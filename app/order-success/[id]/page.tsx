@@ -1174,7 +1174,7 @@ export default function OrderSuccessPage() {
             </div>
 
             <div>
-              {/* Promotion image section (disabled for now, keep for future use)
+              {/* Payment Success Section with Download Image */}
               {(isCompleted || hasUploadedSlip) && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
                   <div className="flex flex-col items-center gap-6">
@@ -1236,7 +1236,6 @@ export default function OrderSuccessPage() {
                   </div>
                 </div>
               )}
-              */}
               <Card>
                 <CardHeader>
                   <CardTitle>สถานะการตรวจสลิป</CardTitle>
