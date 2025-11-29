@@ -53,6 +53,7 @@ type Enrollment = {
   enrolledAt: string
   progress: number
   status: string
+  viewedContentIds?: string[]
 }
 
 type CourseDetail = {
@@ -156,7 +157,7 @@ export default function CourseDetailPage() {
   const [course, setCourse] = useState<CourseDetail | null>(null)
   const [loginOpen, setLoginOpen] = useState(false)
 
-  const [highestCompletedIndex, setHighestCompletedIndex] = useState<number>(-1)
+  const [viewedContentIds, setViewedContentIds] = useState<string[]>([])
   const [progressLoading, setProgressLoading] = useState(false)
 
 
@@ -195,6 +196,24 @@ export default function CourseDetailPage() {
     return m
   }, [flat])
 
+  // Sync viewed content from enrollment; fallback to progress-based sequential fill if no list exists
+  useEffect(() => {
+    if (!course) {
+      setViewedContentIds([])
+      return
+    }
+    const allIds = flat.map((f) => f.content.id)
+    const enrollmentViewed = Array.isArray(course.enrollment?.viewedContentIds)
+      ? course.enrollment.viewedContentIds
+      : []
+    if (enrollmentViewed.length > 0) {
+      setViewedContentIds(enrollmentViewed.filter((id) => contentIndexMap.has(id)))
+      return
+    }
+    const hi = progressToIndex(course.enrollment?.progress ?? 0, allIds.length)
+    setViewedContentIds(hi >= 0 ? allIds.slice(0, hi + 1) : [])
+  }, [course, flat, contentIndexMap])
+
 
   const selectedItem = useMemo(
     () => flat.find((f) => f.content.id === selectedContent?.id),
@@ -220,12 +239,14 @@ export default function CourseDetailPage() {
     }
     return null
   }, [flat, selectedContentIndex])
-  const isCurrentCompleted = selectedContentIndex !== -1 && selectedContentIndex <= highestCompletedIndex
+  const viewedSet = useMemo(() => new Set(viewedContentIds), [viewedContentIds])
+  const isCurrentCompleted = selectedContent ? viewedSet.has(selectedContent.id) : false
   const hasOverlay = videoReplayVisible && isSelectedVimeo
-  const completedCount = Math.max(0, highestCompletedIndex + 1)
+  const completedCount = viewedContentIds.filter((id) => contentIndexMap.has(id)).length
 
 
-  const currentProgress = course?.enrollment?.progress || 0
+  const viewedProgress = totalContents > 0 ? Math.round((completedCount / totalContents) * 100) : 0
+  const currentProgress = viewedContentIds.length > 0 ? viewedProgress : (course?.enrollment?.progress || 0)
   const progressText =
     currentProgress === 0
       ? 'ยังไม่ได้เริ่มเรียน'
@@ -280,11 +301,6 @@ export default function CourseDetailPage() {
             const firstContent = [...firstChapter.contents].sort((a, b) => a.order - b.order)[0]
             setSelectedContent(firstContent)
           }
-
-         
-          const total = json.course.stats?.totalContents ?? 0
-          const hi = progressToIndex(json.course.enrollment?.progress ?? 0, total)
-          setHighestCompletedIndex(hi)
         }
       } catch (e: any) {
         if (active) setError(e?.message ?? 'โหลดคอร์สไม่สำเร็จ')
@@ -340,22 +356,29 @@ export default function CourseDetailPage() {
 
     const idx = contentIndexMap.get(content.id)
     if (idx === undefined) return
-    if (idx <= highestCompletedIndex) return
+    if (viewedSet.has(content.id)) return
 
-    const prevIndex = highestCompletedIndex
     const total = totalContents
+    const prevViewed = viewedContentIds
+    const prevProgress = course?.enrollment?.progress ?? 0
+    const prevStatus = course?.enrollment?.status ?? 'ACTIVE'
 
-    const optimisticIndex = Math.max(prevIndex, idx)
-    setHighestCompletedIndex(optimisticIndex)
+    const nextSet = new Set(prevViewed)
+    nextSet.add(content.id)
+    const orderedIds = flat.map((f) => f.content.id)
+    const nextViewed = orderedIds.filter((id) => nextSet.has(id))
+    const optimisticProgress = total > 0 ? Math.round((nextViewed.length / total) * 100) : prevProgress
+
+    setViewedContentIds(nextViewed)
     setCourse((prev) => {
       if (!prev) return prev
-      const newProgress = indexToProgress(optimisticIndex, total)
       return {
         ...prev,
         enrollment: {
           ...prev.enrollment,
-          progress: newProgress,
-          status: newProgress >= 100 ? 'COMPLETED' : prev.enrollment.status,
+          progress: optimisticProgress,
+          viewedContentIds: nextViewed,
+          status: optimisticProgress >= 100 ? 'COMPLETED' : prev.enrollment.status,
         },
       }
     })
@@ -371,52 +394,60 @@ export default function CourseDetailPage() {
 
       if (!response.ok || !result?.success) {
         // rollback
-        setHighestCompletedIndex(prevIndex)
         setCourse((prev) => {
           if (!prev) return prev
-          const rollbackProgress = indexToProgress(prevIndex, total)
           return {
             ...prev,
             enrollment: {
               ...prev.enrollment,
-              progress: rollbackProgress,
-              status: rollbackProgress >= 100 ? 'COMPLETED' : prev.enrollment.status,
+              progress: prevProgress,
+              viewedContentIds: prevViewed,
+              status: prevStatus,
             },
           }
         })
+        setViewedContentIds(prevViewed)
         return
       }
 
       // sync จาก API
+      const apiViewedRaw = Array.isArray(result.viewedContentIds)
+        ? result.viewedContentIds
+        : Array.isArray(result.data?.viewedContentIds)
+          ? result.data.viewedContentIds
+          : nextViewed
+      const filteredApiViewed = orderedIds.filter((id) => apiViewedRaw.includes(id))
+      const apiProgress = result.progress ?? result.data?.progress ?? optimisticProgress
+      const apiStatus = result.status ?? result.data?.status ?? (apiProgress >= 100 ? 'COMPLETED' : prevStatus)
+
       setCourse((prev) => {
         if (!prev) return prev
         return {
           ...prev,
           enrollment: {
             ...prev.enrollment,
-            progress: result.progress ?? prev.enrollment.progress,
-            status: result.status ?? prev.enrollment.status,
+            progress: apiProgress,
+            viewedContentIds: filteredApiViewed,
+            status: apiStatus,
           },
         }
       })
-
-      const apiIndex = progressToIndex(result.progress ?? 0, total)
-      setHighestCompletedIndex((cur) => Math.max(cur, apiIndex))
+      setViewedContentIds(filteredApiViewed)
     } catch {
       // rollback
-      setHighestCompletedIndex(prevIndex)
       setCourse((prev) => {
         if (!prev) return prev
-        const rollbackProgress = indexToProgress(prevIndex, total)
         return {
           ...prev,
           enrollment: {
             ...prev.enrollment,
-            progress: rollbackProgress,
-            status: rollbackProgress >= 100 ? 'COMPLETED' : prev.enrollment.status,
+            progress: prevProgress,
+            viewedContentIds: prevViewed,
+            status: prevStatus,
           },
         }
       })
+      setViewedContentIds(prevViewed)
     } finally {
       setProgressLoading(false)
     }
@@ -595,7 +626,7 @@ export default function CourseDetailPage() {
                                 {contentsSorted.map((c) => {
                                   const isCurrent = selectedContent?.id === c.id
                                   const idx = contentIndexMap.get(c.id) ?? -1
-                                  const isCompleted = idx <= highestCompletedIndex && idx !== -1
+                                  const isCompleted = viewedSet.has(c.id)
                                   return (
                                     <Button
                                       key={c.id}
