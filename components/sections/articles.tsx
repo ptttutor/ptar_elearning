@@ -30,7 +30,7 @@ function deriveExcerpt(input?: string, max = 160) {
 }
 
 export default function Articles() {
- 
+
   const fallbackMapped: ArticleItem[] = useMemo(
     () =>
       fallbackArticles.map((a) => ({
@@ -50,67 +50,67 @@ export default function Articles() {
 
   useEffect(() => {
     let mounted = true
-    ;(async () => {
-      try {
-        const params = new URLSearchParams({ postType: "บทความ", featured: "true", limit: "12" })
-        const res = await http.get(`/api/posts?${params.toString()}`)
-        if (!mounted) return
+      ; (async () => {
+        try {
+          const params = new URLSearchParams({ postType: "บทความ", featured: "true", limit: "12" })
+          const res = await http.get(`/api/posts?${params.toString()}`)
+          if (!mounted) return
 
-        if (res.status < 200 || res.status >= 300) {
-          console.warn("[ArticlesSection] Fetch /api/posts: NOT OK", res.status, res.statusText)
-          setItems(fallbackMapped)
-          return
+          if (res.status < 200 || res.status >= 300) {
+            console.warn("[ArticlesSection] Fetch /api/posts: NOT OK", res.status, res.statusText)
+            setItems(fallbackMapped)
+            return
+          }
+
+          const json: any = res.data || null
+          const list: any[] = Array.isArray(json)
+            ? json
+            : Array.isArray(json?.data)
+              ? json.data
+              : []
+
+
+          const filtered = list.filter((p) => p?.postType?.name === "บทความ" && p?.isFeatured === true)
+
+          if (!filtered.length) {
+            console.warn("[ArticlesSection] API ไม่มีบทความเด่น → ใช้ fallback")
+            setItems(fallbackMapped)
+            return
+          }
+
+          const mapped: ArticleItem[] = filtered
+            .map((p: any, idx: number) => {
+              const desktop = p?.imageUrl || p?.imageUrlMobileMode || ""
+              const mobile = p?.imageUrlMobileMode || p?.imageUrl || ""
+              const excerpt = p?.excerpt || deriveExcerpt(p?.content, 180)
+              const dateIso = p?.publishedAt
+                ? new Date(p.publishedAt).toISOString()
+                : new Date().toISOString()
+              return {
+                id: p?.id ?? idx,
+                slug: p?.slug || "",
+                title: p?.title || "",
+                imageDesktop: desktop,
+                imageMobile: mobile,
+                excerpt: excerpt || "",
+                date: dateIso,
+              }
+            })
+            .filter((a) => !!(a.imageDesktop || a.imageMobile))
+
+          if (mapped.length) {
+            setItems(mapped)
+          } else {
+            console.warn("[ArticlesSection] บทความเด่นไม่มีรูป → ใช้ fallback")
+            setItems(fallbackMapped)
+          }
+        } catch (err) {
+          console.error("[ArticlesSection] Failed to load posts", err)
+          if (mounted) setItems(fallbackMapped)
+        } finally {
+          if (mounted) setLoading(false)
         }
-
-        const json: any = res.data || null
-        const list: any[] = Array.isArray(json)
-          ? json
-          : Array.isArray(json?.data)
-          ? json.data
-          : []
-
-     
-        const filtered = list.filter((p) => p?.postType?.name === "บทความ" && p?.isFeatured === true)
-
-        if (!filtered.length) {
-          console.warn("[ArticlesSection] API ไม่มีบทความเด่น → ใช้ fallback")
-          setItems(fallbackMapped)
-          return
-        }
-
-        const mapped: ArticleItem[] = filtered
-          .map((p: any, idx: number) => {
-            const desktop = p?.imageUrl || p?.imageUrlMobileMode || ""
-            const mobile = p?.imageUrlMobileMode || p?.imageUrl || ""
-            const excerpt = p?.excerpt || deriveExcerpt(p?.content, 180)
-            const dateIso = p?.publishedAt
-              ? new Date(p.publishedAt).toISOString()
-              : new Date().toISOString()
-            return {
-              id: p?.id ?? idx,
-              slug: p?.slug || "",
-              title: p?.title || "",
-              imageDesktop: desktop,
-              imageMobile: mobile,
-              excerpt: excerpt || "",
-              date: dateIso,
-            }
-          })
-          .filter((a) => !!(a.imageDesktop || a.imageMobile))
-
-        if (mapped.length) {
-          setItems(mapped)
-        } else {
-          console.warn("[ArticlesSection] บทความเด่นไม่มีรูป → ใช้ fallback")
-          setItems(fallbackMapped)
-        }
-      } catch (err) {
-        console.error("[ArticlesSection] Failed to load posts", err)
-        if (mounted) setItems(fallbackMapped)
-      } finally {
-        if (mounted) setLoading(false)
-      }
-    })()
+      })()
     return () => {
       mounted = false
     }
