@@ -96,41 +96,10 @@ export default function CoursesPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [isCompactPagination, setIsCompactPagination] = useState(false)
 
-  // Load available subjects from API
-  useEffect(() => {
-    let active = true
-    const loadFilters = async () => {
-      try {
-        const coursesRes = await fetch('/api/courses?limit=200', { cache: "no-store" })
-        if (coursesRes.ok) {
-          const coursesJson = await coursesRes.json()
-          const coursesList = Array.isArray(coursesJson?.data) ? coursesJson.data : []
-
-          const subjectCategories = new Set<string>()
-
-          coursesList.forEach((course: any) => {
-            const categoryName = course?.category?.name
-            if (categoryName && /^คอร์ส/i.test(categoryName)) {
-              subjectCategories.add(categoryName)
-            }
-          })
-
-          // Set subjects  
-          if (active && subjectCategories.size > 0) {
-            const subjects = Array.from(subjectCategories).map(name => ({
-              id: name,
-              name: name
-            }))
-            setAvailableSubjects([{ id: "all", name: "ทุกวิชา" }, ...subjects])
-          }
-        }
-      } catch (e) {
-        console.warn('Failed to load filters:', e)
-      }
-    }
-    loadFilters()
-    return () => { active = false }
-  }, [])
+  // Available subjects state moved up implicitly by component structure but instantiated here
+  const [availableSubjects, setAvailableSubjects] = useState<Array<{ id: string; name: string }>>([
+    { id: "all", name: "ทุกวิชา" }
+  ])
 
   // Load all courses initially
   useEffect(() => {
@@ -177,6 +146,24 @@ export default function CoursesPage() {
         if (active) {
           setData(collected)
           setAllCourses(collected)
+
+          // Extract subjects from loaded courses
+          const subjectCategories = new Set<string>()
+          collected.forEach((course) => {
+            const categoryName = course?.category?.name
+            if (categoryName && /^คอร์ส/i.test(categoryName)) {
+              subjectCategories.add(categoryName)
+            }
+          })
+
+          if (subjectCategories.size > 0) {
+            const subjects = Array.from(subjectCategories).map(name => ({
+              id: name,
+              name: name
+            }))
+            setAvailableSubjects([{ id: "all", name: "ทุกวิชา" }, ...subjects])
+          }
+
           // Debug: Log first course to check gradeLevel field
           if (collected.length > 0) {
             console.log('Sample course data:', collected[0])
@@ -207,9 +194,7 @@ export default function CoursesPage() {
     { id: GradeLevel.SENIOR_HIGH, name: GRADE_LEVEL_LABELS[GradeLevel.SENIOR_HIGH] }
   ]
 
-  const [availableSubjects, setAvailableSubjects] = useState<Array<{ id: string; name: string }>>([
-    { id: "all", name: "ทุกวิชา" }
-  ])
+
 
 
 

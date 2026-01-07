@@ -15,14 +15,9 @@ type Slide = {
 }
 
 const fallbackSlides: Slide[] = [
-  { id: 1, src: "/view1.jpeg", alt: "บรรยากาศการเรียนในห้องเรียน", title: "บรรยากาศการเรียนในห้องเรียน" },
-  { id: 2, src: "/view2.jpeg", alt: "บรรยากาศการเรียนในห้องเรียน", title: "บรรยากาศการเรียนในห้องเรียน" },
-  { id: 3, src: "/view3.jpeg", alt: "บรรยากาศการเรียนในห้องเรียน", title: "บรรยากาศการเรียนในห้องเรียน" },
-  { id: 4, src: "/view4.jpeg", alt: "บรรยากาศการเรียนในห้องเรียน", title: "บรรยากาศการเรียนในห้องเรียน" },
-  { id: 5, src: "/view5.jpeg", alt: "บรรยากาศการเรียนในห้องเรียน", title: "บรรยากาศการเรียนในห้องเรียน" },
-  { id: 6, src: "/view6.jpeg", alt: "บรรยากาศการเรียนในห้องเรียน", title: "บรรยากาศการเรียนในห้องเรียน" },
-  { id: 7, src: "/view7.jpeg", alt: "บรรยากาศการเรียนในห้องเรียน", title: "บรรยากาศการเรียนในห้องเรียน" },
-  { id: 8, src: "/view8.jpeg", alt: "บรรยากาศการเรียนในห้องเรียน", title: "บรรยากาศการเรียนในห้องเรียน" },
+  { id: 1, src: "/placeholder.svg", alt: "บรรยากาศการเรียนในห้องเรียน", title: "บรรยากาศการเรียนในห้องเรียน" },
+  { id: 2, src: "/placeholder.svg", alt: "บรรยากาศการเรียนในห้องเรียน", title: "บรรยากาศการเรียนในห้องเรียน" },
+  { id: 3, src: "/placeholder.svg", alt: "บรรยากาศการเรียนในห้องเรียน", title: "บรรยากาศการเรียนในห้องเรียน" },
 ]
 
 export default function ViewOfTeachingSection({
@@ -46,39 +41,39 @@ export default function ViewOfTeachingSection({
   useEffect(() => {
     let mounted = true
     const controller = new AbortController()
-    ;(async () => {
-      try {
-        const targetName = "บรรยากาศการเรียน"
-        const params = new URLSearchParams({ postType: targetName, limit: "12" })
-        const res = await http.get(`/api/posts?${params.toString()}`, { signal: controller.signal })
-        const json: any = res?.data ?? null
-        const list = Array.isArray(json) ? json : Array.isArray(json?.data) ? json.data : []
+      ; (async () => {
+        try {
+          const targetName = "บรรยากาศการเรียน"
+          const params = new URLSearchParams({ postType: targetName, limit: "12" })
+          const res = await http.get(`/api/posts?${params.toString()}`, { signal: controller.signal })
+          const json: any = res?.data ?? null
+          const list = Array.isArray(json) ? json : Array.isArray(json?.data) ? json.data : []
 
-        const now = new Date()
-        const typed = list.filter((p: any) => p?.postType?.name === targetName)
-        const activePublished = typed.filter((p: any) => {
-          const isActive = p?.isActive !== false
-          const publishedAt = p?.publishedAt ? new Date(p.publishedAt) : null
-          return isActive && (!publishedAt || publishedAt <= now)
-        })
+          const now = new Date()
+          const typed = list.filter((p: any) => p?.postType?.name === targetName)
+          const activePublished = typed.filter((p: any) => {
+            const isActive = p?.isActive !== false
+            const publishedAt = p?.publishedAt ? new Date(p.publishedAt) : null
+            return isActive && (!publishedAt || publishedAt <= now)
+          })
 
-        const mapped: Slide[] = activePublished
-          .map((p: any, idx: number) => ({
-            id: p?.id ?? idx,
-            src: p?.imageUrl || p?.imageUrlMobileMode || "",
-            alt: p?.title || "บรรยากาศการเรียน",
-            title: p?.title || "บรรยากาศการเรียน",
-          }))
-          .filter((s: Slide) => !!s.src)
+          const mapped: Slide[] = activePublished
+            .map((p: any, idx: number) => ({
+              id: p?.id ?? idx,
+              src: p?.imageUrl || p?.imageUrlMobileMode || "",
+              alt: p?.title || "บรรยากาศการเรียน",
+              title: p?.title || "บรรยากาศการเรียน",
+            }))
+            .filter((s: Slide) => !!s.src)
 
-        if (mounted && !controller.signal.aborted && mapped.length) {
-          setSlides(mapped)
-          setCurrent(0)
+          if (mounted && !controller.signal.aborted && mapped.length) {
+            setSlides(mapped)
+            setCurrent(0)
+          }
+        } catch {
+          // keep fallbackSlides
         }
-      } catch {
-        // keep fallbackSlides
-      }
-    })()
+      })()
     return () => {
       mounted = false
       controller.abort()
@@ -156,9 +151,8 @@ export default function ViewOfTeachingSection({
                     if (idx !== current) setCurrent(idx)
                   }}
                   aria-label={`Go to image ${idx + 1}`}
-                  className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                    idx === current ? "bg-primary scale-125" : "bg-muted hover:bg-muted-foreground/30"
-                  }`}
+                  className={`w-3 h-3 rounded-full transition-all duration-300 ${idx === current ? "bg-primary scale-125" : "bg-muted hover:bg-muted-foreground/30"
+                    }`}
                 />
               ))}
             </div>
