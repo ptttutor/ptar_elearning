@@ -1338,13 +1338,13 @@ export default function OrderSuccessPage() {
                         <span className="text-muted-foreground">เลขบัญชี</span>
                         <div className="flex items-center gap-2">
                           <span className="font-semibold tracking-wider text-foreground">
-                            131-1-20677-6
+                            061-3-33214-6
                           </span>
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() =>
-                              navigator.clipboard?.writeText("1311206776")
+                              navigator.clipboard?.writeText("0613332146")
                             }
                           >
                             คัดลอก
@@ -1355,7 +1355,7 @@ export default function OrderSuccessPage() {
                         <span className="text-muted-foreground">ชื่อบัญชี</span>
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-foreground">
-                            อนุชิต ประทุมรัตน์
+                            ศรชัย น้อยลา
                           </span>
                           <Button
                             size="sm"
@@ -1372,13 +1372,13 @@ export default function OrderSuccessPage() {
                         <span className="text-muted-foreground">พร้อมเพย์</span>
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-foreground">
-                            083-210-9685
+                            099-632-7669
                           </span>
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() =>
-                              navigator.clipboard?.writeText("0832109685")
+                              navigator.clipboard?.writeText("0996327669")
                             }
                           >
                             คัดลอก

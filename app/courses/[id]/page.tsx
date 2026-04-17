@@ -50,6 +50,13 @@ function getEmbedSrc(url?: string | null) {
   return getYouTubeEmbedUrl(url) || getVimeoEmbedUrl(url)
 }
 
+function isValidVideoUrl(url?: string | null) {
+  if (!url) return false
+  const value = String(url).trim()
+  if (!value || value === "-") return false
+  return /^https?:\/\//i.test(value)
+}
+
 
 type ApiCourse = {
   id: string
@@ -221,10 +228,46 @@ export default function CourseDetailPage() {
   // Intro video 
   const [introSrc, setIntroSrc] = useState<string | null>(null)
   const introFrameRef = useRef<HTMLIFrameElement | null>(null)
+  const introSectionRef = useRef<HTMLDivElement | null>(null)
   const introPlayerRef = useRef<Player | null>(null)
   const [introReplayVisible, setIntroReplayVisible] = useState(false)
   const [introEmbedKey, setIntroEmbedKey] = useState(0)
+  const [introAutoplayNonce, setIntroAutoplayNonce] = useState(0)
   const isIntroVimeo = useMemo(() => introSrc?.includes("player.vimeo.com") ?? false, [introSrc])
+
+  const introPlayableSrc = useMemo(() => {
+    if (!introSrc) return null
+    if (!introAutoplayNonce) return introSrc
+    try {
+      const url = new URL(introSrc)
+      url.searchParams.set("autoplay", "1")
+      url.searchParams.set("playsinline", "1")
+      if (url.hostname.includes("youtube")) {
+        // Keep sound policy-friendly while still auto-starting playback.
+        url.searchParams.set("mute", "1")
+      }
+      return url.toString()
+    } catch {
+      return introSrc
+    }
+  }, [introSrc, introAutoplayNonce])
+
+  const handlePreviewClick = (event?: React.MouseEvent) => {
+    event?.stopPropagation()
+
+    if (introSrc) {
+      setIntroReplayVisible(false)
+      setIntroAutoplayNonce((n) => n + 1)
+      setIntroEmbedKey((key) => key + 1)
+      introSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+      return
+    }
+
+    const rawSample = (course?.sampleVideo || "").trim()
+    if (isValidVideoUrl(rawSample)) {
+      window.open(rawSample, "_blank", "noopener,noreferrer")
+    }
+  }
 
 
   useEffect(() => {
@@ -281,6 +324,10 @@ export default function CourseDetailPage() {
     const src = getEmbedSrc(course?.sampleVideo || null)
     setIntroSrc(src)
   }, [course?.sampleVideo])
+
+  useEffect(() => {
+    setIntroAutoplayNonce(0)
+  }, [introSrc])
 
   useEffect(() => {
     setIntroReplayVisible(false)
@@ -717,15 +764,15 @@ export default function CourseDetailPage() {
 
               <section className="lg:col-span-2 space-y-8 order-1">
                 <motion.div variants={fadeInUp} initial="initial" animate="animate" className="w-full max-w-full">
-                  <div className="mb-6">
+                  <div ref={introSectionRef} className="mb-6">
                     <AspectRatio ratio={16 / 9}>
                       <div className="group relative h-full w-full overflow-hidden rounded-2xl ring-1 ring-black/5 shadow-lg bg-black">
                     {introSrc ? (
                       <>
                         <iframe
-                          key={isIntroVimeo ? `intro-${introEmbedKey}` : "intro"}
+                          key={`intro-${introEmbedKey}-${introAutoplayNonce}`}
                           ref={introFrameRef}
-                          src={introSrc}
+                          src={introPlayableSrc || undefined}
                           className={`absolute inset-0 h-full w-full transition-opacity ${isIntroVimeo && introReplayVisible ? "pointer-events-none opacity-0" : "opacity-100"}`}
                           width="100%"
                           height="100%"
@@ -757,15 +804,6 @@ export default function CourseDetailPage() {
                           className="object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/25 to-transparent" />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <Button
-                            size="lg"
-                            className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl rounded-xl px-6 py-6 ring-1 ring-white/20 transition-all"
-                          >
-                            <Play className="h-6 w-6 mr-2" />
-                            ดูตัวอย่าง
-                          </Button>
-                        </div>
                       </>
                     )}
                       </div>
@@ -905,7 +943,7 @@ export default function CourseDetailPage() {
                                           variant="ghost"
                                           size="sm"
                                           className="text-[#004B7D] hover:bg-[#004B7D1A] rounded-lg h-8 px-2"
-                                          onClick={(e) => e.stopPropagation()}
+                                          onClick={handlePreviewClick}
                                         >
                                           <Play className="h-4 w-4 sm:mr-1" />
                                           <span className="hidden sm:inline">ดูตัวอย่าง</span>
