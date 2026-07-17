@@ -22,7 +22,9 @@ export async function GET(req: Request) {
 
     const res = await fetch(`${baseUrl.replace(/\/$/, "")}/api/posts${search}`, {
       headers,
-      cache: "no-store",
+      // Public marketing content (banners/reviews/articles) — doesn't need to be
+      // real-time fresh, and the home page alone fires 7 of these per pageview.
+      next: { revalidate: 60 },
     })
 
     const data = await res.json().catch(() => ({}))

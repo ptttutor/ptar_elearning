@@ -82,93 +82,79 @@ type ApiResponse = {
 
 const COURSES_API = "/api/courses"
 const PAGE_SIZE = 9
-const API_FETCH_LIMIT = 100
+// Bounded, single-shot sample used only to build the subject/category filter
+// options — not the course listing itself, so this never scales with catalog size.
+const CATEGORY_SAMPLE_LIMIT = 100
 
 export default function CoursesPage() {
   const searchParams = useSearchParams()
   const initialGradeLevel = searchParams.get('gradeLevel') || 'all'
   const [selectedGradeLevel, setSelectedGradeLevel] = useState<string>(initialGradeLevel)
   const [selectedSubject, setSelectedSubject] = useState<string>("all")
-  const [data, setData] = useState<ApiCourse[]>([])
-  const [allCourses, setAllCourses] = useState<ApiCourse[]>([])
+  const [courses, setCourses] = useState<ApiCourse[]>([])
+  const [totalCourses, setTotalCourses] = useState(0)
+  const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [isCompactPagination, setIsCompactPagination] = useState(false)
 
-  // Available subjects state moved up implicitly by component structure but instantiated here
   const [availableSubjects, setAvailableSubjects] = useState<Array<{ id: string; name: string }>>([
     { id: "all", name: "ทุกวิชา" }
   ])
 
-  // Load all courses initially
+  // Build the subject/category filter options once, from a bounded sample —
+  // this only populates the dropdown, it never drives the course listing.
   useEffect(() => {
     let active = true
-    const loadAllCourses = async () => {
+    const loadCategoryOptions = async () => {
+      try {
+        const params = new URLSearchParams({ page: "1", limit: String(CATEGORY_SAMPLE_LIMIT) })
+        const res = await fetch(`${COURSES_API}?${params.toString()}`, { cache: "no-store" })
+        if (!res.ok) return
+        const json: ApiResponse = await res.json()
+        const list = Array.isArray(json?.data) ? json.data : []
+
+        const subjectCategories = new Map<string, string>()
+        list.forEach((course) => {
+          const category = course?.category
+          if (category?.id && category.name && /^คอร์ส/i.test(category.name)) {
+            subjectCategories.set(category.id, category.name)
+          }
+        })
+
+        if (active && subjectCategories.size > 0) {
+          const subjects = Array.from(subjectCategories, ([id, name]) => ({ id, name }))
+          setAvailableSubjects([{ id: "all", name: "ทุกวิชา" }, ...subjects])
+        }
+      } catch {
+        // Filter options are a nice-to-have; leave the default "ทุกวิชา" only.
+      }
+    }
+    loadCategoryOptions()
+    return () => { active = false }
+  }, [])
+
+  // Fetch the current page of courses directly from the backend, filtered
+  // and paginated server-side.
+  useEffect(() => {
+    let active = true
+    const loadCourses = async () => {
       try {
         setLoading(true)
         setError(null)
-        const collected: ApiCourse[] = []
-        const seen = new Set<string>()
-        let page = 1
-        let lastReportedPage = 0
-        const maxPages = 50
+        const params = new URLSearchParams({ page: String(currentPage), limit: String(PAGE_SIZE) })
+        if (selectedGradeLevel !== "all") params.set("gradeLevel", selectedGradeLevel)
+        if (selectedSubject !== "all") params.set("categoryId", selectedSubject)
 
-        while (page <= maxPages) {
-          const params = new URLSearchParams({ page: String(page), limit: String(API_FETCH_LIMIT) })
-          const res = await fetch(`${COURSES_API}?${params.toString()}`, { cache: "no-store" })
-          if (!res.ok) throw new Error(`HTTP ${res.status}`)
-          const json: ApiResponse & { pagination?: { page?: number; totalPages?: number } } = await res.json()
-          const list = Array.isArray(json?.data) ? json.data : []
-
-          for (const course of list) {
-            if (course?.id && !seen.has(course.id)) {
-              seen.add(course.id)
-              collected.push(course)
-            }
-          }
-
-          const pagination = json?.pagination
-          const reported = Number(pagination?.page)
-          const reportedPage = Number.isFinite(reported) && reported > 0 ? reported : page
-          const repeatedPage = page > 1 && reportedPage === lastReportedPage
-          lastReportedPage = reportedPage
-          const totalPages = Number(pagination?.totalPages)
-          const done =
-            !list.length ||
-            list.length < API_FETCH_LIMIT ||
-            (Number.isFinite(totalPages) && reportedPage >= totalPages) ||
-            repeatedPage
-          if (done) break
-          page += 1
-        }
+        const res = await fetch(`${COURSES_API}?${params.toString()}`, { cache: "no-store" })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const json: ApiResponse = await res.json()
 
         if (active) {
-          setData(collected)
-          setAllCourses(collected)
-
-          // Extract subjects from loaded courses
-          const subjectCategories = new Set<string>()
-          collected.forEach((course) => {
-            const categoryName = course?.category?.name
-            if (categoryName && /^คอร์ส/i.test(categoryName)) {
-              subjectCategories.add(categoryName)
-            }
-          })
-
-          if (subjectCategories.size > 0) {
-            const subjects = Array.from(subjectCategories).map(name => ({
-              id: name,
-              name: name
-            }))
-            setAvailableSubjects([{ id: "all", name: "ทุกวิชา" }, ...subjects])
-          }
-
-          // Debug: Log first course to check gradeLevel field
-          if (collected.length > 0) {
-            console.log('Sample course data:', collected[0])
-            console.log('gradeLevel field:', collected[0].gradeLevel)
-          }
+          setCourses(Array.isArray(json?.data) ? json.data : [])
+          setTotalCourses(json?.pagination?.total ?? 0)
+          setTotalPages(Math.max(1, json?.pagination?.totalPages ?? 1))
         }
       } catch (e: any) {
         if (active) setError(e?.message ?? "Failed to load courses")
@@ -176,16 +162,9 @@ export default function CoursesPage() {
         if (active) setLoading(false)
       }
     }
-    loadAllCourses()
+    loadCourses()
     return () => { active = false }
-  }, [])
-
-
-
-
-  useEffect(() => {
-    void searchParams; void data
-  }, [data, searchParams])
+  }, [selectedGradeLevel, selectedSubject, currentPage])
 
   // Available grade levels from enum
   const availableGradeLevels = [
@@ -214,45 +193,6 @@ export default function CoursesPage() {
       mq.removeEventListener("change", handleChange)
     }
   }, [])
-
-  const filteredCourses = useMemo(() => {
-    let filtered = allCourses || []
-
-    // Client-side filtering for grade level
-    if (selectedGradeLevel !== "all") {
-      filtered = filtered.filter(course => {
-        // Check if course has gradeLevel property
-        if (course.gradeLevel) {
-          return course.gradeLevel === selectedGradeLevel
-        }
-        // Fallback: check category name for grade level indicators
-        const categoryName = course.category?.name
-        if (categoryName) {
-          if (selectedGradeLevel === GradeLevel.JUNIOR_HIGH) {
-            return categoryName.includes("ม.ต้น") || categoryName.includes("มต้น")
-          }
-          if (selectedGradeLevel === GradeLevel.SENIOR_HIGH) {
-            return categoryName.includes("ม.ปลาย") || categoryName.includes("มปลาย")
-          }
-        }
-        return false
-      })
-    }
-
-    // Client-side filtering for subject
-    if (selectedSubject !== "all") {
-      filtered = filtered.filter(course => {
-        const categoryName = course.category?.name
-        return categoryName === selectedSubject
-      })
-    }
-
-    return filtered
-  }, [allCourses, selectedGradeLevel, selectedSubject])
-
-  const totalPages = useMemo(() => {
-    return Math.max(1, Math.ceil((filteredCourses.length || 0) / PAGE_SIZE))
-  }, [filteredCourses.length])
 
   const buildPageList = useMemo<(number | "...")[]>(() => {
     if (totalPages <= 1) return [1]
@@ -371,12 +311,6 @@ export default function CoursesPage() {
       return Math.min(prev, totalPages)
     })
   }, [totalPages])
-
-  const paginatedCourses = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE
-    const end = start + PAGE_SIZE
-    return filteredCourses.slice(start, end)
-  }, [currentPage, filteredCourses])
 
   return (
     <>
@@ -503,7 +437,7 @@ export default function CoursesPage() {
             {!loading && error && (
               <div className="col-span-full text-center text-destructive">เกิดข้อผิดพลาด: {error}</div>
             )}
-            {!loading && !error && paginatedCourses.map((course) => (
+            {!loading && !error && courses.map((course) => (
               <motion.div key={course.id} variants={fadeInUp}>
                 <Card className="h-full hover:shadow-xl transition-shadow duration-300 group pt-0">
                   <CardContent className="p-0">
@@ -585,14 +519,14 @@ export default function CoursesPage() {
             ))}
           </motion.div>
 
-          {!loading && !error && filteredCourses.length > 0 && (
+          {!loading && !error && totalCourses > 0 && (
             <div className="mt-10 flex w-full flex-wrap items-center justify-center gap-2">
               {paginationControls}
             </div>
           )}
 
 
-          {!loading && !error && filteredCourses.length === 0 && (
+          {!loading && !error && totalCourses === 0 && (
             <motion.div
               className="text-center py-12"
               initial={{ opacity: 0 }}

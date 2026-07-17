@@ -15,7 +15,9 @@ export async function GET(req: Request) {
     const cookie = req.headers.get("cookie") ?? ""
     const upstream = `${baseUrl.replace(/\/$/, "")}/api/courses${search}`
     const res = await fetch(upstream, {
-      cache: "no-store",
+      // Public course catalog — courses rarely change, so cache longer than
+      // the posts feed to further cut DB load.
+      next: { revalidate: 600 },
       headers: { cookie },
     })
     const data = await res.json()
