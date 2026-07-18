@@ -23,16 +23,17 @@ type PaidCourse = {
   title: string
   description?: string | null
   coverImageUrl?: string | null
-  purchaseDate?: string | null
+  enrolledAt?: string | null
   paymentMethod?: string | null
   category?: { id: string; name: string }
   instructor?: { id: string; name: string }
   _count?: { chapters: number; enrollments: number }
-  
+
   progress?: number | null
   chapters?: ChapterSlim[]
   enrollmentStatus?: string | null
   isExpire?: boolean | null
+  expiresAt?: string | null
 }
 
 type MyCoursesResponse = {
@@ -308,13 +309,20 @@ export default function MyCourses() {
                         <BookOpen className="h-4 w-4" />
                         {chaptersCount} บทเรียน
                       </div>
-                      {c.purchaseDate && (
+                      {c.enrolledAt && (
                         <div className="inline-flex items-center gap-1">
                           <Clock className="h-4 w-4" />
-                          {formatTHDate(c.purchaseDate)}
+                          {formatTHDate(c.enrolledAt)}
                         </div>
                       )}
                     </div>
+
+                    {c.expiresAt && (
+                      <div className={`text-xs ${expired ? "text-destructive" : "text-muted-foreground"}`}>
+                        {expired ? "หมดอายุเมื่อ " : "ใช้งานได้ถึง "}
+                        {formatTHDate(c.expiresAt)}
+                      </div>
+                    )}
 
                     
                     <div className="mt-1">
