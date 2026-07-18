@@ -5,14 +5,13 @@ import { Calendar, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import Script from "next/script"
-import { articles as fallbackArticles } from "@/lib/dummy-data"
 
 const PAGE_SIZE = 9
 const FETCH_LIMIT = 200
 
 export const metadata = {
   title: "บทความทั้งหมด | เคมีพี่ต้า",
-  description: "รวมบทความ เทคนิคการเรียนฟิสิกส์ และแนะแนวการสอบ",
+  description: "รวมบทความ เทคนิคการเรียนเคมี และแนะแนวการสอบ",
 }
 
 type ArticleItem = {
@@ -81,21 +80,7 @@ export default async function ArticlesIndexPage({ searchParams }: Props) {
     })
     .filter((a) => !!(a.imageDesktop || a.imageMobile))
 
-  const usingFallback = mapped.length === 0
-  const fallbackReason = !items.length ? "no-posts" : "no-images"
-  const base: ArticleItem[] = usingFallback
-    ? fallbackArticles.map((a) => ({
-        id: (a as any).id,
-        slug: (a as any).slug || "",
-        title: (a as any).title || "",
-        excerpt: (a as any).excerpt || "",
-        date: (a as any).date || new Date().toISOString(),
-        imageDesktop: (a as any).image || "",
-        imageMobile: (a as any).image || "",
-      }))
-    : mapped
-
-  const sorted = [...base].sort(
+  const sorted = [...mapped].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   )
 
@@ -118,36 +103,10 @@ export default async function ArticlesIndexPage({ searchParams }: Props) {
           {`
             (() => {
               const scope = '[Articles]';
-              const d = ${JSON.stringify({
-                ok,
-                status,
-                postsCount: undefined, 
-                mappedCount: undefined,
-                usingFallback,
-                fallbackReason,
-                fallbackCount: fallbackArticles.length,
-              })};
-              d.postsCount = ${Number.isFinite((items as any[]).length) ? (items as any[]).length : 0};
-              d.mappedCount = ${Number.isFinite((mapped as any[]).length) ? (mapped as any[]).length : 0};
-              if (typeof d.ok !== 'undefined') {
-                if (d.ok) console.log(scope + ' Fetch /api/posts: OK ' + d.status);
-                else console.warn(scope + ' Fetch /api/posts: NOT OK ' + d.status);
-              }
-              if (typeof d.postsCount !== 'undefined') {
-                if (!d.postsCount) {
-                  console.warn(scope + ' API ไม่มีข้อมูลโพสต์ ใช้รูป dummy แทน (' + d.fallbackCount + ' ภาพ)');
-                } else {
-                  console.log(scope + ' Posts loaded: ' + d.postsCount);
-                }
-              }
-              console.log(scope + ' Articles mapped: ' + d.mappedCount);
-              if (d.usingFallback) {
-                if (d.fallbackReason === 'no-images') {
-                  console.warn(scope + ' API ไม่มีรูป (imageUrl/imageUrlMobileMode) ใช้รูป dummy แทน (' + d.fallbackCount + ' ภาพ)');
-                }
-              } else {
-                console.log(scope + ' ใช้รูปจาก API จำนวน ' + d.mappedCount + ' ภาพ');
-              }
+              ${ok
+                ? `console.log(scope + ' Fetch /api/posts: OK ${status}');`
+                : `console.warn(scope + ' Fetch /api/posts: NOT OK ${status}');`}
+              console.log(scope + ' Articles mapped: ${mapped.length}');
             })();
           `}
         </Script>
@@ -157,11 +116,14 @@ export default async function ArticlesIndexPage({ searchParams }: Props) {
             บทความทั้งหมด
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto text-pretty">
-            อัปเดตความรู้ฟิสิกส์ เคล็ดลับทำข้อสอบ และแนวคิดที่ใช้ได้จริง
+            อัปเดตความรู้เคมี เคล็ดลับทำข้อสอบ และแนวคิดที่ใช้ได้จริง
           </p>
         </div>
 
 
+        {pageItems.length === 0 ? (
+          <div className="text-center text-gray-500 py-16">ยังไม่มีบทความในขณะนี้</div>
+        ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {pageItems.map((article) => (
             <Card
@@ -226,8 +188,10 @@ export default async function ArticlesIndexPage({ searchParams }: Props) {
             </Card>
           ))}
         </div>
+        )}
 
 
+        {pageItems.length > 0 && (
         <div className="flex items-center justify-center gap-3 mt-12">
 
           {page <= 1 ? (
@@ -255,6 +219,7 @@ export default async function ArticlesIndexPage({ searchParams }: Props) {
             </Button>
           )}
         </div>
+        )}
       </div>
     </section>
   )

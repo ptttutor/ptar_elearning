@@ -2,11 +2,10 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { Calendar, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { articles as fallbackArticles } from "@/lib/dummy-data"
 import http from "@/lib/http"
 
 type ArticleItem = {
@@ -30,21 +29,6 @@ function deriveExcerpt(input?: string, max = 160) {
 }
 
 export default function Articles() {
-
-  const fallbackMapped: ArticleItem[] = useMemo(
-    () =>
-      fallbackArticles.map((a) => ({
-        id: a.id,
-        slug: (a as any).slug || "",
-        title: a.title,
-        excerpt: (a as any).excerpt || "",
-        date: (a as any).date || new Date().toISOString(),
-        imageDesktop: (a as any).image || "",
-        imageMobile: (a as any).image || "",
-      })),
-    []
-  )
-
   const [items, setItems] = useState<ArticleItem[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -58,7 +42,7 @@ export default function Articles() {
 
           if (res.status < 200 || res.status >= 300) {
             console.warn("[ArticlesSection] Fetch /api/posts: NOT OK", res.status, res.statusText)
-            setItems(fallbackMapped)
+            setItems([])
             return
           }
 
@@ -73,8 +57,7 @@ export default function Articles() {
           const filtered = list.filter((p) => p?.postType?.name === "บทความ" && p?.isFeatured === true)
 
           if (!filtered.length) {
-            console.warn("[ArticlesSection] API ไม่มีบทความเด่น → ใช้ fallback")
-            setItems(fallbackMapped)
+            setItems([])
             return
           }
 
@@ -98,15 +81,10 @@ export default function Articles() {
             })
             .filter((a) => !!(a.imageDesktop || a.imageMobile))
 
-          if (mapped.length) {
-            setItems(mapped)
-          } else {
-            console.warn("[ArticlesSection] บทความเด่นไม่มีรูป → ใช้ fallback")
-            setItems(fallbackMapped)
-          }
+          setItems(mapped)
         } catch (err) {
           console.error("[ArticlesSection] Failed to load posts", err)
-          if (mounted) setItems(fallbackMapped)
+          if (mounted) setItems([])
         } finally {
           if (mounted) setLoading(false)
         }
@@ -114,7 +92,7 @@ export default function Articles() {
     return () => {
       mounted = false
     }
-  }, [fallbackMapped])
+  }, [])
 
   return (
     <section className="pt-0 pb-10 lg:pt-24 lg:pb-5 bg-background">
@@ -149,6 +127,8 @@ export default function Articles() {
               </Card>
             ))}
           </div>
+        ) : items.length === 0 ? (
+          <div className="text-center text-muted-foreground py-10">ยังไม่มีบทความในขณะนี้</div>
         ) : (
           <>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">

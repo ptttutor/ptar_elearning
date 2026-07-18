@@ -1,8 +1,6 @@
 import Image from "next/image"
 import { notFound } from "next/navigation"
 
-import { articles as fallbackArticles } from "@/lib/dummy-data"
-
 type PageProps = { params: Promise<{ slug: string }> }
 
 type ArticleContentBlock = {
@@ -147,36 +145,7 @@ async function fetchArticle(slug: string): Promise<ArticleItem | null> {
 
 export default async function ArticleDetailPage({ params }: PageProps) {
   const { slug } = await params
-  const article =
-    (await fetchArticle(slug)) ||
-    (() => {
-      const fallback = fallbackArticles.find(
-        (item) => normalizeSlug((item as any)?.slug) === normalizeSlug(slug)
-      )
-      if (!fallback) return null
-      const date = (fallback as any).date || new Date().toISOString()
-      const image = (fallback as any).image || ""
-      return {
-        id: (fallback as any).id ?? slug,
-        slug: (fallback as any).slug ?? slug,
-        title: (fallback as any).title ?? "",
-        excerpt: (fallback as any).excerpt ?? "",
-        content: (fallback as any).content ?? (fallback as any).excerpt ?? "",
-        date,
-        imageDesktop: image,
-        imageMobile: image,
-        authorName: "เคมีพี่ต้า",
-        readTimeMinutes: Math.max(
-          1,
-          Math.round(
-            String((fallback as any).content ?? (fallback as any).excerpt ?? "")
-              .split(/\s+/)
-              .filter(Boolean).length / 200
-          )
-        ),
-        postContents: [],
-      } satisfies ArticleItem
-    })()
+  const article = await fetchArticle(slug)
 
   if (!article) return notFound()
 
