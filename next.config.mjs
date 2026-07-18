@@ -10,9 +10,14 @@ const nextConfig = {
   images: {
     // Post/course images are served as full-size originals from Vercel Blob
     // (up to ~1.3MB PNGs) — let Next.js resize/compress them on the fly
-    // instead of shipping the raw file to every visitor.
+    // instead of shipping the raw file to every visitor. Also allowlist the
+    // other external hosts next/image actually renders across the site:
+    // YouTube/Vumbnail video thumbnails, and the Unsplash fallback images.
     remotePatterns: [
       { protocol: "https", hostname: "*.public.blob.vercel-storage.com" },
+      { protocol: "https", hostname: "img.youtube.com" },
+      { protocol: "https", hostname: "vumbnail.com" },
+      { protocol: "https", hostname: "images.unsplash.com" },
     ],
   },
 
