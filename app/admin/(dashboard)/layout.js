@@ -3,13 +3,10 @@
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAdminAuth as useAuth } from "../_lib/AdminAuthContext";
-import { Layout, theme } from "antd";
 import AdminSidebar from "../../../components/admin/AdminSidebar";
 import AdminHeader from "../../../components/admin/AdminHeader";
 import AdminLoadingScreen from "../../../components/admin/AdminLoadingScreen";
 import AdminAccessDenied from "../../../components/admin/AdminAccessDenied";
-
-const { Header, Sider, Content } = Layout;
 
 export default function AdminShellLayout({ children }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -18,10 +15,6 @@ export default function AdminShellLayout({ children }) {
   const { user, isAuthenticated, loading, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-
-  const {
-    token: { colorBgContainer },
-  } = theme.useToken();
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -74,39 +67,26 @@ export default function AdminShellLayout({ children }) {
   };
 
   return (
-    <Layout style={{ minHeight: "100vh" }}>
-      <Sider
-        trigger={null}
-        collapsible
-        collapsed={collapsed}
-        width={220}
-        collapsedWidth={80}
-        style={{ background: "#001529" }}
+    <div className="flex min-h-screen">
+      <aside
+        className="relative shrink-0 transition-[width] duration-200"
+        style={{ width: collapsed ? 80 : 220 }}
       >
-        <AdminSidebar collapsed={collapsed} pathname={pathname} />
-      </Sider>
+        <AdminSidebar collapsed={collapsed} pathname={pathname} onToggle={handleToggle} />
+      </aside>
 
-      <Layout style={{ transition: "margin-left 0.2s" }}>
-        <Header
-          style={{
-            padding: "0 24px",
-            background: colorBgContainer,
-            borderBottom: "1px solid #f0f0f0",
-            position: "sticky",
-            top: 0,
-            zIndex: 100,
-          }}
-        >
+      <div className="flex flex-1 flex-col">
+        <header className="sticky top-0 z-[100] flex h-16 items-center border-b border-gray-200 bg-white px-6">
           <AdminHeader
             collapsed={collapsed}
             onToggle={handleToggle}
             user={user}
             onLogout={handleLogout}
           />
-        </Header>
+        </header>
 
-        <Content style={{ minHeight: "calc(100vh - 112px)" }}>{children}</Content>
-      </Layout>
-    </Layout>
+        <main className="min-h-[calc(100vh-64px)] flex-1">{children}</main>
+      </div>
+    </div>
   );
 }

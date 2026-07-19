@@ -1,19 +1,52 @@
 "use client";
-import { Modal, Form, Input, message } from "antd";
-import { LockOutlined } from "@ant-design/icons";
 import { useState } from "react";
+import { Lock, Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/components/ui/use-toast";
+
+const EMPTY_VALUES = { oldPassword: "", newPassword: "", confirmPassword: "" };
 
 export default function ChangePasswordModal({ open, onClose }) {
-  const [form] = Form.useForm();
+  const [values, setValues] = useState(EMPTY_VALUES);
+  const [showPasswords, setShowPasswords] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [messageApi, contextHolder] = message.useMessage();
+  const [error, setError] = useState("");
+  const { toast } = useToast();
 
   const handleClose = () => {
-    form.resetFields();
+    setValues(EMPTY_VALUES);
+    setError("");
     onClose();
   };
 
-  const handleSubmit = async (values) => {
+  const handleChange = (field) => (e) => {
+    setValues((prev) => ({ ...prev, [field]: e.target.value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (values.newPassword.length < 6) {
+      setError("รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร");
+      return;
+    }
+    if (values.newPassword !== values.confirmPassword) {
+      setError("รหัสผ่านใหม่ไม่ตรงกัน");
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch("/api/admin/change-password", {
@@ -24,72 +57,111 @@ export default function ChangePasswordModal({ open, onClose }) {
       const result = await res.json();
 
       if (!res.ok || !result.success) {
-        messageApi.error(result.error || "เปลี่ยนรหัสผ่านไม่สำเร็จ");
+        setError(result.error || "เปลี่ยนรหัสผ่านไม่สำเร็จ");
         return;
       }
 
-      messageApi.success("เปลี่ยนรหัสผ่านสำเร็จ");
+      toast({ title: "เปลี่ยนรหัสผ่านสำเร็จ" });
       handleClose();
-    } catch (error) {
-      messageApi.error("เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน");
+    } catch (err) {
+      setError("เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <>
-      {contextHolder}
-      <Modal
-        title="แก้ไขรหัสผ่าน"
-        open={open}
-        onCancel={handleClose}
-        onOk={() => form.submit()}
-        okText="บันทึก"
-        cancelText="ยกเลิก"
-        confirmLoading={loading}
-        destroyOnClose
-      >
-        <Form form={form} layout="vertical" onFinish={handleSubmit} autoComplete="off">
-          <Form.Item
-            name="oldPassword"
-            label="รหัสผ่านเดิม"
-            rules={[{ required: true, message: "กรุณากรอกรหัสผ่านเดิม" }]}
-          >
-            <Input.Password prefix={<LockOutlined />} placeholder="กรอกรหัสผ่านเดิม" />
-          </Form.Item>
+    <Dialog open={open} onOpenChange={(next) => !next && handleClose()}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>แก้ไขรหัสผ่าน</DialogTitle>
+          <DialogDescription>เปลี่ยนรหัสผ่านสำหรับบัญชีผู้ดูแลของคุณ</DialogDescription>
+        </DialogHeader>
 
-          <Form.Item
-            name="newPassword"
-            label="รหัสผ่านใหม่"
-            rules={[
-              { required: true, message: "กรุณากรอกรหัสผ่านใหม่" },
-              { min: 6, message: "รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร" },
-            ]}
-          >
-            <Input.Password prefix={<LockOutlined />} placeholder="กรอกรหัสผ่านใหม่" />
-          </Form.Item>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-          <Form.Item
-            name="confirmPassword"
-            label="ยืนยันรหัสผ่านใหม่"
-            dependencies={["newPassword"]}
-            rules={[
-              { required: true, message: "กรุณายืนยันรหัสผ่านใหม่" },
-              ({ getFieldValue }) => ({
-                validator(_, value) {
-                  if (!value || getFieldValue("newPassword") === value) {
-                    return Promise.resolve();
-                  }
-                  return Promise.reject(new Error("รหัสผ่านใหม่ไม่ตรงกัน"));
-                },
-              }),
-            ]}
-          >
-            <Input.Password prefix={<LockOutlined />} placeholder="ยืนยันรหัสผ่านใหม่" />
-          </Form.Item>
-        </Form>
-      </Modal>
-    </>
+          <div className="space-y-1.5">
+            <Label htmlFor="oldPassword">รหัสผ่านเดิม</Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                id="oldPassword"
+                type={showPasswords ? "text" : "password"}
+                required
+                autoComplete="current-password"
+                placeholder="กรอกรหัสผ่านเดิม"
+                value={values.oldPassword}
+                onChange={handleChange("oldPassword")}
+                className="pl-9"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="newPassword">รหัสผ่านใหม่</Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                id="newPassword"
+                type={showPasswords ? "text" : "password"}
+                required
+                autoComplete="new-password"
+                placeholder="กรอกรหัสผ่านใหม่"
+                value={values.newPassword}
+                onChange={handleChange("newPassword")}
+                className="pl-9"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="confirmPassword">ยืนยันรหัสผ่านใหม่</Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                id="confirmPassword"
+                type={showPasswords ? "text" : "password"}
+                required
+                autoComplete="new-password"
+                placeholder="ยืนยันรหัสผ่านใหม่"
+                value={values.confirmPassword}
+                onChange={handleChange("confirmPassword")}
+                className="pl-9 pr-9"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPasswords((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                tabIndex={-1}
+              >
+                {showPasswords ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+
+          <DialogFooter className="pt-2">
+            <Button type="button" variant="outline" onClick={handleClose}>
+              ยกเลิก
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  กำลังบันทึก...
+                </>
+              ) : (
+                "บันทึก"
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

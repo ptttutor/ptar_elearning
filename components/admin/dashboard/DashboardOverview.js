@@ -1,33 +1,40 @@
-import React, { useState } from "react";
+"use client";
+
+import React, { useState, useMemo } from "react";
 import {
-  Card,
-  Tabs,
-  Row,
-  Col,
-  Statistic,
-  Switch,
-  Space,
-  Typography,
-  Avatar,
-  Divider,
-  Badge,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import {
+  LayoutDashboard,
+  BookOpen,
+  DollarSign,
+  ShoppingCart,
+  BarChart3,
+  TrendingUp,
+} from "lucide-react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
   Table,
-} from "antd";
-import { Bar } from "@ant-design/charts";
-import {
-  DashboardOutlined,
-  BookOutlined,
-  DollarOutlined,
-  ShoppingCartOutlined,
-  UserOutlined,
-  SettingOutlined,
-  EyeOutlined,
-  EyeInvisibleOutlined,
-  BarChartOutlined,
-  RiseOutlined,
-} from "@ant-design/icons";
-import CourseSalesDetail from "../CourseSalesDetail";
-import EbookSalesDetail from "../EbookSalesDetail";
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 import AdminStatsCard from "@/components/admin/shared/AdminStatsCard";
 import {
   useDashboardStats,
@@ -35,17 +42,44 @@ import {
   useEbookSales,
 } from "@/hooks/admin/useDashboard";
 
-const { Title } = Typography;
-const { TabPane } = Tabs;
+const PAGE_SIZE = 10;
+
+const formatCurrency = (amount) =>
+  new Intl.NumberFormat("th-TH", { style: "currency", currency: "THB" }).format(amount || 0);
+
+const formatNumber = (number) => new Intl.NumberFormat("th-TH").format(number || 0);
+
+function SalesTooltip({ active, payload }) {
+  if (!active || !payload || !payload.length) return null;
+  const data = payload[0]?.payload;
+  if (!data) return null;
+  return (
+    <div className="rounded-lg border bg-white p-4 shadow-lg">
+      <div className="mb-1 font-semibold text-blue-600">{data.orderId}</div>
+      <div className="text-sm">
+        ประเภท: <span className="font-medium">{data.type}</span>
+      </div>
+      <div className="text-sm">
+        ชื่อสินค้า: <span className="font-medium">{data.name}</span>
+      </div>
+      <div className="text-sm">
+        จำนวนครั้ง: <span className="font-medium">{data.count} ครั้ง</span>
+      </div>
+      <div className="mt-1 text-base font-bold text-green-600">
+        ยอดขาย: {formatCurrency(data.amount)}
+      </div>
+    </div>
+  );
+}
 
 const DashboardOverview = () => {
   const [period, setPeriod] = useState(30);
-  const [showDetailedView, setShowDetailedView] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview");
   const [salesData, setSalesData] = useState([]);
   const [salesLoading, setSalesLoading] = useState(false);
   const [allSalesData, setAllSalesData] = useState([]);
   const [allSalesLoading, setAllSalesLoading] = useState(false);
+  const [page, setPage] = useState(1);
+
   // ดึงข้อมูล sales overview จาก /api/admin/orders?paymentStatus=COMPLETED
   React.useEffect(() => {
     setSalesLoading(true);
@@ -53,7 +87,6 @@ const DashboardOverview = () => {
       .then((res) => res.json())
       .then((result) => {
         if (result.success && Array.isArray(result.data)) {
-          // สร้างข้อมูลสำหรับตารางจาก orders
           const data = result.data.map((order) => ({
             orderId: order.id,
             type: order.course ? "Course" : order.ebook ? "Ebook" : "-",
@@ -74,14 +107,13 @@ const DashboardOverview = () => {
       .finally(() => setSalesLoading(false));
   }, [period]);
 
-  // ดึงข้อมูล sales ทั้งหมดสำหรับตารางสำเนา
+  // ดึงข้อมูล sales ทั้งหมดสำหรับกราฟ
   React.useEffect(() => {
     setAllSalesLoading(true);
     fetch(`/api/admin/orders?paymentStatus=COMPLETED`)
       .then((res) => res.json())
       .then((result) => {
         if (result.success && Array.isArray(result.data)) {
-          // สร้างข้อมูลสำหรับตารางจาก orders ทั้งหมด
           const data = result.data.map((order) => ({
             orderId: order.id,
             type: order.course ? "Course" : order.ebook ? "Ebook" : "-",
@@ -102,418 +134,237 @@ const DashboardOverview = () => {
       .finally(() => setAllSalesLoading(false));
   }, [period]);
 
-  const { stats, loading: statsLoading } = useDashboardStats(period);
-  const { courseSales, loading: courseSalesLoading } = useCourseSales(period);
-  const { ebookSales, loading: ebookSalesLoading } = useEbookSales(period);
+  const { stats } = useDashboardStats(period);
+  useCourseSales(period);
+  useEbookSales(period);
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("th-TH", {
-      style: "currency",
-      currency: "THB",
-    }).format(amount);
-  };
+  const salesDataWithIndex = salesData.map((item, idx) => ({ ...item, rowNumber: idx + 1 }));
 
-  const formatNumber = (number) => {
-    return new Intl.NumberFormat("th-TH").format(number);
-  };
-  // Add row number to salesData
-  const salesDataWithIndex = salesData.map((item, idx) => ({
-    ...item,
-    rowNumber: idx + 1,
-  }));
-
-  // Add row number to allSalesData และรวมยอดขายจาก Order ID เดียวกัน
   const groupedAllSalesData = allSalesData.reduce((acc, current) => {
-    const existingOrder = acc.find(item => item.orderId === current.orderId);
-    
+    const existingOrder = acc.find((item) => item.orderId === current.orderId);
     if (existingOrder) {
-      // ถ้ามี Order ID เดียวกันแล้ว ให้รวมยอดขาย
       existingOrder.amount += current.amount;
       existingOrder.count = (existingOrder.count || 1) + 1;
     } else {
-      // ถ้ายังไม่มี ให้เพิ่ม record ใหม่
-      acc.push({
-        ...current,
-        count: 1
-      });
+      acc.push({ ...current, count: 1 });
     }
-    
     return acc;
   }, []);
 
-  const allSalesDataWithIndex = groupedAllSalesData.map((item, idx) => ({
-    ...item,
-    rowNumber: idx + 1,
+  const revenueChartData = stats
+    ? [
+        { type: "ยอดขายรวม", value: stats.stats.revenue.total },
+        { type: "รายได้ Course", value: stats.stats.revenue.course },
+      ]
+    : [];
+
+  const productChartData = groupedAllSalesData.slice(0, 10).map((item) => ({
+    orderId: `Order ${item.orderId}`,
+    amount: item.amount,
+    count: item.count,
+    type: item.type,
+    name: item.name,
+    displayName: item.name.length > 15 ? item.name.substring(0, 15) + "..." : item.name,
   }));
+
+  const totalPages = Math.max(1, Math.ceil(salesDataWithIndex.length / PAGE_SIZE));
+  const pagedSales = useMemo(
+    () => salesDataWithIndex.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [salesDataWithIndex, page]
+  );
+
   return (
-    <div style={{ background: "#f5f7fa", minHeight: "100vh", padding: "0" }}>
+    <div className="min-h-screen bg-gray-50">
       {/* Header Section */}
-      <div
-        style={{
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-          padding: "32px",
-          marginBottom: "24px",
-          borderRadius: "0 0 24px 24px",
-          boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-        }}
-      >
-        <Row align="middle" justify="space-between">
-          <Col>
-            <Space align="start">
-              <Avatar
-                size={64}
-                style={{
-                  background: "rgba(255,255,255,0.2)",
-                  color: "#fff",
-                  fontSize: "24px",
-                }}
-              >
-                <DashboardOutlined />
-              </Avatar>
-              <div>
-                <Title
-                  level={1}
-                  style={{ margin: 0, color: "#fff", fontWeight: "300" }}
-                >
-                  Dashboard
-                </Title>
-                <Typography.Text
-                  style={{ color: "rgba(255,255,255,0.8)", fontSize: "16px" }}
-                >
-                  ภาพรวมการขายและสถิติ
-                </Typography.Text>
-              </div>
-            </Space>
-          </Col>
-          <Col>
-            <Card
-              size="small"
-              style={{
-                background: "rgba(255,255,255,0.95)",
-                borderRadius: "12px",
-                border: "none",
-                backdropFilter: "blur(10px)",
-              }}
-            >
-              <Space align="center">
-                <SettingOutlined style={{ color: "#667eea" }} />
-              </Space>
-            </Card>
-          </Col>
-        </Row>
+      <div className="border-b border-gray-200 bg-white px-8 py-6">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-900 text-white">
+            <LayoutDashboard className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900">Dashboard</h1>
+            <p className="text-sm text-gray-500">ภาพรวมการขายและสถิติ</p>
+          </div>
+        </div>
       </div>
 
-      <div style={{ padding: "0 32px 32px 32px" }}>
+      <div className="space-y-8 px-8 py-8">
         {/* Overview Stats */}
         {stats && (
-          <Row gutter={[24, 24]} style={{ marginBottom: "32px" }}>
-            <Col span={24}>
-              <Title level={3} style={{ margin: "0 0 24px 0", color: "#1f2937" }}>
-                <BarChartOutlined style={{ color: "#1890ff", marginRight: "8px" }} />
-                สถิติโดยรวม
-              </Title>
-            </Col>
-            
-            <Col xs={24} sm={12} lg={8}>
+          <div>
+            <h3 className="mb-6 flex items-center gap-2 text-lg font-semibold text-gray-800">
+              <BarChart3 className="h-5 w-5 text-blue-500" />
+              สถิติโดยรวม
+            </h3>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               <AdminStatsCard
                 title="ยอดขายรวม"
                 value={formatCurrency(stats.stats.revenue.total)}
-                icon={<DollarOutlined style={{ fontSize: "24px", color: "#52c41a" }} />}
+                icon={<DollarSign className="h-6 w-6" style={{ color: "#52c41a" }} />}
                 color="#52c41a"
               />
-            </Col>
-
-            <Col xs={24} sm={12} lg={8}>
               <AdminStatsCard
                 title="ออร์เดอร์ทั้งหมด"
                 value={formatNumber(stats.stats.orders.total)}
-                icon={<ShoppingCartOutlined style={{ fontSize: "24px", color: "#1890ff" }} />}
+                icon={<ShoppingCart className="h-6 w-6" style={{ color: "#1890ff" }} />}
                 color="#1890ff"
                 extra={`สำเร็จ: ${stats.stats.orders.completed} | รอ: ${stats.stats.orders.pending}`}
               />
-            </Col>
-
-            <Col xs={24} sm={12} lg={8}>
               <AdminStatsCard
                 title="รายได้ Course"
                 value={formatCurrency(stats.stats.revenue.course)}
-                icon={<BookOutlined style={{ fontSize: "24px", color: "#722ed1" }} />}
+                icon={<BookOpen className="h-6 w-6" style={{ color: "#722ed1" }} />}
                 color="#722ed1"
                 extra={`ขาย: ${formatNumber(stats.stats.courses.sold)} คอร์ส`}
               />
-            </Col>
-{/*
-            <Col xs={24} sm={12} lg={6}>
-              <Card
-                hoverable
-                style={{
-                  borderRadius: "16px",
-                  background: "linear-gradient(135deg, #13c2c2 0%, #08979c 100%)",
-                  border: "none",
-                  height: "160px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  boxShadow: "0 8px 24px rgba(19, 194, 194, 0.2)",
-                }}
-                bodyStyle={{ padding: "24px", width: "100%" }}
-              >
-                <div style={{ textAlign: "center" }}>
-                  <UserOutlined 
-                    style={{ 
-                      fontSize: "32px", 
-                      color: "#fff", 
-                      marginBottom: "12px",
-                      display: "block"
-                    }} 
-                  />
-                  <div style={{ color: "rgba(255,255,255,0.9)", fontSize: "14px", marginBottom: "8px" }}>
-                    รายได้ E-book
-                  </div>
-                  <div style={{ color: "#fff", fontSize: "24px", fontWeight: "bold" }}>
-                    {formatCurrency(stats.stats.revenue.ebook)}
-                  </div>
-                  <div style={{ color: "rgba(255,255,255,0.8)", fontSize: "12px", marginTop: "4px" }}>
-                    ขาย: {formatNumber(stats.stats.ebooks.sold)} เล่ม
-                  </div>
-                </div>
-              </Card>
-            </Col> */}
-          </Row>
+            </div>
+          </div>
         )}
 
         {/* Charts Section */}
-        <Row gutter={[24, 24]} style={{ marginBottom: "32px" }}>
-          {/* Overview Chart */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {stats && (
-            <Col xs={24} lg={12}>
-              <Card
-                title={
-                  <div style={{ 
-                    fontSize: "18px", 
-                    fontWeight: "600",
-                    color: "#1f2937",
-                    display: "flex",
-                    alignItems: "center"
-                  }}>
-                    <BarChartOutlined style={{ color: "#fa8c16", marginRight: "8px" }} />
-                    ภาพรวมยอดขาย
-                  </div>
-                }
-                style={{
-                  borderRadius: "16px",
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-                  border: "1px solid #f0f0f0",
-                }}
-                bodyStyle={{ padding: "24px" }}
-              >
-                <Bar
-                  data={[
-                    { type: "ยอดขายรวม", value: stats.stats.revenue.total },
-                    { type: "รายได้ Course", value: stats.stats.revenue.course },
-                    // { type: "รายได้ E-book", value: stats.stats.revenue.ebook },
-                  ]}
-                  xField="type"
-                  yField="value"
-                  color={["#fa8c16", "#722ed1", "#13c2c2"]}
-                  height={280}
-                  label={{ position: "top", style: { fill: "#333", fontSize: "12px" } }}
-                  meta={{ value: { alias: "ยอดขาย (บาท)" } }}
-                  barStyle={{ radius: [8, 8, 0, 0] }}
-                />
-              </Card>
-            </Col>
+            <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+              <div className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-800">
+                <BarChart3 className="h-5 w-5 text-orange-500" />
+                ภาพรวมยอดขาย
+              </div>
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={revenueChartData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-gray-200" />
+                  <XAxis dataKey="type" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <Tooltip formatter={(value) => formatCurrency(value)} />
+                  <Bar dataKey="value" fill="#fa8c16" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           )}
 
-          {/* Product Sales Chart */}
-          <Col xs={24} lg={12}>
-            <Card
-              title={
-                <div style={{ 
-                  fontSize: "18px", 
-                  fontWeight: "600",
-                  color: "#1f2937",
-                  display: "flex",
-                  alignItems: "center"
-                }}>
-                  <RiseOutlined style={{ color: "#1890ff", marginRight: "8px" }} />
-                  ยอดขายสินค้า
-                </div>
-              }
-              style={{
-                borderRadius: "16px",
-                boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-                border: "1px solid #f0f0f0",
-              }}
-              bodyStyle={{ padding: "24px" }}
-            >
-              {allSalesLoading ? (
-                <div style={{ 
-                  textAlign: 'center', 
-                  padding: '100px 0',
-                  color: '#666'
-                }}>
-                  กำลังโหลดข้อมูล...
-                </div>
-              ) : (
-                <Bar
-                  data={groupedAllSalesData.slice(0, 10).map(item => ({
-                    orderId: `Order ${item.orderId}`,
-                    amount: item.amount,
-                    count: item.count,
-                    type: item.type,
-                    name: item.name.length > 20 ? item.name.substring(0, 20) + '...' : item.name,
-                    displayName: item.name.length > 15 ? item.name.substring(0, 15) + '...' : item.name
-                  }))}
-                  xField="displayName"
-                  yField="amount"
-                  height={280}
-                  color="#1890ff"
-                  label={{ 
-                    position: "top", 
-                    style: { fill: "#333", fontSize: "10px" },
-                    formatter: (value) => formatCurrency(value)
-                  }}
-                  meta={{ 
-                    amount: { alias: "ยอดขาย (บาท)" },
-                    displayName: { alias: "ชื่อสินค้า" }
-                  }}
-                  barStyle={{ radius: [4, 4, 0, 0] }}
-                  tooltip={{
-                    customContent: (title, items) => {
-                      if (!items || items.length === 0) return null;
-                      const data = items[0]?.data;
-                      return (
-                        <div style={{ 
-                          background: '#fff', 
-                          padding: '16px', 
-                          border: '1px solid #e6f7ff',
-                          borderRadius: '8px',
-                          boxShadow: '0 4px 16px rgba(0,0,0,0.1)'
-                        }}>
-                          <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1890ff' }}>
-                            {data.orderId}
-                          </div>
-                          <div style={{ marginBottom: '4px' }}>ประเภท: <strong>{data.type}</strong></div>
-                          <div style={{ marginBottom: '4px' }}>ชื่อสินค้า: <strong>{data.name}</strong></div>
-                          <div style={{ marginBottom: '4px' }}>จำนวนครั้ง: <strong>{data.count} ครั้ง</strong></div>
-                          <div style={{ color: '#52c41a', fontWeight: 'bold', fontSize: '16px' }}>
-                            ยอดขาย: {formatCurrency(data.amount)}
-                          </div>
-                        </div>
-                      );
-                    }
-                  }}
-                  interactions={[
-                    { type: 'element-active' },
-                    { type: 'brush' }
-                  ]}
-                />
-              )}
-            </Card>
-          </Col>
-        </Row>
+          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+            <div className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-800">
+              <TrendingUp className="h-5 w-5 text-blue-500" />
+              ยอดขายสินค้า
+            </div>
+            {allSalesLoading ? (
+              <div className="flex h-[280px] items-center justify-center text-gray-400">
+                กำลังโหลดข้อมูล...
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={productChartData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-gray-200" />
+                  <XAxis dataKey="displayName" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <Tooltip content={<SalesTooltip />} />
+                  <Bar dataKey="amount" fill="#1890ff" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
 
-        {/* Tables Section */}
-        <Row gutter={[24, 24]}>
-          {/* Recent Sales Table */}
-          <Col span={24}>
-            <Card
-              title={
-                <div style={{ 
-                  fontSize: "18px", 
-                  fontWeight: "600",
-                  color: "#1f2937",
-                  display: "flex",
-                  alignItems: "center"
-                }}>
-                  <DashboardOutlined style={{ color: "#52c41a", marginRight: "8px" }} />
-                  รายการขายล่าสุด (100 รายการ)
-                </div>
-              }
-              style={{
-                borderRadius: "16px",
-                boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-                border: "1px solid #f0f0f0",
-              }}
-              bodyStyle={{ padding: "24px" }}
-            >
-              <Table
-                columns={[
-                  { 
-                    title: "#", 
-                    dataIndex: "rowNumber", 
-                    key: "rowNumber",
-                    width: 60,
-                    align: "center"
-                  },
-                  // { 
-                  //   title: "Order ID", 
-                  //   dataIndex: "orderId", 
-                  //   key: "orderId",
-                  //   width: 100,
-                  //   render: (text) => <span style={{ fontWeight: "500", color: "#1890ff" }}>{text}</span>
-                  // },
-                  { 
-                    title: "ประเภท", 
-                    dataIndex: "type", 
-                    key: "type",
-                    width: 100,
-                    render: (text) => (
-                      <span style={{ 
-                        padding: "4px 12px",
-                        borderRadius: "12px",
-                        fontSize: "12px",
-                        fontWeight: "500",
-                        background: text === "Course" ? "#f6ffed" : "#fff7e6",
-                        color: text === "Course" ? "#52c41a" : "#fa8c16",
-                        border: `1px solid ${text === "Course" ? "#b7eb8f" : "#ffd591"}`
-                      }}>
-                        {text}
-                      </span>
-                    )
-                  },
-                  { 
-                    title: "ชื่อสินค้า", 
-                    dataIndex: "name", 
-                    key: "name",
-                    ellipsis: true
-                  },
-                  {
-                    title: "ยอดขาย",
-                    dataIndex: "amount",
-                    key: "amount",
-                    width: 120,
-                    align: "right",
-                    render: (v) => <span style={{ fontWeight: "600", color: "#52c41a" }}>{formatCurrency(v)}</span>,
-                  },
-                  {
-                    title: "วันที่",
-                    dataIndex: "date",
-                    key: "date",
-                    width: 160,
-                    render: (d) => (
-                      <span style={{ color: "#666" }}>
-                        {new Date(d).toLocaleString("th-TH")}
-                      </span>
-                    ),
-                  },
-                ]}
-                dataSource={salesDataWithIndex}
-                loading={salesLoading}
-                rowKey="orderId"
-                pagination={{ 
-                  pageSize: 10,
-                  showSizeChanger: true,
-                  showQuickJumper: true,
-                  showTotal: (total, range) => `${range[0]}-${range[1]} จาก ${total} รายการ`
-                }}
-                size="middle"
-                scroll={{ x: 800 }}
-              />
-            </Card>
-          </Col>
-        </Row>
+        {/* Recent Sales Table */}
+        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-800">
+            <LayoutDashboard className="h-5 w-5 text-green-500" />
+            รายการขายล่าสุด ({salesDataWithIndex.length} รายการ)
+          </div>
+
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-14 text-center">#</TableHead>
+                  <TableHead>ประเภท</TableHead>
+                  <TableHead>ชื่อสินค้า</TableHead>
+                  <TableHead className="text-right">ยอดขาย</TableHead>
+                  <TableHead>วันที่</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {salesLoading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell colSpan={5}>
+                        <Skeleton className="h-6 w-full" />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : pagedSales.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center text-gray-400">
+                      ยังไม่มีรายการขาย
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  pagedSales.map((item) => (
+                    <TableRow key={item.orderId}>
+                      <TableCell className="text-center text-gray-500">{item.rowNumber}</TableCell>
+                      <TableCell>
+                        <span
+                          className={`rounded-full border px-3 py-1 text-xs font-medium ${
+                            item.type === "Course"
+                              ? "border-green-200 bg-green-50 text-green-600"
+                              : "border-orange-200 bg-orange-50 text-orange-600"
+                          }`}
+                        >
+                          {item.type}
+                        </span>
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate">{item.name}</TableCell>
+                      <TableCell className="text-right font-semibold text-green-600">
+                        {formatCurrency(item.amount)}
+                      </TableCell>
+                      <TableCell className="text-gray-500">
+                        {new Date(item.date).toLocaleString("th-TH")}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {totalPages > 1 && (
+            <Pagination className="mt-4">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setPage((p) => Math.max(1, p - 1));
+                    }}
+                  />
+                </PaginationItem>
+                {Array.from({ length: totalPages }).map((_, i) => (
+                  <PaginationItem key={i}>
+                    <PaginationLink
+                      href="#"
+                      isActive={page === i + 1}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setPage(i + 1);
+                      }}
+                    >
+                      {i + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setPage((p) => Math.min(totalPages, p + 1));
+                    }}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
+        </div>
       </div>
     </div>
   );

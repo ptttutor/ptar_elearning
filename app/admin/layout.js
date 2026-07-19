@@ -4,6 +4,7 @@ import { SessionProvider } from "next-auth/react";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import { AntdConfigProvider } from "@/lib/antd";
 import { AdminAuthProvider } from "./_lib/AdminAuthContext";
+import { Toaster } from "@/components/ui/toaster";
 
 export default function AdminLayout({ children }) {
   return (
@@ -12,6 +13,7 @@ export default function AdminLayout({ children }) {
         <AntdRegistry>
           <AntdConfigProvider>{children}</AntdConfigProvider>
         </AntdRegistry>
+        <Toaster />
       </AdminAuthProvider>
     </SessionProvider>
   );

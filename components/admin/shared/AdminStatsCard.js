@@ -1,40 +1,30 @@
-import { Card, Statistic } from "antd";
-
 /**
  * One stat-summary card: colored icon box + big number, on a tinted card
  * background. Extracted from UserStatsCards.js so every admin section can
  * show summary stats the same way. Usage: map your stats array to
- * <AdminStatsCard key={...} {...stat} /> inside a Row/Col grid.
+ * <AdminStatsCard key={...} {...stat} /> inside a responsive grid.
  */
 export default function AdminStatsCard({ title, value, icon, color, extra }) {
   return (
-    <Card style={{ background: `${color}0d`, border: `1px solid ${color}20` }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+    <div
+      className="rounded-xl border p-5"
+      style={{ backgroundColor: `${color}0d`, borderColor: `${color}33` }}
+    >
+      <div className="flex items-center gap-4">
         <div
-          style={{
-            background: `${color}15`,
-            padding: "12px",
-            borderRadius: "8px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg"
+          style={{ backgroundColor: `${color}1f` }}
         >
           {icon}
         </div>
-        <div style={{ flex: 1 }}>
-          <Statistic
-            title={<span style={{ fontSize: "14px", color: "#666" }}>{title}</span>}
-            value={value}
-            valueStyle={{ color, fontSize: "24px", fontWeight: "bold" }}
-          />
-          {extra && (
-            <div style={{ fontSize: "12px", color: "#8c8c8c", marginTop: "4px" }}>
-              {extra}
-            </div>
-          )}
+        <div className="min-w-0 flex-1">
+          <div className="text-sm text-gray-500">{title}</div>
+          <div className="text-2xl font-bold" style={{ color }}>
+            {value}
+          </div>
+          {extra && <div className="mt-1 text-xs text-gray-400">{extra}</div>}
         </div>
       </div>
-    </Card>
+    </div>
   );
 }
