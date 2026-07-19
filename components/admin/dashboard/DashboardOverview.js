@@ -18,16 +18,7 @@ import {
   BarChart3,
   TrendingUp,
 } from "lucide-react";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationEllipsis,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-import { getPaginationRange } from "@/lib/get-pagination-range";
+import AdminPagination from "@/components/admin/shared/AdminPagination";
 import {
   Table,
   TableBody,
@@ -328,50 +319,7 @@ const DashboardOverview = () => {
             </Table>
           </div>
 
-          {totalPages > 1 && (
-            <Pagination className="mt-4">
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setPage((p) => Math.max(1, p - 1));
-                    }}
-                  />
-                </PaginationItem>
-                {getPaginationRange(page, totalPages).map((p, i) =>
-                  p === "..." ? (
-                    <PaginationItem key={`ellipsis-${i}`}>
-                      <PaginationEllipsis />
-                    </PaginationItem>
-                  ) : (
-                    <PaginationItem key={p}>
-                      <PaginationLink
-                        href="#"
-                        isActive={page === p}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setPage(p);
-                        }}
-                      >
-                        {p}
-                      </PaginationLink>
-                    </PaginationItem>
-                  )
-                )}
-                <PaginationItem>
-                  <PaginationNext
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setPage((p) => Math.min(totalPages, p + 1));
-                    }}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          )}
+          <AdminPagination current={page} total={totalPages} onPageChange={setPage} className="mt-4" />
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Edit, Repeat, BookPlus, Trash2, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { Edit, Repeat, BookPlus, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { th } from "date-fns/locale";
 import {
@@ -21,16 +21,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationEllipsis,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-import { getPaginationRange } from "@/lib/get-pagination-range";
+import SortableTableHead from "@/components/admin/shared/SortableTableHead";
+import AdminPagination from "@/components/admin/shared/AdminPagination";
 
 const ROLE_STYLES = {
   STUDENT: "border-green-200 bg-green-50 text-green-700",
@@ -38,30 +30,6 @@ const ROLE_STYLES = {
   ADMIN: "border-red-200 bg-red-50 text-red-700",
 };
 const ROLE_LABELS = { STUDENT: "นักเรียน", INSTRUCTOR: "ผู้สอน", ADMIN: "ผู้ดูแลระบบ" };
-
-function SortableHead({ field, label, sortBy, sortOrder, onSort }) {
-  const isActive = sortBy === field;
-  return (
-    <TableHead>
-      <button
-        type="button"
-        onClick={() => onSort(field)}
-        className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-900"
-      >
-        {label}
-        {isActive ? (
-          sortOrder === "asc" ? (
-            <ArrowUp className="h-3 w-3" />
-          ) : (
-            <ArrowDown className="h-3 w-3" />
-          )
-        ) : (
-          <ArrowUpDown className="h-3 w-3 text-gray-300" />
-        )}
-      </button>
-    </TableHead>
-  );
-}
 
 export default function UserTable({
   users,
@@ -99,7 +67,7 @@ export default function UserTable({
             <TableHeader>
               <TableRow>
                 <TableHead className="min-w-[260px]">ผู้ใช้งาน</TableHead>
-                <SortableHead
+                <SortableTableHead
                   field="role"
                   label="บทบาท"
                   sortBy={filters.sortBy}
@@ -108,7 +76,7 @@ export default function UserTable({
                 />
                 <TableHead>สถานะ</TableHead>
                 <TableHead>LINE ID</TableHead>
-                <SortableHead
+                <SortableTableHead
                   field="createdAt"
                   label="วันที่สร้าง"
                   sortBy={filters.sortBy}
@@ -244,50 +212,12 @@ export default function UserTable({
           </Table>
         </div>
 
-        {totalPages > 1 && (
-          <Pagination className="mt-4">
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    onPageChange(Math.max(1, pagination.current - 1));
-                  }}
-                />
-              </PaginationItem>
-              {getPaginationRange(pagination.current, totalPages).map((p, i) =>
-                p === "..." ? (
-                  <PaginationItem key={`ellipsis-${i}`}>
-                    <PaginationEllipsis />
-                  </PaginationItem>
-                ) : (
-                  <PaginationItem key={p}>
-                    <PaginationLink
-                      href="#"
-                      isActive={pagination.current === p}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        onPageChange(p);
-                      }}
-                    >
-                      {p}
-                    </PaginationLink>
-                  </PaginationItem>
-                )
-              )}
-              <PaginationItem>
-                <PaginationNext
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    onPageChange(Math.min(totalPages, pagination.current + 1));
-                  }}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        )}
+        <AdminPagination
+          current={pagination.current}
+          total={totalPages}
+          onPageChange={onPageChange}
+          className="mt-4"
+        />
       </div>
     </TooltipProvider>
   );

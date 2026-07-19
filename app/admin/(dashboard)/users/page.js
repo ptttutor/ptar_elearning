@@ -40,6 +40,7 @@ export default function UsersPage() {
     handleFilterChange,
     handlePageChange,
     handleSortChange,
+    handleSortSelectChange,
     resetFilters,
   } = useUsers();
 
@@ -222,6 +223,7 @@ export default function UsersPage() {
         searchInput={searchInput}
         setSearchInput={setSearchInput}
         onFilterChange={handleFilterChange}
+        onSortSelectChange={handleSortSelectChange}
         onReset={resetFilters}
         totalCount={pagination.total}
         currentCount={users.length}

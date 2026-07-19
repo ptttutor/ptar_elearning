@@ -26,16 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationEllipsis,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-import { getPaginationRange } from "@/lib/get-pagination-range";
+import AdminPagination from "@/components/admin/shared/AdminPagination";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -498,50 +489,11 @@ export default function UserCoursesPage() {
               </Table>
             </div>
 
-            {courseTotalPages > 1 && (
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleCoursePageChange(Math.max(1, coursePage - 1));
-                      }}
-                    />
-                  </PaginationItem>
-                  {getPaginationRange(coursePage, courseTotalPages).map((p, i) =>
-                    p === "..." ? (
-                      <PaginationItem key={`ellipsis-${i}`}>
-                        <PaginationEllipsis />
-                      </PaginationItem>
-                    ) : (
-                      <PaginationItem key={p}>
-                        <PaginationLink
-                          href="#"
-                          isActive={coursePage === p}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleCoursePageChange(p);
-                          }}
-                        >
-                          {p}
-                        </PaginationLink>
-                      </PaginationItem>
-                    )
-                  )}
-                  <PaginationItem>
-                    <PaginationNext
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleCoursePageChange(Math.min(courseTotalPages, coursePage + 1));
-                      }}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            )}
+            <AdminPagination
+              current={coursePage}
+              total={courseTotalPages}
+              onPageChange={handleCoursePageChange}
+            />
 
             {selectedCourseIds.length > 0 && (
               <div className="text-xs text-gray-500">
