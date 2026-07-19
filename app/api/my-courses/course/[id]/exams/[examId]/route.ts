@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { getBackendAuthHeaders } from "@/lib/server-auth"
 
 export async function GET(
   req: Request,
@@ -16,14 +17,9 @@ export async function GET(
     const url = new URL(req.url)
     const search = url.search || ""
     const { id: courseId, examId } = params
-    const cookie = req.headers.get("cookie") ?? ""
-    const authorization = req.headers.get("authorization") ?? ""
-
-    const headers: Record<string, string> = { cookie }
-    if (authorization) headers["authorization"] = authorization
 
     const res = await fetch(`${baseUrl}/api/my-courses/course/${encodeURIComponent(courseId)}/exams/${encodeURIComponent(examId)}${search}`, {
-      headers,
+      headers: getBackendAuthHeaders(req),
       cache: "no-store",
     })
     const data = await res.json().catch(() => ({}))
@@ -51,18 +47,10 @@ export async function POST(
   try {
     const body = await req.json().catch(() => ({}))
     const { id: courseId, examId } = params
-    const cookie = req.headers.get("cookie") ?? ""
-    const authorization = req.headers.get("authorization") ?? ""
-
-    const headers: Record<string, string> = {
-      cookie,
-      "content-type": "application/json",
-    }
-    if (authorization) headers["authorization"] = authorization
 
     const res = await fetch(`${baseUrl}/api/my-courses/course/${encodeURIComponent(courseId)}/exams/${encodeURIComponent(examId)}`, {
       method: "POST",
-      headers,
+      headers: { "content-type": "application/json", ...getBackendAuthHeaders(req) },
       body: JSON.stringify(body),
       cache: "no-store",
     })

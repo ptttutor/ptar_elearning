@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { getBackendAuthHeaders } from "@/lib/server-auth"
 
 export async function GET(req: Request) {
   const baseUrl = process.env.API_BASE_URL
@@ -12,17 +13,8 @@ export async function GET(req: Request) {
   try {
     const url = new URL(req.url)
     const search = url.search || ""
-    const cookie = req.headers.get("cookie") ?? ""
-    const authorization = req.headers.get("authorization") ?? ""
-    
-    const headers: Record<string, string> = { cookie }
-    if (authorization) {
-      headers["authorization"] = authorization
-    }
-    
-    
     const res = await fetch(`${baseUrl}/api/progress${search}`, {
-      headers,
+      headers: getBackendAuthHeaders(req),
       cache: "no-store",
     })
     
@@ -49,18 +41,9 @@ export async function DELETE(req: Request) {
     const url = new URL(req.url)
     const userId = url.searchParams.get("userId") || ""
     const courseId = url.searchParams.get("courseId") || ""
-    const cookie = req.headers.get("cookie") ?? ""
-    const authorization = req.headers.get("authorization") ?? ""
-    
-    const headers: Record<string, string> = { cookie, "content-type": "application/json" }
-    if (authorization) {
-      headers["authorization"] = authorization
-    }
-    
- 
     const res = await fetch(`${baseUrl}/api/progress`, {
       method: "PUT",
-      headers,
+      headers: { "content-type": "application/json", ...getBackendAuthHeaders(req) },
       body: JSON.stringify({ userId, courseId, progress: 0 }),
       cache: "no-store",
     })

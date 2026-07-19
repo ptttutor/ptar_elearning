@@ -38,7 +38,19 @@ export async function POST(req: Request) {
       )
     }
 
-    return NextResponse.json(data)
+    const response = NextResponse.json(data)
+    try {
+      const token = data?.data?.token || data?.token
+      if (typeof token === "string" && token.length > 0) {
+        response.cookies.set("jwt", token, {
+          httpOnly: true,
+          sameSite: "lax",
+          path: "/",
+          maxAge: 60 * 60 * 24 * 7,
+        })
+      }
+    } catch {}
+    return response
   } catch (error) {
     console.error("LINE login error:", error)
     return NextResponse.json(

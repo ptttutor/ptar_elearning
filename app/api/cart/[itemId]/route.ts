@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { getBackendAuthHeaders } from "@/lib/server-auth"
 
 function ensureBaseUrl() {
   const baseUrl = process.env.API_BASE_URL
@@ -10,7 +11,6 @@ function ensureBaseUrl() {
 
 async function proxyCartRequest(req: Request, params: { itemId: string }, method: "PATCH" | "DELETE") {
   const baseUrl = ensureBaseUrl()
-  const cookie = req.headers.get("cookie") ?? ""
   let body: any = undefined
   if (method === "PATCH" || method === "DELETE") {
     try {
@@ -19,7 +19,7 @@ async function proxyCartRequest(req: Request, params: { itemId: string }, method
     } catch {}
   }
 
-  const headers: Record<string, string> = { cookie }
+  const headers: Record<string, string> = { ...getBackendAuthHeaders(req) }
   if (body !== undefined) headers["content-type"] = "application/json"
 
   const attempt = async (url: string, payload: any) => {

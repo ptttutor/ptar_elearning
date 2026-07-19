@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { getBackendAuthHeaders } from "@/lib/server-auth"
 
 export async function GET(req: Request) {
   const baseUrl = process.env.API_BASE_URL
@@ -12,9 +13,8 @@ export async function GET(req: Request) {
   try {
     const url = new URL(req.url)
     const search = url.search || ""
-    const cookie = req.headers.get("cookie") ?? ""
     const res = await fetch(`${baseUrl}/api/orders${search}`, {
-      headers: { cookie },
+      headers: getBackendAuthHeaders(req),
       cache: "no-store",
     })
     const data = await res.json().catch(() => ({}))
@@ -59,10 +59,9 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json().catch(() => ({}))
-    const cookie = req.headers.get("cookie") ?? ""
     const res = await fetch(`${baseUrl}/api/orders`, {
       method: "POST",
-      headers: { "content-type": "application/json", cookie },
+      headers: { "content-type": "application/json", ...getBackendAuthHeaders(req) },
       body: JSON.stringify(body),
       cache: "no-store",
     })

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { getBackendAuthHeaders } from "@/lib/server-auth"
 
 export async function GET(req: Request) {
   const baseUrl = process.env.API_BASE_URL
@@ -12,13 +13,8 @@ export async function GET(req: Request) {
   try {
     const url = new URL(req.url)
     const search = url.search || ""
-    const cookie = req.headers.get("cookie") ?? ""
-    const authorization = req.headers.get("authorization") ?? ""
-    const headers: Record<string, string> = { cookie }
-    if (authorization) headers["authorization"] = authorization
-
     const res = await fetch(`${baseUrl}/api/my-courses/exam-results${search}`, {
-      headers,
+      headers: getBackendAuthHeaders(req),
       cache: "no-store",
     })
     const data = await res.json().catch(() => ({}))

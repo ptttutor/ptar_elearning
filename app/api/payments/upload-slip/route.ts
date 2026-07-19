@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { getBackendAuthHeaders } from "@/lib/server-auth"
 
 export async function POST(req: Request) {
   const baseUrl = process.env.API_BASE_URL
@@ -10,7 +11,6 @@ export async function POST(req: Request) {
   }
 
   try {
-    const cookie = req.headers.get("cookie") ?? ""
     const incoming = await req.formData()
     const form = new FormData()
     for (const [key, value] of incoming.entries()) {
@@ -24,7 +24,7 @@ export async function POST(req: Request) {
 
     const res = await fetch(`${baseUrl}/api/payments/upload-slip`, {
       method: "POST",
-      headers: { cookie },
+      headers: getBackendAuthHeaders(req),
       body: form,
       cache: "no-store",
     })

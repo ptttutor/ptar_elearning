@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { getBackendAuthHeaders } from "@/lib/server-auth"
 
 export async function GET(req: Request) {
   const baseUrl = process.env.API_BASE_URL
@@ -6,8 +7,7 @@ export async function GET(req: Request) {
   try {
     const url = new URL(req.url)
     const search = url.search || ""
-    const cookie = req.headers.get("cookie") ?? ""
-    const res = await fetch(`${baseUrl}/api/enrollments${search}`, { headers: { cookie }, cache: "no-store" })
+    const res = await fetch(`${baseUrl}/api/enrollments${search}`, { headers: getBackendAuthHeaders(req), cache: "no-store" })
     const data = await res.json().catch(() => ({}))
     return NextResponse.json(data, { status: res.status })
   } catch (e) {
@@ -20,10 +20,9 @@ export async function PATCH(req: Request) {
   if (!baseUrl) return NextResponse.json({ error: "API_BASE_URL is not configured" }, { status: 500 })
   try {
     const body = await req.json().catch(() => ({}))
-    const cookie = req.headers.get("cookie") ?? ""
     const res = await fetch(`${baseUrl}/api/enrollments`, {
       method: "PATCH",
-      headers: { "content-type": "application/json", cookie },
+      headers: { "content-type": "application/json", ...getBackendAuthHeaders(req) },
       body: JSON.stringify(body),
       cache: "no-store",
     })
@@ -39,10 +38,9 @@ export async function POST(req: Request) {
   if (!baseUrl) return NextResponse.json({ error: "API_BASE_URL is not configured" }, { status: 500 })
   try {
     const body = await req.json().catch(() => ({}))
-    const cookie = req.headers.get("cookie") ?? ""
     const res = await fetch(`${baseUrl}/api/enrollments`, {
       method: "POST",
-      headers: { "content-type": "application/json", cookie },
+      headers: { "content-type": "application/json", ...getBackendAuthHeaders(req) },
       body: JSON.stringify(body),
       cache: "no-store",
     })

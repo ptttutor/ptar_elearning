@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { getBackendAuthHeaders } from "@/lib/server-auth"
 
 function ensureBaseUrl() {
   const baseUrl = process.env.API_BASE_URL
@@ -13,10 +14,9 @@ export async function GET(req: Request) {
     const baseUrl = ensureBaseUrl()
     const url = new URL(req.url)
     const search = url.search || ""
-    const cookie = req.headers.get("cookie") ?? ""
     const res = await fetch(`${baseUrl}/api/cart${search}`, {
       method: "GET",
-      headers: { cookie },
+      headers: getBackendAuthHeaders(req),
       cache: "no-store",
     })
     const data = await res.json().catch(() => ({}))
@@ -31,12 +31,11 @@ export async function POST(req: Request) {
   try {
     const baseUrl = ensureBaseUrl()
     const body = await req.json().catch(() => ({}))
-    const cookie = req.headers.get("cookie") ?? ""
     const res = await fetch(`${baseUrl}/api/cart`, {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        cookie,
+        ...getBackendAuthHeaders(req),
       },
       body: JSON.stringify(body),
       cache: "no-store",
@@ -53,12 +52,11 @@ export async function DELETE(req: Request) {
   try {
     const baseUrl = ensureBaseUrl()
     const body = await req.json().catch(() => ({}))
-    const cookie = req.headers.get("cookie") ?? ""
     const res = await fetch(`${baseUrl}/api/cart`, {
       method: "DELETE",
       headers: {
         "content-type": "application/json",
-        cookie,
+        ...getBackendAuthHeaders(req),
       },
       body: JSON.stringify(body),
       cache: "no-store",
