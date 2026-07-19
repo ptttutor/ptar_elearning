@@ -1,103 +1,60 @@
 "use client";
-import { useState, useEffect, useCallback, useRef } from "react";
-import { useMessage } from "./useAntdApp";
+import { useState, useEffect, useCallback } from "react";
+import { useToast } from "@/components/ui/use-toast";
+import { useAdminListState } from "./useAdminListState";
 
 export function useCourses() {
-  const message = useMessage();
-  const [courses, setCourses] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
   const [categories, setCategories] = useState([]);
   const [catLoading, setCatLoading] = useState(false);
   const [instructors, setInstructors] = useState([]);
   const [instLoading, setInstLoading] = useState(false);
 
-  // Server-side filtering and pagination states
-  const [filters, setFilters] = useState({
-    search: "",
-    status: "ALL",
-    instructorId: "",
-    categoryId: "",
-    subject: "",
-    gradeLevel: "",
-    minPrice: "",
-    maxPrice: "",
-    sortBy: "createdAt",
-    sortOrder: "desc",
-  });
-  const [searchInput, setSearchInput] = useState("");
-  const [pagination, setPagination] = useState({
-    page: 1,
-    pageSize: 10,
-    totalCount: 0,
-    totalPages: 0,
-  });
-
-  // Use ref to keep track of current state
-  const filtersRef = useRef(filters);
-  const paginationRef = useRef(pagination);
-
-  // Update refs when state changes
-  useEffect(() => {
-    filtersRef.current = filters;
-  }, [filters]);
-
-  useEffect(() => {
-    paginationRef.current = pagination;
-  }, [pagination]);
-
-  // Fetch courses with server-side filtering and pagination
-  const fetchCourses = useCallback(async (customFilters, customPagination) => {
-    setLoading(true);
-    try {
-      // ใช้ ref เพื่อได้ current state หรือใช้ parameters ที่ส่งมา
-      const currentFilters = customFilters || filtersRef.current;
-      const currentPagination = customPagination || paginationRef.current;
-
-      // Build query parameters
+  const fetcher = useCallback(
+    async ({ page, limit, search, status, instructorId, categoryId, subject, gradeLevel, minPrice, maxPrice, sortBy, sortOrder }) => {
       const params = new URLSearchParams({
-        page: currentPagination.page?.toString() || "1",
-        pageSize: currentPagination.pageSize?.toString() || "10",
-        search: currentFilters.search || "",
-        status: currentFilters.status || "ALL",
-        instructorId: currentFilters.instructorId || "",
-        categoryId: currentFilters.categoryId || "",
-        subject: currentFilters.subject || "",
-        gradeLevel: currentFilters.gradeLevel || "",
-        sortBy: currentFilters.sortBy || "createdAt",
-        sortOrder: currentFilters.sortOrder || "desc",
+        page: String(page),
+        pageSize: String(limit),
+        search: search || "",
+        status: status || "ALL",
+        instructorId: instructorId && instructorId !== "all" ? instructorId : "",
+        categoryId: categoryId && categoryId !== "all" ? categoryId : "",
+        subject: subject && subject !== "all" ? subject : "",
+        gradeLevel: gradeLevel && gradeLevel !== "all" ? gradeLevel : "",
+        sortBy: sortBy || "createdAt",
+        sortOrder: sortOrder || "desc",
       });
-
-      // Add price filters if they exist
-      if (currentFilters.minPrice)
-        params.append("minPrice", currentFilters.minPrice);
-      if (currentFilters.maxPrice)
-        params.append("maxPrice", currentFilters.maxPrice);
+      if (minPrice) params.set("minPrice", minPrice);
+      if (maxPrice) params.set("maxPrice", maxPrice);
 
       const res = await fetch(`/api/admin/courses?${params}`);
       const data = await res.json();
-
-      if (data.success) {
-        setCourses(data.data || []);
-        setPagination(data.pagination || {
-          page: 1,
-          pageSize: 10,
-          totalCount: 0,
-          totalPages: 0,
-        });
-        if (customFilters) {
-          setFilters(currentFilters);
-        }
-      } else {
-        message.error(data.error || "โหลดข้อมูลคอร์สไม่สำเร็จ");
+      if (!data.success) {
+        throw new Error(data.error || "โหลดข้อมูลคอร์สไม่สำเร็จ");
       }
-    } catch (e) {
-      console.error("Fetch courses error:", e);
-      message.error("โหลดข้อมูลคอร์สไม่สำเร็จ");
-    }
-    setLoading(false);
-  }, []);
 
-  // Fetch categories
+      return {
+        items: data.data,
+        total: data.pagination.totalCount,
+        page: data.pagination.page,
+      };
+    },
+    []
+  );
+
+  const list = useAdminListState({
+    fetcher,
+    initialFilters: {
+      status: "ALL",
+      instructorId: "all",
+      categoryId: "all",
+      subject: "all",
+      gradeLevel: "all",
+      minPrice: "",
+      maxPrice: "",
+    },
+  });
+
   const fetchCategories = useCallback(async () => {
     setCatLoading(true);
     try {
@@ -105,122 +62,46 @@ export function useCourses() {
       const data = await res.json();
       setCategories(data.data || []);
     } catch (e) {
-      message.error("โหลดข้อมูลหมวดหมู่ไม่สำเร็จ");
+      toast({ variant: "destructive", title: "โหลดข้อมูลหมวดหมู่ไม่สำเร็จ" });
+    } finally {
+      setCatLoading(false);
     }
-    setCatLoading(false);
-  }, []);
+  }, [toast]);
 
-  // Fetch instructors
   const fetchInstructors = useCallback(async () => {
     setInstLoading(true);
     try {
       const res = await fetch("/api/admin/users?role=INSTRUCTOR");
       const data = await res.json();
-      console.log('data :>> ', data);
       setInstructors(data.data?.users || []);
     } catch (e) {
-      message.error("โหลดข้อมูลผู้สอนไม่สำเร็จ");
+      toast({ variant: "destructive", title: "โหลดข้อมูลผู้สอนไม่สำเร็จ" });
+    } finally {
+      setInstLoading(false);
     }
-    setInstLoading(false);
-  }, []);
+  }, [toast]);
 
-  // Handle filter change
-  const handleFilterChange = useCallback((key, value) => {
-    const newFilters = { ...filtersRef.current, [key]: value };
-    fetchCourses(newFilters, { page: 1 });
-  }, [fetchCourses]);
-
-  // Handle table change (sorting, pagination)
-  const handleTableChange = useCallback((paginationInfo, filtersInfo, sorter) => {
-    const newFilters = { ...filtersRef.current };
-    const newPagination = {
-      page: paginationInfo.current,
-      pageSize: paginationInfo.pageSize,
-    };
-
-    // Handle sorting
-    if (sorter.field) {
-      newFilters.sortBy = sorter.field;
-      newFilters.sortOrder = sorter.order === "ascend" ? "asc" : "desc";
-    }
-
-    fetchCourses(newFilters, newPagination);
-  }, [fetchCourses]);
-
-  // Reset filters
-  const resetFilters = useCallback(() => {
-    const resetFiltersData = {
-      search: "",
-      status: "ALL",
-      instructorId: "",
-      categoryId: "",
-      subject: "",
-      gradeLevel: "",
-      minPrice: "",
-      maxPrice: "",
-      sortBy: "createdAt",
-      sortOrder: "desc",
-    };
-    setSearchInput("");
-    setFilters(resetFiltersData);
-    fetchCourses(resetFiltersData, { page: 1 });
-  }, [fetchCourses]);
-
-  // Initial load - แก้ไข dependencies
   useEffect(() => {
-    const loadInitialData = async () => {
-      await fetchCategories();
-      await fetchInstructors();
-      await fetchCourses();
-    };
-    loadInitialData();
-  }, [fetchCategories, fetchInstructors, fetchCourses]);
-
-  // Debounce search - แก้ไข dependencies
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      const newFilters = { ...filtersRef.current, search: searchInput };
-      fetchCourses(newFilters, { page: 1 });
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchInput, fetchCourses]);
-
-  // Helper functions for optimistic updates
-  const updateCourseInList = useCallback((courseId, updatedData) => {
-    setCourses(prevCourses => 
-      prevCourses.map(course => 
-        course.id === courseId 
-          ? { ...course, ...updatedData }
-          : course
-      )
-    );
-  }, []);
-
-  const addCourseToList = useCallback((newCourse) => {
-    setCourses(prevCourses => [newCourse, ...prevCourses]);
-    setPagination(prev => ({
-      ...prev,
-      totalCount: prev.totalCount + 1
-    }));
-  }, []);
+    fetchCategories();
+    fetchInstructors();
+  }, [fetchCategories, fetchInstructors]);
 
   return {
-    courses,
-    loading,
+    courses: list.items,
+    loading: list.loading,
     categories,
     catLoading,
     instructors,
     instLoading,
-    filters,
-    searchInput,
-    setSearchInput,
-    pagination,
-    fetchCourses,
-    handleFilterChange,
-    handleTableChange,
-    resetFilters,
-    updateCourseInList,
-    addCourseToList,
+    filters: list.filters,
+    searchInput: list.searchInput,
+    setSearchInput: list.setSearchInput,
+    pagination: list.pagination,
+    fetchCourses: list.fetchData,
+    handleFilterChange: list.handleFilterChange,
+    handlePageChange: list.handlePageChange,
+    handleSortChange: list.handleSortChange,
+    handleSortSelectChange: list.handleSortSelectChange,
+    resetFilters: list.resetFilters,
   };
 }

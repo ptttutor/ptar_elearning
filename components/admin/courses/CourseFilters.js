@@ -1,186 +1,83 @@
-"use client";
-import { Input, Select, InputNumber, Button, Typography, Space, Card } from "antd";
-import { getSubjectOptions, getGradeLevelOptions } from "@/lib/constants";
-import ResultsCount from "@/components/admin/shared/ResultsCount";
-import { RESET_FILTERS_LABEL } from "@/components/admin/shared/adminUiConstants";
+import AdminFilterBar from "@/components/admin/shared/AdminFilterBar";
+import PriceRangeFilter from "@/components/admin/shared/PriceRangeFilter";
+import { getSubjectOptions, getGradeLevelOptions, getSubjectLabel, getGradeLevelLabel } from "@/lib/constants";
 
-const { Option } = Select;
-const { Text } = Typography;
+const STATUS_OPTIONS = [
+  { value: "ALL", label: "ทั้งหมด" },
+  { value: "ACTIVE", label: "ใช้งานอยู่" },
+  { value: "DRAFT", label: "ฉบับร่าง" },
+  { value: "PUBLISHED", label: "เผยแพร่" },
+  { value: "CLOSED", label: "ปิด" },
+  { value: "DELETED", label: "ถูกลบ" },
+];
 
 export default function CourseFilters({
   filters,
   searchInput,
   setSearchInput,
   onFilterChange,
+  onSortSelectChange,
   onReset,
   instructors,
   categories,
   totalCount,
   currentCount,
+  loading,
 }) {
+  const instructorOptions = [
+    { value: "all", label: "ทั้งหมด" },
+    ...instructors.map((i) => ({ value: i.id, label: i.name })),
+  ];
+  const categoryOptions = [
+    { value: "all", label: "ทั้งหมด" },
+    ...categories.map((c) => ({ value: c.id, label: c.name })),
+  ];
+  const subjectOptions = [{ value: "all", label: "ทั้งหมด" }, ...getSubjectOptions()];
+  const gradeLevelOptions = [{ value: "all", label: "ทั้งหมด" }, ...getGradeLevelOptions()];
+
   return (
-    <Card style={{ marginBottom: "16px" }}>
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "12px",
-          alignItems: "end",
-        }}
-      >
-        {/* Search */}
-        <div style={{ minWidth: "200px" }}>
-          <Text strong>ค้นหา:</Text>
-          <Input
-            placeholder="ค้นหาชื่อคอร์สหรือรายละเอียด"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            allowClear
-            onClear={() => setSearchInput("")}
-            style={{ marginTop: "4px" }}
-          />
-        </div>
-
-        {/* Status Filter */}
-        <div style={{ minWidth: "150px" }}>
-          <Text strong>สถานะ:</Text>
-          <Select
-            value={filters.status}
-            onChange={(value) => onFilterChange("status", value)}
-            style={{ width: "100%", marginTop: "4px" }}
-            placeholder="เลือกสถานะ"
-          >
-            <Option value="ALL">ทั้งหมด</Option>
-            <Option value="ACTIVE">ใช้งานอยู่</Option>
-            <Option value="DRAFT">ฉบับร่าง</Option>
-            <Option value="PUBLISHED">เผยแพร่</Option>
-            <Option value="CLOSED">ปิด</Option>
-            <Option value="DELETED">ถูกลบ</Option>
-          </Select>
-        </div>
-
-        {/* Instructor Filter */}
-        <div style={{ minWidth: "180px" }}>
-          <Text strong>ผู้สอน:</Text>
-          <Select
-            value={filters.instructorId}
-            onChange={(value) => onFilterChange("instructorId", value)}
-            style={{ width: "100%", marginTop: "4px" }}
-            placeholder="เลือกผู้สอน"
-            allowClear
-            showSearch
-            optionFilterProp="children"
-          >
-            {instructors.map((instructor) => (
-              <Option key={instructor.id} value={instructor.id}>
-                {instructor.name}
-              </Option>
-            ))}
-          </Select>
-        </div>
-
-        {/* Category Filter */}
-        <div style={{ minWidth: "150px" }}>
-          <Text strong>หมวดหมู่:</Text>
-          <Select
-            value={filters.categoryId}
-            onChange={(value) => onFilterChange("categoryId", value)}
-            style={{ width: "100%", marginTop: "4px" }}
-            placeholder="เลือกหมวดหมู่"
-            allowClear
-            showSearch
-            optionFilterProp="children"
-          >
-            {categories.map((category) => (
-              <Option key={category.id} value={category.id}>
-                {category.name}
-              </Option>
-            ))}
-          </Select>
-        </div>
-
-        {/* Subject Filter */}
-        <div style={{ minWidth: "180px" }}>
-          <Text strong>วิชา:</Text>
-          <Select
-            value={filters.subject}
-            onChange={(value) => onFilterChange("subject", value)}
-            style={{ width: "100%", marginTop: "4px" }}
-            placeholder="เลือกวิชา"
-            allowClear
-            showSearch
-            optionFilterProp="children"
-          >
-            {getSubjectOptions().map((subject) => (
-              <Option key={subject.value} value={subject.value}>
-                {subject.label}
-              </Option>
-            ))}
-          </Select>
-        </div>
-
-        {/* Grade Level Filter */}
-        <div style={{ minWidth: "180px" }}>
-          <Text strong>ระดับชั้น:</Text>
-          <Select
-            value={filters.gradeLevel}
-            onChange={(value) => onFilterChange("gradeLevel", value)}
-            style={{ width: "100%", marginTop: "4px" }}
-            placeholder="เลือกระดับชั้น"
-            allowClear
-            showSearch
-            optionFilterProp="children"
-          >
-            {getGradeLevelOptions().map((level) => (
-              <Option key={level.value} value={level.value}>
-                {level.label}
-              </Option>
-            ))}
-          </Select>
-        </div>
-
-        {/* Price Range */}
-        <div style={{ minWidth: "120px" }}>
-          <Text strong>ราคาต่ำสุด:</Text>
-          <InputNumber
-            value={filters.minPrice}
-            onChange={(value) => onFilterChange("minPrice", value || "")}
-            style={{ width: "100%", marginTop: "4px" }}
-            placeholder="0"
-            min={0}
-            formatter={(value) =>
-              value ? `฿ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",") : ""
-            }
-            parser={(value) => value.replace(/฿\s?|(,*)/g, "")}
-          />
-        </div>
-
-        <div style={{ minWidth: "120px" }}>
-          <Text strong>ราคาสูงสุด:</Text>
-          <InputNumber
-            value={filters.maxPrice}
-            onChange={(value) => onFilterChange("maxPrice", value || "")}
-            style={{ width: "100%", marginTop: "4px" }}
-            placeholder="ไม่จำกัด"
-            min={0}
-            formatter={(value) =>
-              value ? `฿ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",") : ""
-            }
-            parser={(value) => value.replace(/฿\s?|(,*)/g, "")}
-          />
-        </div>
-
-        {/* Clear Filters */}
-        <div>
-          <Button onClick={onReset} style={{ borderRadius: "6px" }}>
-            {RESET_FILTERS_LABEL}
-          </Button>
-        </div>
-      </div>
-
-      <div style={{ marginTop: "12px", textAlign: "right" }}>
-        <ResultsCount current={currentCount} total={totalCount} />
-      </div>
-    </Card>
+    <AdminFilterBar
+      searchValue={searchInput}
+      onSearchChange={setSearchInput}
+      searchPlaceholder="ค้นหาชื่อคอร์สหรือรายละเอียด..."
+      selects={[
+        { key: "status", value: filters.status, onChange: (v) => onFilterChange("status", v), placeholder: "สถานะ", options: STATUS_OPTIONS },
+        { key: "instructorId", value: filters.instructorId, onChange: (v) => onFilterChange("instructorId", v), placeholder: "ผู้สอน", options: instructorOptions },
+        { key: "categoryId", value: filters.categoryId, onChange: (v) => onFilterChange("categoryId", v), placeholder: "หมวดหมู่", options: categoryOptions },
+        { key: "subject", value: filters.subject, onChange: (v) => onFilterChange("subject", v), placeholder: "วิชา", options: subjectOptions },
+        { key: "gradeLevel", value: filters.gradeLevel, onChange: (v) => onFilterChange("gradeLevel", v), placeholder: "ระดับชั้น", options: gradeLevelOptions },
+      ]}
+      extraFields={[
+        {
+          key: "priceRange",
+          label: "ช่วงราคา",
+          span: 2,
+          render: () => (
+            <PriceRangeFilter
+              minValue={filters.minPrice}
+              maxValue={filters.maxPrice}
+              onCommit={(lo, hi) => {
+                onFilterChange("minPrice", lo);
+                onFilterChange("maxPrice", hi);
+              }}
+            />
+          ),
+        },
+      ]}
+      onReset={onReset}
+      totalCount={totalCount}
+      currentCount={currentCount}
+      loading={loading}
+      activeSummary={[
+        filters.search && `ค้นหา: "${filters.search}"`,
+        filters.status !== "ALL" && `สถานะ: ${STATUS_OPTIONS.find((o) => o.value === filters.status)?.label || filters.status}`,
+        filters.instructorId !== "all" && `ผู้สอน: ${instructors.find((i) => i.id === filters.instructorId)?.name || filters.instructorId}`,
+        filters.categoryId !== "all" && `หมวดหมู่: ${categories.find((c) => c.id === filters.categoryId)?.name || filters.categoryId}`,
+        filters.subject !== "all" && `วิชา: ${getSubjectLabel(filters.subject)}`,
+        filters.gradeLevel !== "all" && `ระดับชั้น: ${getGradeLevelLabel(filters.gradeLevel)}`,
+        (filters.minPrice || filters.maxPrice) &&
+          `ราคา: ฿${filters.minPrice || 0} - ${filters.maxPrice ? `฿${filters.maxPrice}` : "ไม่จำกัด"}`,
+      ]}
+    />
   );
 }

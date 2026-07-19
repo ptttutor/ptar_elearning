@@ -1,8 +1,9 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "antd";
-import { BookOutlined, PlusOutlined } from "@ant-design/icons";
+import { BookOpen, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 import AdminPageHeader from "@/components/admin/shared/AdminPageHeader";
 
 // Components
@@ -13,44 +14,11 @@ import DeleteModal from "./DeleteModal";
 
 // Hooks
 import { useCourses } from "@/hooks/admin/useCourses";
-import { useMessage } from "@/hooks/admin/useAntdApp";
 
 export default function CoursesManagement() {
-  // Confirm delete course
-  const confirmDelete = async () => {
-    if (!courseToDelete?.id) {
-      message.error("ไม่พบ ID ของคอร์ส");
-      return;
-    }
-    setDeleting(true);
-    try {
-      const response = await fetch(`/api/admin/courses/${courseToDelete.id}`, {
-        method: "DELETE"
-      });
-      const data = await response.json();
-      if (data.success) {
-        message.success("ลบคอร์สสำเร็จ");
-        setDeleteModalOpen(false);
-        setCourseToDelete(null);
-        await fetchCourses();
-      } else {
-        message.error(data.error || "เกิดข้อผิดพลาดในการลบคอร์ส");
-      }
-    } catch (error) {
-      console.error("Delete course error:", error);
-      message.error(`เกิดข้อผิดพลาด: ${error.message}`);
-    } finally {
-      setDeleting(false);
-    }
-  };
-  // Handle delete course
-  const handleDelete = (course) => {
-    setCourseToDelete(course);
-    setDeleteModalOpen(true);
-  };
   const router = useRouter();
-  const message = useMessage();
-  
+  const { toast } = useToast();
+
   // Modal states
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -73,10 +41,10 @@ export default function CoursesManagement() {
     pagination,
     fetchCourses,
     handleFilterChange,
-    handleTableChange,
+    handlePageChange,
+    handleSortChange,
+    handleSortSelectChange,
     resetFilters,
-    updateCourseInList,
-    addCourseToList,
   } = useCourses();
 
   // Create or update course
@@ -84,7 +52,6 @@ export default function CoursesManagement() {
     setSubmitting(true);
     try {
       let res;
-      // Ensure isRecommended is boolean
       const payload = { ...courseData, isRecommended: !!courseData.isRecommended };
       if (editing) {
         res = await fetch(`/api/admin/courses/${editing.id}`, {
@@ -103,22 +70,51 @@ export default function CoursesManagement() {
       const result = await res.json();
 
       if (result.success) {
-        message.success(editing ? "แก้ไขคอร์สสำเร็จ" : "สร้างคอร์สสำเร็จ");
+        toast({ title: editing ? "แก้ไขคอร์สสำเร็จ" : "สร้างคอร์สสำเร็จ" });
         setModalOpen(false);
         setEditing(null);
-        // Optimistic update without full page refresh
-        if (editing) {
-          updateCourseInList(editing.id, result.data);
-        } else {
-          addCourseToList(result.data);
-        }
+        fetchCourses();
       } else {
-        message.error(result.error || "เกิดข้อผิดพลาด");
+        toast({ variant: "destructive", title: result.error || "เกิดข้อผิดพลาด" });
       }
     } catch (error) {
-      message.error("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+      toast({ variant: "destructive", title: "เกิดข้อผิดพลาดในการบันทึกข้อมูล" });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // Handle delete course
+  const handleDelete = (course) => {
+    setCourseToDelete(course);
+    setDeleteModalOpen(true);
+  };
+
+  // Confirm delete course
+  const confirmDelete = async () => {
+    if (!courseToDelete?.id) {
+      toast({ variant: "destructive", title: "ไม่พบ ID ของคอร์ส" });
+      return;
+    }
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/admin/courses/${courseToDelete.id}`, {
+        method: "DELETE",
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast({ title: "ลบคอร์สสำเร็จ" });
+        setDeleteModalOpen(false);
+        setCourseToDelete(null);
+        await fetchCourses();
+      } else {
+        toast({ variant: "destructive", title: data.error || "เกิดข้อผิดพลาดในการลบคอร์ส" });
+      }
+    } catch (error) {
+      console.error("Delete course error:", error);
+      toast({ variant: "destructive", title: `เกิดข้อผิดพลาด: ${error.message}` });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -142,17 +138,17 @@ export default function CoursesManagement() {
 
   // Handle manage exams
   const handleManageExams = (course) => {
-    console.log('Managing exams for course:', course.id);
     router.push(`/admin/courses/exams/${course.id}`);
   };
 
   return (
     <AdminPageHeader
-      icon={<BookOutlined />}
+      icon={<BookOpen className="h-6 w-6" />}
       title="จัดการคอร์สเรียน"
       subtitle="สร้างและจัดการคอร์สเรียนออนไลน์"
       actions={
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal(null)}>
+        <Button onClick={() => openModal(null)}>
+          <Plus className="mr-2 h-4 w-4" />
           สร้างคอร์สใหม่
         </Button>
       }
@@ -163,11 +159,13 @@ export default function CoursesManagement() {
         searchInput={searchInput}
         setSearchInput={setSearchInput}
         onFilterChange={handleFilterChange}
+        onSortSelectChange={handleSortSelectChange}
         onReset={resetFilters}
         instructors={instructors}
         categories={categories}
-        totalCount={pagination.totalCount}
+        totalCount={pagination.total}
         currentCount={courses.length}
+        loading={loading}
       />
 
       <CourseTable
@@ -178,7 +176,8 @@ export default function CoursesManagement() {
         onEdit={openModal}
         onDelete={handleDelete}
         onManageExams={handleManageExams}
-        onTableChange={handleTableChange}
+        onPageChange={handlePageChange}
+        onSortChange={handleSortChange}
       />
 
       {/* Create/Edit Modal */}

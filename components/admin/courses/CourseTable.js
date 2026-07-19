@@ -1,20 +1,37 @@
 "use client";
-import { Table, Card, Button, Space, Tag, Image, Typography, Tooltip } from "antd";
+
+import { Edit, Trash2, FileText, Settings, User as UserIcon, Tag, DollarSign, ImageOff, Star } from "lucide-react";
 import {
-  BookOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  SettingOutlined,
-  UserOutlined,
-  TagOutlined,
-  DollarOutlined,
-  PictureOutlined,
-  FileTextOutlined,
-  StarFilled,
-} from "@ant-design/icons";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import SortableTableHead from "@/components/admin/shared/SortableTableHead";
+import AdminPagination from "@/components/admin/shared/AdminPagination";
 import { getSubjectLabel, getGradeLevelLabel } from "@/lib/constants";
 
-const { Text } = Typography;
+const STATUS_STYLES = {
+  DRAFT: "border-gray-200 bg-gray-50 text-gray-600",
+  PUBLISHED: "border-green-200 bg-green-50 text-green-700",
+  CLOSED: "border-red-200 bg-red-50 text-red-700",
+  DELETED: "border-red-200 bg-red-50 text-red-700",
+};
+const STATUS_LABELS = { DRAFT: "ฉบับร่าง", PUBLISHED: "เผยแพร่", CLOSED: "ปิด", DELETED: "ถูกลบ" };
+
+const formatCurrency = (amount) =>
+  new Intl.NumberFormat("th-TH", { style: "currency", currency: "THB" }).format(amount || 0);
 
 export default function CourseTable({
   courses,
@@ -24,351 +41,182 @@ export default function CourseTable({
   onEdit,
   onDelete,
   onManageExams,
-  onTableChange,
+  onPageChange,
+  onSortChange,
 }) {
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "DRAFT":
-        return "default";
-      case "PUBLISHED":
-        return "success";
-      case "CLOSED":
-        return "error";
-      case "DELETED":
-        return "red";
-      default:
-        return "default";
-    }
-  };
-
-  const getStatusText = (status) => {
-    switch (status) {
-      case "DRAFT":
-        return "ฉบับร่าง";
-      case "PUBLISHED":
-        return "เผยแพร่";
-      case "CLOSED":
-        return "ปิด";
-      case "DELETED":
-        return "ถูกลบ";
-      default:
-        return status;
-    }
-  };
-
-  const columns = [
-    {
-      title: "แนะนำ",
-      dataIndex: "isRecommended",
-      key: "isRecommended",
-      align: "center",
-      render: (isRecommended) =>
-        isRecommended ? (
-          <Tag color="gold" style={{ fontWeight: "bold" }}>
-            <StarFilled /> แนะนำ
-          </Tag>
-        ) : null,
-      width: 90,
-    },
-    {
-      title: "รูปปก",
-      dataIndex: "coverImageUrl",
-      key: "coverImageUrl",
-      render: (coverImageUrl) => (
-        <div
-          style={{ width: 60, height: 40, overflow: "hidden", borderRadius: 4 }}
-        >
-          {coverImageUrl ? (
-            <Image
-              src={coverImageUrl}
-              alt="Course Cover"
-              width={60}
-              height={40}
-              style={{ objectFit: "cover" }}
-              fallback="/placeholder-course.svg"
-            />
-          ) : (
-            <div
-              style={{
-                width: 60,
-                height: 40,
-                backgroundColor: "#f0f0f0",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: 4,
-              }}
-            >
-              <PictureOutlined style={{ color: "#d9d9d9" }} />
-            </div>
-          )}
-        </div>
-      ),
-      width: 80,
-    },
-    {
-      title: "ชื่อคอร์ส",
-      dataIndex: "title",
-      key: "title",
-      sorter: true,
-      sortOrder:
-        filters.sortBy === "title"
-          ? filters.sortOrder === "asc"
-            ? "ascend"
-            : "descend"
-          : null,
-      render: (title) => (
-        <Space>
-          <BookOutlined style={{ color: "#1890ff" }} />
-          <Text strong>{title}</Text>
-        </Space>
-      ),
-      width: 250,
-    },
-    {
-      title: "รูปแบบ",
-      key: "format",
-      render: (_, record) => (
-        <Space direction="vertical" size={4}>
-          {record.isFree ? (
-            <Tag color="green" icon={<DollarOutlined />}>
-              ฟรี
-            </Tag>
-          ) : (
-            <Tag color="blue" icon={<DollarOutlined />}>
-              เสียค่าใช้จ่าย
-            </Tag>
-          )}
-          {record.isPhysical && (
-            <Tag color="orange" icon={<TagOutlined />}>
-              ส่งของ
-            </Tag>
-          )}
-        </Space>
-      ),
-      width: 120,
-    },
-    {
-      title: "ราคา",
-      dataIndex: "price",
-      key: "price",
-      sorter: true,
-      sortOrder:
-        filters.sortBy === "price"
-          ? filters.sortOrder === "asc"
-            ? "ascend"
-            : "descend"
-          : null,
-      render: (price, record) => (
-        <Space direction="vertical" size={2}>
-          <Space>
-            <DollarOutlined style={{ color: "#52c41a" }} />
-            <Text strong style={{ color: "#52c41a" }}>
-              {new Intl.NumberFormat("th-TH", {
-                style: "currency",
-                currency: "THB",
-              }).format(price || 0)}
-            </Text>
-          </Space>
-          {record.discountPrice && (
-            <Text type="secondary" delete style={{ fontSize: "12px" }}>
-              {new Intl.NumberFormat("th-TH", {
-                style: "currency",
-                currency: "THB",
-              }).format(record.discountPrice)}
-            </Text>
-          )}
-        </Space>
-      ),
-      width: 150,
-    },
-    {
-      title: "สถานะ",
-      dataIndex: "status",
-      key: "status",
-      sorter: true,
-      sortOrder:
-        filters.sortBy === "status"
-          ? filters.sortOrder === "asc"
-            ? "ascend"
-            : "descend"
-          : null,
-      render: (status) => (
-        <Tag color={getStatusColor(status)}>{getStatusText(status)}</Tag>
-      ),
-      width: 120,
-    },
-    {
-      title: "จำนวนวัน",
-      dataIndex: "accessDuration",
-      key: "accessDuration",
-      align: "center",
-      render: (val) => (val ? `${val} วัน` : "-"),
-      width: 90,
-    },
-    {
-      title: "จำนวนชั่วโมง",
-      dataIndex: "accessHours",
-      key: "accessHours",
-      align: "center",
-      render: (val) => (val ? `${val} ชม.` : "-"),
-      width: 90,
-    },
-    {
-      title: "ผู้สอน",
-      dataIndex: ["instructor", "name"],
-      key: "instructor",
-      sorter: true,
-      sortOrder:
-        filters.sortBy === "instructor"
-          ? filters.sortOrder === "asc"
-            ? "ascend"
-            : "descend"
-          : null,
-      render: (name) => (
-        <Space>
-          <UserOutlined style={{ color: "#8c8c8c" }} />
-          <Text>{name || "-"}</Text>
-        </Space>
-      ),
-      width: 180,
-    },
-    {
-      title: "หมวดหมู่",
-      dataIndex: ["category", "name"],
-      key: "category",
-      sorter: true,
-      sortOrder:
-        filters.sortBy === "category"
-          ? filters.sortOrder === "asc"
-            ? "ascend"
-            : "descend"
-          : null,
-      render: (name) => (
-        <Space>
-          <TagOutlined style={{ color: "#8c8c8c" }} />
-          <Text>{name || "-"}</Text>
-        </Space>
-      ),
-      width: 150,
-    },
-    {
-      title: "วิชา",
-      dataIndex: "subject",
-      key: "subject",
-      sorter: true,
-      sortOrder:
-        filters.sortBy === "subject"
-          ? filters.sortOrder === "asc"
-            ? "ascend"
-            : "descend"
-          : null,
-      render: (subject) => (
-        <Space>
-          <BookOutlined style={{ color: "#8c8c8c" }} />
-          <Text>{subject ? getSubjectLabel(subject) : "-"}</Text>
-        </Space>
-      ),
-      width: 180,
-    },
-    {
-      title: "ระดับชั้น",
-      dataIndex: "gradeLevel",
-      key: "gradeLevel",
-      sorter: true,
-      sortOrder:
-        filters.sortBy === "gradeLevel"
-          ? filters.sortOrder === "asc"
-            ? "ascend"
-            : "descend"
-          : null,
-      render: (gradeLevel) => {
-        if (!gradeLevel) return "-";
-        return (
-          <Space>
-            <BookOutlined style={{ color: "#8c8c8c" }} />
-            <Text>{getGradeLevelLabel(gradeLevel)}</Text>
-          </Space>
-        );
-      },
-      width: 120,
-    },
-    {
-      title: "การจัดการ",
-      key: "actions",
-      render: (_, record) => (
-        <Space size={8} wrap>
-          <Tooltip title="แก้ไข">
-            <Button
-              type="text"
-              icon={<EditOutlined />}
-              onClick={() => onEdit(record)}
-            />
-          </Tooltip>
-          <Tooltip title="ลบ">
-            <Button
-              type="text"
-              danger
-              icon={<DeleteOutlined />}
-              onClick={() => onDelete(record)}
-            />
-          </Tooltip>
-          <Tooltip title="จัดการข้อสอบ">
-            <Button
-              type="text"
-              icon={<FileTextOutlined />}
-              onClick={() => onManageExams(record)}
-            />
-          </Tooltip>
-          <Tooltip title="จัดการ Chapter">
-            <Button
-              type="text"
-              icon={<SettingOutlined />}
-              onClick={() =>
-                (window.location.href = `/admin/courses/chapter/${record.id}`)
-              }
-            />
-          </Tooltip>
-        </Space>
-      ),
-      width: 180,
-      fixed: "right",
-    },
-  ];
+  const totalPages = Math.max(1, Math.ceil((pagination.total || 0) / pagination.pageSize));
 
   return (
-    <Card
-      title={
-        <Space>
-          รายการคอร์สเรียน
-          <Tag color="blue" style={{ marginLeft: "8px" }}>
-            {pagination.totalCount} รายการ
-          </Tag>
-        </Space>
-      }
-    >
-      <Table
-        columns={columns}
-        dataSource={courses}
-        rowKey="id"
-        loading={loading}
-        scroll={{ x: 1200 }}
-        rowClassName={(record) =>
-          record.status === "DELETED" ? "deleted-row" : ""
-        }
-        onChange={onTableChange}
-        pagination={{
-          current: pagination.page,
-          pageSize: pagination.pageSize,
-          total: pagination.totalCount,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total, range) =>
-            `${range[0]}-${range[1]} จาก ${total} รายการ`,
-          pageSizeOptions: ["10", "20", "50", "100"],
-        }}
-        size="middle"
-      />
-    </Card>
+    <TooltipProvider delayDuration={200}>
+      <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+        <div className="mb-4 flex items-center gap-2">
+          <h3 className="font-semibold text-gray-900">รายการคอร์สเรียน</h3>
+          <Badge variant="secondary">{pagination.total} รายการ</Badge>
+        </div>
+
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>รูปปก</TableHead>
+                <SortableTableHead field="title" label="ชื่อคอร์ส" sortBy={filters.sortBy} sortOrder={filters.sortOrder} onSort={onSortChange} className="max-w-[180px]" />
+                <TableHead>รูปแบบ</TableHead>
+                <SortableTableHead field="price" label="ราคา" sortBy={filters.sortBy} sortOrder={filters.sortOrder} onSort={onSortChange} />
+                <SortableTableHead field="status" label="สถานะ" sortBy={filters.sortBy} sortOrder={filters.sortOrder} onSort={onSortChange} />
+                <TableHead className="text-center">จำนวนวัน</TableHead>
+                <TableHead className="text-center">จำนวนชั่วโมง</TableHead>
+                <SortableTableHead field="instructor" label="ผู้สอน" sortBy={filters.sortBy} sortOrder={filters.sortOrder} onSort={onSortChange} />
+                <SortableTableHead field="category" label="หมวดหมู่" sortBy={filters.sortBy} sortOrder={filters.sortOrder} onSort={onSortChange} />
+                <SortableTableHead field="subject" label="วิชา" sortBy={filters.sortBy} sortOrder={filters.sortOrder} onSort={onSortChange} />
+                <SortableTableHead field="gradeLevel" label="ระดับชั้น" sortBy={filters.sortBy} sortOrder={filters.sortOrder} onSort={onSortChange} />
+                <TableHead className="sticky right-0 z-10 border-l border-gray-100 bg-white text-right">จัดการ</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell colSpan={11}>
+                      <Skeleton className="h-10 w-full" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : courses.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={11} className="text-center text-gray-400">
+                    ไม่พบคอร์สเรียน
+                  </TableCell>
+                </TableRow>
+              ) : (
+                courses.map((record) => (
+                  <TableRow key={record.id} className={`group ${record.status === "DELETED" ? "opacity-60" : ""}`}>
+                    <TableCell>
+                      <div className="flex h-10 w-16 items-center justify-center overflow-hidden rounded-md bg-gray-100">
+                        {record.coverImageUrl ? (
+                          <img
+                            src={record.coverImageUrl}
+                            alt={record.title}
+                            className="h-full w-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.src = "/placeholder-course.svg";
+                            }}
+                          />
+                        ) : (
+                          <ImageOff className="h-4 w-4 text-gray-300" />
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="max-w-[180px]">
+                      <div className="flex items-center gap-1.5 font-semibold text-gray-900" title={record.title}>
+                        {record.isRecommended && <Star className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-400" />}
+                        <span className="truncate">{record.title}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        <Badge variant="outline" className={record.isFree ? "border-green-200 bg-green-50 text-green-700" : "border-blue-200 bg-blue-50 text-blue-700"}>
+                          {record.isFree ? "ฟรี" : "เสียค่าใช้จ่าย"}
+                        </Badge>
+                        {record.isPhysical && (
+                          <Badge variant="outline" className="border-orange-200 bg-orange-50 text-orange-700">
+                            ส่งของ
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1 font-semibold text-green-600">
+                        <DollarSign className="h-3.5 w-3.5" />
+                        {formatCurrency(record.price)}
+                      </div>
+                      {record.discountPrice && (
+                        <div className="text-xs text-gray-400 line-through">{formatCurrency(record.discountPrice)}</div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={STATUS_STYLES[record.status]}>
+                        {STATUS_LABELS[record.status] || record.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-center text-sm text-gray-600">
+                      {record.accessDuration ? `${record.accessDuration} วัน` : "-"}
+                    </TableCell>
+                    <TableCell className="text-center text-sm text-gray-600">
+                      {record.accessHours ? `${record.accessHours} ชม.` : "-"}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                        <UserIcon className="h-3.5 w-3.5 text-gray-400" />
+                        {record.instructor?.name || "-"}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                        <Tag className="h-3.5 w-3.5 text-gray-400" />
+                        {record.category?.name || "-"}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm text-gray-600">
+                      {record.subject ? getSubjectLabel(record.subject) : "-"}
+                    </TableCell>
+                    <TableCell className="text-sm text-gray-600">
+                      {record.gradeLevel ? getGradeLevelLabel(record.gradeLevel) : "-"}
+                    </TableCell>
+                    <TableCell className="sticky right-0 z-10 border-l border-gray-100 bg-white group-hover:bg-muted/50">
+                      <div className="flex items-center justify-end gap-1">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="text-blue-600" onClick={() => onEdit(record)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>แก้ไข</TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" onClick={() => onManageExams(record)}>
+                              <FileText className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>จัดการข้อสอบ</TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <a href={`/admin/courses/chapter/${record.id}`}>
+                              <Button variant="ghost" size="icon" type="button">
+                                <Settings className="h-4 w-4" />
+                              </Button>
+                            </a>
+                          </TooltipTrigger>
+                          <TooltipContent>จัดการ Chapter</TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="text-red-600" onClick={() => onDelete(record)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>ลบ</TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        <AdminPagination
+          current={pagination.current}
+          total={totalPages}
+          onPageChange={onPageChange}
+          className="mt-4"
+        />
+      </div>
+    </TooltipProvider>
   );
 }
