@@ -134,16 +134,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return
         }
 
-        // Try to recover session from server cookie (LINE login)
-        const res = await http.get("/api/auth/me")
-        const data: any = res.data || {}
-        if (active && res.status >= 200 && res.status < 300 && data && data.success !== false && data.data) {
-          setUser(data.data)
-          try { localStorage.setItem("user", JSON.stringify(data.data)) } catch {}
+        // Try to recover session from server cookie (LINE login). A 401 here
+        // just means there's no cookie-based session — that's the normal
+        // "not logged in" case, not an error, so don't log it.
+        try {
+          const res = await http.get("/api/auth/me")
+          const data: any = res.data || {}
+          if (active && data && data.success !== false && data.data) {
+            setUser(data.data)
+            try { localStorage.setItem("user", JSON.stringify(data.data)) } catch {}
+          }
+        } catch (e: any) {
+          if (e?.response?.status !== 401) {
+            console.error("Failed to recover session from cookie", e)
+          }
         }
       } catch (e) {
         console.error("Failed to initialize auth", e)
-        try { 
+        try {
           localStorage.removeItem("user")
           localStorage.removeItem("token")
         } catch {}

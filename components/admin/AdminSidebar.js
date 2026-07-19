@@ -108,8 +108,9 @@ export default function AdminSidebar({ collapsed, pathname }) {
 
   return (
     <>
-      {/* Logo/Brand */}
-      <div
+      {/* Logo/Brand — links back to the customer-facing home page */}
+      <Link
+        href="/"
         style={{
           height: "64px",
           display: "flex",
@@ -128,7 +129,7 @@ export default function AdminSidebar({ collapsed, pathname }) {
             Admin Panel
           </Text>
         )}
-      </div>
+      </Link>
 
       {/* Navigation Menu */}
       <Menu

@@ -1,14 +1,16 @@
 "use client";
-import { 
-  Form, 
-  Input, 
-  Button, 
-  Typography, 
+import Link from "next/link";
+import {
+  Form,
+  Input,
+  Button,
+  Typography,
   Alert
 } from "antd";
-import { 
-  UserOutlined, 
-  LockOutlined
+import {
+  UserOutlined,
+  LockOutlined,
+  HomeOutlined
 } from "@ant-design/icons";
 
 const { Title, Paragraph } = Typography;
@@ -122,15 +124,32 @@ export default function LoginForm({ error, setError, loading, onSubmit, isSmallM
 
         {/* Forgot Password */}
         <div style={{ textAlign: "center", marginTop: "16px" }}>
-          <Button type="link" style={{ 
-            color: "#9ca3af", 
-            padding: 0, 
-            fontSize: isSmallMobile ? "12px" : "14px" 
+          <Button type="link" style={{
+            color: "#9ca3af",
+            padding: 0,
+            fontSize: isSmallMobile ? "12px" : "14px"
           }}>
             ลืมรหัสผ่าน?
           </Button>
         </div>
       </Form>
+
+      {/* Back to home */}
+      <div style={{ textAlign: "center", marginTop: "24px" }}>
+        <Link
+          href="/"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+            color: "#6b7280",
+            fontSize: isSmallMobile ? "12px" : "14px",
+          }}
+        >
+          <HomeOutlined />
+          กลับสู่หน้าหลัก
+        </Link>
+      </div>
     </>
   );
 }

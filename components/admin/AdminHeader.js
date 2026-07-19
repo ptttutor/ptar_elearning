@@ -1,32 +1,34 @@
 "use client";
 
-import { Button, Avatar, Dropdown, Space, Typography } from "antd";
+import { useState } from "react";
+import Link from "next/link";
+import { Button, Avatar, Dropdown, Space, Typography, Tooltip } from "antd";
 import {
   UserOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   LogoutOutlined,
-  SettingOutlined,
+  KeyOutlined,
+  HomeOutlined,
 } from "@ant-design/icons";
+import ChangePasswordModal from "./ChangePasswordModal";
 
 const { Text } = Typography;
 
 export default function AdminHeader({ collapsed, onToggle, user, onLogout }) {
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+
   // User menu items
   const userMenuItems = [
-    // {
-    //   key: 'profile',
-    //   label: 'ข้อมูลส่วนตัว',
-    //   icon: <UserOutlined />,
-    // },
-    // {
-    //   key: 'settings',
-    //   label: 'การตั้งค่า',
-    //   icon: <SettingOutlined />,
-    // },
-    // {
-    //   type: 'divider',
-    // },
+    {
+      key: 'change-password',
+      label: 'แก้ไขรหัสผ่าน',
+      icon: <KeyOutlined />,
+      onClick: () => setChangePasswordOpen(true),
+    },
+    {
+      type: 'divider',
+    },
     {
       key: 'logout',
       label: 'ออกจากระบบ',
@@ -53,6 +55,13 @@ export default function AdminHeader({ collapsed, onToggle, user, onLogout }) {
 
       {/* Right side - User info and actions */}
       <Space size="middle">
+        {/* Back to home page */}
+        <Tooltip title="กลับสู่หน้าหลัก">
+          <Link href="/">
+            <Button type="text" icon={<HomeOutlined />} />
+          </Link>
+        </Tooltip>
+
         {/* User Profile Dropdown */}
         <Dropdown
           menu={{
@@ -80,6 +89,11 @@ export default function AdminHeader({ collapsed, onToggle, user, onLogout }) {
           </Space>
         </Dropdown>
       </Space>
+
+      <ChangePasswordModal
+        open={changePasswordOpen}
+        onClose={() => setChangePasswordOpen(false)}
+      />
     </div>
   );
 }
