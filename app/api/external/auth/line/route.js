@@ -89,7 +89,7 @@ export async function POST(request) {
     const externalToken = createExternalToken(user);
 
     // 5. ส่งข้อมูลกลับ
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: {
         token: externalToken,
@@ -105,6 +105,13 @@ export async function POST(request) {
         tokenType: 'Bearer'
       }
     });
+    response.cookies.set('jwt', externalToken, {
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+    });
+    return response;
 
   } catch (error) {
     console.error('❌ LINE login error:', error);

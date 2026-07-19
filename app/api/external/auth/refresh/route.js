@@ -21,7 +21,7 @@ export async function POST(request) {
 
     const decoded = verifyExternalToken(newToken);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: {
         token: newToken,
@@ -34,6 +34,13 @@ export async function POST(request) {
         }
       }
     });
+    response.cookies.set('jwt', newToken, {
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+    });
+    return response;
 
   } catch (error) {
     console.error('❌ Token refresh error:', error);

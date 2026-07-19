@@ -38,7 +38,7 @@ export async function POST(request) {
     const token = createExternalToken(user);
 
     // ส่งข้อมูลกลับ
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: {
         token: token,
@@ -54,6 +54,13 @@ export async function POST(request) {
         tokenType: 'Bearer'
       }
     });
+    response.cookies.set('jwt', token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+    });
+    return response;
 
   } catch (error) {
     console.error('❌ Token exchange error:', error);
