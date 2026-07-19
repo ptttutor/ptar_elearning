@@ -5,6 +5,7 @@ import { Calendar, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import Script from "next/script"
+import { getBaseUrl } from "@/lib/get-base-url"
 
 const PAGE_SIZE = 9
 const FETCH_LIMIT = 200
@@ -44,7 +45,8 @@ export default async function ArticlesIndexPage({ searchParams }: Props) {
   const page = Math.max(1, Number.isNaN(Number(raw)) ? 1 : Number(raw))
 
   const params = new URLSearchParams({ postType: "บทความ", limit: String(FETCH_LIMIT) })
-  const apiUrl = `${(process.env.API_BASE_URL || "").replace(/\/$/, "")}/api/posts?${params.toString()}`
+  const baseUrl = await getBaseUrl()
+  const apiUrl = `${baseUrl}/api/posts?${params.toString()}`
   let ok = false
   let status = 0
   let items: any[] = []

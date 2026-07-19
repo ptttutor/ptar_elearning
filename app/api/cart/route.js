@@ -1,0 +1,89 @@
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { requireUser } from '@/lib/requireUser';
+
+// DELETE /api/cart - ลบสินค้าออกจากตะกร้า (ตาม userId, itemType, itemId)
+export async function DELETE(req) {
+  try {
+    const session = await requireUser(req);
+    if (!session) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { itemType, itemId } = await req.json();
+    const userId = session.userId;
+    if (!userId || !itemType || !itemId) {
+      return NextResponse.json({ success: false, error: 'ข้อมูลไม่ครบถ้วน' }, { status: 400 });
+    }
+    const cart = await prisma.cart.findFirst({ where: { userId } });
+    if (!cart) {
+      return NextResponse.json({ success: false, error: 'ไม่พบตะกร้า' }, { status: 404 });
+    }
+    const deleted = await prisma.cartItem.deleteMany({
+      where: { cartId: cart.id, itemType, itemId }
+    });
+    if (deleted.count === 0) {
+      return NextResponse.json({ success: false, error: 'ไม่พบสินค้านี้ในตะกร้า' }, { status: 404 });
+    }
+    return NextResponse.json({ success: true, deletedCount: deleted.count });
+  } catch (error) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+// POST /api/cart - เพิ่มสินค้าเข้าตะกร้า
+export async function POST(req) {
+  try {
+    const session = await requireUser(req);
+    if (!session) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { itemType, itemId, title, quantity = 1, unitPrice } = await req.json();
+    const userId = session.userId;
+    if (!userId || !itemType || !itemId) {
+      return NextResponse.json({ success: false, error: 'ข้อมูลไม่ครบถ้วน' }, { status: 400 });
+    }
+    if (quantity !== 1) {
+      return NextResponse.json({ success: false, error: 'สามารถเพิ่มสินค้าแต่ละชิ้นได้ครั้งละ 1 เท่านั้น' }, { status: 400 });
+    }
+    // หา cart ของ user หรือสร้างใหม่
+  let cart = await prisma.cart.findFirst({ where: { userId } });
+    if (!cart) {
+      cart = await prisma.cart.create({ data: { userId } });
+    }
+    // หา item ซ้ำ ถ้ามีให้ reject
+    const existing = await prisma.cartItem.findFirst({ where: { cartId: cart.id, itemType, itemId } });
+    if (existing) {
+      return NextResponse.json({ success: false, error: 'มีสินค้านี้ในตะกร้าแล้ว' }, { status: 400 });
+    }
+    // เพิ่มใหม่เท่านั้น
+    const cartItem = await prisma.cartItem.create({
+      data: { cartId: cart.id, itemType, itemId, title, quantity: 1, unitPrice }
+    });
+    return NextResponse.json({ success: true, data: cartItem });
+  } catch (error) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+// GET /api/cart?userId=xxx - ดูตะกร้าของ user
+export async function GET(req) {
+  try {
+    const session = await requireUser(req);
+    if (!session) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = session.userId;
+    if (!userId) {
+      return NextResponse.json({ success: false, error: 'กรุณาระบุ userId' }, { status: 400 });
+    }
+    const cart = await prisma.cart.findFirst({
+      where: { userId },
+      include: { items: true }
+    });
+    return NextResponse.json({ success: true, data: cart });
+  } catch (error) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}

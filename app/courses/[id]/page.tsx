@@ -20,8 +20,6 @@ import { Textarea } from "@/components/ui/textarea"
 import Player from "@vimeo/player"
 import { AspectRatio } from "@/components/ui/aspect-ratio"
 
-const API_BASE = (process.env.NEXT_PUBLIC_ELEARNING_BASE_URL || "").replace(/\/$/, "");
-
 const fadeInUp = {
   initial: { opacity: 0, y: 30 },
   animate: { opacity: 1, y: 0 },

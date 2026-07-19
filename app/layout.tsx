@@ -2,10 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Sarabun } from "next/font/google"
 import "./globals.css"
-import { Navigation } from "@/components/navigation"
-import { AuthProvider } from "@/components/auth-provider"
-import { CartProvider } from "@/components/cart-provider"
-import { Toaster } from "@/components/ui/toaster"
+import { SiteChrome } from "@/components/site-chrome"
 
 const sarabun = Sarabun({
   subsets: ["thai", "latin"],
@@ -33,13 +30,7 @@ export default function RootLayout({
   return (
     <html lang="th">
       <body className={`font-sans ${sarabun.variable} antialiased`}>
-        <AuthProvider>
-          <CartProvider>
-            <Navigation />
-            <main className="pt-16 lg:pt-20">{children}</main>
-            <Toaster />
-          </CartProvider>
-        </AuthProvider>
+        <SiteChrome>{children}</SiteChrome>
       </body>
     </html>
   )

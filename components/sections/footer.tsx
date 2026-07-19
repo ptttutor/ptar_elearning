@@ -191,9 +191,7 @@ export function Footer() {
                 ข้อกำหนดการใช้งาน
               </Link>
               <Link
-                href="https://backoffice.ptarchem.com/"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/admin"
                 className="hover:text-primary transition-colors duration-200"
               >
                 จัดการหลังบ้าน

@@ -1,18 +1,10 @@
 import http from "@/lib/http"
 
-
-const API_BASE_URL =
-  (process.env.NEXT_PUBLIC_ELEARNING_BASE_URL as string | undefined) ||
-  (process.env.API_BASE_URL as string | undefined) ||
-  "http://localhost:3000/"
-
 export async function apiCall(endpoint: string, options: RequestInit = {}) {
   const method = (options.method || "GET").toUpperCase()
   const headers = options.headers as Record<string, string> | undefined
   const data = options.body ? (() => { try { return JSON.parse(options.body as any) } catch { return options.body } })() : undefined
-  const url = endpoint.startsWith("http")
-    ? endpoint
-    : `${API_BASE_URL.replace(/\/$/, "")}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`
+  const url = endpoint.startsWith("/") ? endpoint : `/${endpoint}`
 
   switch (method) {
     case "GET":

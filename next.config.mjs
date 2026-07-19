@@ -1,9 +1,5 @@
 "use server"
 
-const PORT = process.env.PORT ?? 3001
-
-const API_PROXY_TARGET = process.env.API_PROXY_TARGET || "http://localhost:3005";
-
 const nextConfig = {
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
@@ -12,12 +8,15 @@ const nextConfig = {
     // (up to ~1.3MB PNGs) — let Next.js resize/compress them on the fly
     // instead of shipping the raw file to every visitor. Also allowlist the
     // other external hosts next/image actually renders across the site:
-    // YouTube/Vumbnail video thumbnails, and the Unsplash fallback images.
+    // YouTube/Vumbnail video thumbnails, the Unsplash fallback images, and
+    // Cloudinary (admin-uploaded images).
     remotePatterns: [
       { protocol: "https", hostname: "*.public.blob.vercel-storage.com" },
       { protocol: "https", hostname: "img.youtube.com" },
       { protocol: "https", hostname: "vumbnail.com" },
       { protocol: "https", hostname: "images.unsplash.com" },
+      { protocol: "https", hostname: "res.cloudinary.com" },
+      { protocol: "https", hostname: "*.vercel-storage.com" },
     ],
   },
 
@@ -34,15 +33,6 @@ const nextConfig = {
 
     return config
   },
-
-  async rewrites() {
-    return [
-      { source: "/api/reviews",       destination: `${API_PROXY_TARGET}/api/reviews` },
-      { source: "/api/reviews/:path*",destination: `${API_PROXY_TARGET}/api/reviews/:path*` },
-
-    ];
-  },
 };
-
 
 export default nextConfig

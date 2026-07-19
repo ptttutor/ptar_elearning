@@ -1,5 +1,6 @@
 import Image from "next/image"
 import { notFound } from "next/navigation"
+import { getBaseUrl } from "@/lib/get-base-url"
 
 type PageProps = { params: Promise<{ slug: string }> }
 
@@ -83,9 +84,9 @@ function splitParagraphs(text?: string) {
 
 async function fetchArticle(slug: string): Promise<ArticleItem | null> {
   const normalizedSlug = normalizeSlug(slug)
-  const baseUrl = process.env.API_BASE_URL?.replace(/\/$/, "") || ""
+  const baseUrl = await getBaseUrl()
   const params = new URLSearchParams({ postType: "บทความ", limit: String(FETCH_LIMIT) })
-  const apiUrl = baseUrl ? `${baseUrl}/api/posts?${params.toString()}` : `/api/posts?${params.toString()}`
+  const apiUrl = `${baseUrl}/api/posts?${params.toString()}`
   try {
     const res = await fetch(apiUrl, { cache: "no-store" })
     const text = await res.text()

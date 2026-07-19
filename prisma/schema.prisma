@@ -1,0 +1,765 @@
+// ระบบตะกร้าสินค้า (Cart)
+model Cart {
+  id        String      @id @default(uuid())
+  userId    String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  items     CartItem[]
+
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  cartId    String
+  itemType  ItemType
+  itemId    String
+  title     String?
+  quantity  Int      @default(1)
+  unitPrice Float?
+  createdAt DateTime @default(now())
+
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+}
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String        @id @default(uuid())
+  email        String?       @unique // ทำให้ email เป็น optional สำหรับ LINE users
+  name         String?
+  password     String?
+  image        String?       // สำหรับ profile image จาก LINE
+  lineId       String?       @unique // LINE User ID
+  role         Role          @default(STUDENT)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  courses      Course[]      @relation("InstructorCourses")
+  enrollments  Enrollment[]
+  examAttempts ExamAttempt[]
+  orders       Order[]
+  posts        Post[]        @relation("AuthorPosts")
+  postContents PostContent[] @relation("PostContentAuthor")
+  reviews      Review[]
+  couponUsages CouponUsage[]
+  downloads    EbookDownload[]
+  accounts     Account[]
+  sessions     Session[]
+  carts        Cart[]
+}
+
+// NextAuth.js required models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Course {
+  id           String       @id @default(uuid())
+  title        String
+  description  String?      @db.Text
+  price        Float        @default(0)
+  discountPrice Float?      // ราคาหลังส่วนลด
+  sampleVideo  String?      // URL วิดีโอตัวอย่าง
+  duration     Int?
+  accessDuration Int?       @default(60) // ระยะเวลาที่เรียนได้ (วัน)
+  accessHours    Int?       @default(120) // จำนวนชั่วโมงที่เรียนได้ (ถ้าต้องการจำกัดเป็นชั่วโมง)
+  isFree       Boolean      @default(false)
+  isRecommended Boolean     @default(false) // คอร์สแนะนำ
+  status       CourseStatus @default(DRAFT)
+  instructorId String
+  categoryId   String?
+  subject      Subjects?
+  gradeLevel   GradeLevel?
+  coverImageUrl String?
+  coverPublicId String?
+  isPhysical   Boolean      @default(false) // หากเป็น physical course (เช่น หนังสือประกอบ, CD, DVD)
+  weight       Float?       // น้ำหนัก (กรัม) สำหรับการคำนวณค่าจัดส่ง
+  dimensions   String?      // ขนาด "กว้าง x ยาว x สูง (ซม.)"
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  chapters     Chapter[]
+  exams        Exam[]
+  category     Category?    @relation(fields: [categoryId], references: [id])
+  instructor   User         @relation("InstructorCourses", fields: [instructorId], references: [id])
+  enrollments  Enrollment[]
+  orders       Order[]
+  reviews      Review[]
+}
+
+model Chapter {
+  id        String    @id @default(uuid())
+  title     String
+  order     Int
+  courseId  String
+  createdAt DateTime  @default(now())
+  course    Course    @relation(fields: [courseId], references: [id])
+  contents  Content[]
+}
+
+model Content {
+  id          String      @id @default(uuid())
+  title       String
+  contentType ContentType
+  contentUrl  String
+  order       Int
+  chapterId   String
+  createdAt   DateTime    @default(now())
+  chapter     Chapter     @relation(fields: [chapterId], references: [id])
+}
+
+model Enrollment {
+  id         String       @id @default(uuid())
+  userId     String
+  courseId   String
+  progress   Float        @default(0)
+  status     EnrollStatus @default(ACTIVE)
+  viewedContentIds Json   @default("[]")
+  enrolledAt DateTime     @default(now())
+  accessDuration Int?     // override (วัน) รายบุคคล ถ้าไม่กำหนดใช้ค่าจาก Course.accessDuration
+  accessHours    Int?     // override (ชั่วโมง) รายบุคคล ถ้าไม่กำหนดใช้ค่าจาก Course.accessHours
+  course     Course       @relation(fields: [courseId], references: [id])
+  user       User         @relation(fields: [userId], references: [id])
+
+  @@unique([userId, courseId])
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  courses     Course[]
+}
+
+model Order {
+  id             String      @id @default(uuid())
+  orderNumber    String      @unique @default(cuid())
+  userId         String
+  courseId       String?
+  ebookId        String?
+  orderType      OrderType   @default(COURSE)
+  status         OrderStatus @default(PENDING)
+  subtotal       Float       // ราคาสินค้า
+  shippingFee    Float       @default(0)
+  tax            Float       @default(0)
+  discount       Float       @default(0)
+  couponDiscount Float       @default(0)
+  total          Float
+  notes          String?
+  couponId       String?
+  couponCode     String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  
+  user           User        @relation(fields: [userId], references: [id])
+  course         Course?     @relation(fields: [courseId], references: [id])
+  ebook          Ebook?      @relation(fields: [ebookId], references: [id])
+  coupon         Coupon?     @relation(fields: [couponId], references: [id])
+  items          OrderItem[]
+  payment        Payment?
+  shipping       Shipping?
+  couponUsages   CouponUsage[]
+  downloads      EbookDownload[]
+}
+
+model Payment {
+  id           String        @id @default(uuid())
+  orderId      String        @unique
+  method       PaymentMethod @default(BANK_TRANSFER)
+  status       PaymentStatus @default(PENDING)
+  amount       Float
+  paidAt       DateTime?
+  ref          String?
+  slipUrl      String?
+  uploadedAt   DateTime?
+  verifiedAt   DateTime?
+  verifiedBy   String?       // Admin ID ที่ตรวจสอบ
+  notes        String?
+  
+  // Slip Analysis Fields
+  slipAnalysisData    String?      // JSON ข้อมูลการวิเคราะห์สลิป
+  detectedAmount      Float?       // จำนวนเงินที่ AI ตรวจพบ
+  detectedDate        DateTime?    // วันที่ที่ AI ตรวจพบ
+  detectedTime        String?      // เวลาที่ AI ตรวจพบ
+  senderAccount       String?      // บัญชีผู้โอน
+  senderName          String?      // ชื่อผู้โอน
+  senderBank          String?      // ธนาคารผู้โอน
+  receiverAccount     String?      // บัญชีผู้รับ
+  receiverName        String?      // ชื่อผู้รับ
+  receiverBank        String?      // ธนาคารผู้รับ
+  transactionRef      String?      // เลขอ้างอิงธุรกรรม
+  confidenceScore     Float?       // คะแนนความเชื่อมั่นจาก AI
+  validationScore     String?      // คะแนนการตรวจสอบ เช่น "3/3"
+  validationPassed    Boolean?     // ผ่านการตรวจสอบหรือไม่
+  analysisError       String?      // ข้อผิดพลาดในการวิเคราะห์
+  lastAnalyzedAt      DateTime?    // วันที่วิเคราะห์ครั้งล่าสุด
+  
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  
+  order        Order         @relation(fields: [orderId], references: [id])
+}
+
+enum Role {
+  ADMIN
+  INSTRUCTOR
+  STUDENT
+}
+
+enum CourseStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  DELETED
+}
+
+enum ContentType {
+  VIDEO
+  PDF
+  LINK
+  QUIZ
+  ASSIGNMENT
+}
+
+enum EnrollStatus {
+  ACTIVE
+  COMPLETED
+  CANCELED
+}
+
+enum OrderType {
+  COURSE
+  EBOOK
+  MIXED
+}
+
+enum OrderStatus {
+  PENDING
+  PENDING_PAYMENT
+  PENDING_VERIFICATION
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  BANK_TRANSFER
+  CREDIT_CARD
+  PROMPTPAY
+  TRUE_MONEY
+  FREE
+}
+
+enum PaymentStatus {
+  PENDING
+  PENDING_VERIFICATION
+  COMPLETED
+  REJECTED
+  FAILED
+  REFUNDED
+}
+
+enum ShippingMethod {
+  STANDARD
+  EXPRESS
+  KERRY
+  THAILAND_POST
+  JT_EXPRESS
+  FLASH_EXPRESS
+  NINJA_VAN
+  DHL
+  FEDEX
+}
+
+enum ShippingStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+  RETURNED
+}
+
+enum EbookFormat {
+  PDF
+  EPUB
+  MOBI
+}
+
+enum CouponType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  FREE_SHIPPING
+}
+
+enum ApplicableType {
+  ALL
+  COURSE_ONLY
+  EBOOK_ONLY
+  CATEGORY
+  SPECIFIC_ITEM
+}
+
+enum ItemType {
+  COURSE
+  EBOOK
+}
+
+model PostType {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  posts       Post[]
+}
+
+model Post {
+  id                  String    @id @default(uuid())
+  title               String
+  content             String?
+  excerpt             String?
+  imageUrl            String?
+  imageUrlMobileMode  String?
+  slug                String?   @unique
+  isActive            Boolean   @default(true)
+  isFeatured          Boolean   @default(false)
+  publishedAt         DateTime?
+  authorId            String
+  postTypeId          String
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  author              User      @relation("AuthorPosts", fields: [authorId], references: [id])
+  postType            PostType  @relation(fields: [postTypeId], references: [id])
+  postContents        PostContent[]
+}
+
+model PostContent {
+  id          String   @id @default(uuid())
+  urlImg      String?  // URL รูปภาพ
+  name        String?  // ชื่อรูปหรือ caption
+  description String?  // คำอธิบายรูป
+  authorId    String   // ผู้สร้าง content
+  postId      String   // เชื่อมกับ Post
+  createdAt   DateTime @default(now())
+  
+  author      User     @relation("PostContentAuthor", fields: [authorId], references: [id])
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  @@index([postId])
+  @@index([authorId])
+}
+
+// ระบบรีวิวสำหรับ Course และ Ebook
+model Review {
+  id         String    @id @default(uuid())
+  userId     String
+  courseId   String?   // nullable สำหรับรีวิว ebook
+  ebookId    String?   // nullable สำหรับรีวิว course
+  rating     Int       @default(5)
+  title      String?   // หัวข้อรีวิว
+  comment    String?
+  isActive   Boolean   @default(true)
+  isVerified Boolean   @default(false) // ตรวจสอบว่าเป็นผู้ซื้อจริง
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course     Course?   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  ebook      Ebook?    @relation(fields: [ebookId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId], name: "unique_user_course_review")
+  @@unique([userId, ebookId], name: "unique_user_ebook_review")
+  @@index([userId])
+  @@index([courseId])
+  @@index([ebookId])
+  @@index([rating])
+  @@index([createdAt])
+}
+
+
+
+
+
+model Ebook {
+  id              String        @id @default(uuid())
+  title           String
+  description     String?
+  author          String
+  isbn            String?       @unique
+  price           Float
+  discountPrice   Float?
+  coverImageUrl   String?
+  previewUrl      String?
+  fileUrl         String?
+  fileSize        Int?
+  pageCount       Int?
+  language        String        @default("th")
+  format          EbookFormat   @default(PDF)
+  isPhysical      Boolean       @default(false)
+  weight          Float?        // กรัม
+  dimensions      String?       // "กว้าง x ยาว x สูง (ซม.)"
+  downloadLimit   Int?          // จำกัดการดาวน์โหลด
+  accessDuration  Int?          // ระยะเวลาการเข้าถึง (วัน)
+  isActive        Boolean       @default(true)
+  isFeatured      Boolean       @default(false)
+  publishedAt     DateTime?
+  publishedYear   Int?          // ปีที่หนังสือถูกตีพิมพ์ เช่น 2025
+  categoryId      String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  category        EbookCategory? @relation(fields: [categoryId], references: [id])
+  orders          Order[]
+  reviews         Review[]
+  downloads       EbookDownload[]
+}
+
+model EbookCategory {
+  id          String  @id @default(uuid())
+  name        String  @unique
+  description String?
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  ebooks      Ebook[]
+}
+
+
+
+model Shipping {
+  id                String         @id @default(uuid())
+  orderId           String         @unique
+  recipientName     String
+  recipientPhone    String
+  address           String
+  district          String
+  province          String
+  postalCode        String
+  country           String         @default("Thailand")
+  shippingMethod    ShippingMethod @default(STANDARD)
+  shippingFee       Float          @default(0)
+  trackingNumber    String?
+  status            ShippingStatus @default(PENDING)
+  estimatedDelivery DateTime?
+  shippedAt         DateTime?
+  deliveredAt       DateTime?
+  notes             String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  
+  order             Order          @relation(fields: [orderId], references: [id])
+}
+
+model ExamCategory {
+  id          String     @id @default(uuid())
+  name        String     @unique
+  description String?
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  exams       ExamBank[]
+}
+
+model ExamBank {
+  id          String       @id @default(uuid())
+  title       String
+  description String?
+  categoryId  String?
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  category    ExamCategory? @relation(fields: [categoryId], references: [id])
+  files       ExamFile[]
+}
+
+model ExamFile {
+  id         String   @id @default(uuid())
+  examId     String
+  fileName   String
+  filePath   String
+  fileType   String?
+  fileSize   Int?
+  isDownload Boolean  @default(true)
+  uploadedAt DateTime @default(now())
+  exam       ExamBank @relation(fields: [examId], references: [id], onDelete: Cascade)
+}
+
+// ระบบ Coupon/Discount Code
+model Coupon {
+  id              String         @id @default(uuid())
+  code            String         @unique
+  name            String         // ชื่อโปรโมชั่น
+  description     String?
+  type            CouponType     @default(PERCENTAGE)
+  value           Float          // เปอร์เซ็นต์ หรือ จำนวนเงิน
+  minOrderAmount  Float?         // ยอดขั้นต่ำ
+  maxDiscount     Float?         // ส่วนลดสูงสุด (สำหรับ percentage)
+  usageLimit      Int?           // จำนวนครั้งที่ใช้ได้ทั้งหมด
+  usageCount      Int            @default(0)
+  userUsageLimit  Int?           // จำนวนครั้งที่ user คนเดียวใช้ได้
+  isActive        Boolean        @default(true)
+  validFrom       DateTime
+  validUntil      DateTime
+  applicableType  ApplicableType @default(ALL)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  // Relations
+  orders          Order[]
+  usages          CouponUsage[]
+  categories      CouponCategory[]
+  items           CouponItem[]
+}
+
+model CouponUsage {
+  id        String   @id @default(uuid())
+  couponId  String
+  userId    String
+  orderId   String
+  usedAt    DateTime @default(now())
+  
+  coupon    Coupon   @relation(fields: [couponId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  order     Order    @relation(fields: [orderId], references: [id])
+  
+  @@unique([couponId, userId, orderId])
+}
+
+model CouponCategory {
+  id         String   @id @default(uuid())
+  couponId   String
+  categoryId String
+  itemType   ItemType // COURSE หรือ EBOOK
+  
+  coupon     Coupon   @relation(fields: [couponId], references: [id])
+  
+  @@unique([couponId, categoryId, itemType])
+}
+
+model CouponItem {
+  id       String   @id @default(uuid())
+  couponId String
+  itemId   String
+  itemType ItemType
+  
+  coupon   Coupon   @relation(fields: [couponId], references: [id])
+  
+  @@unique([couponId, itemId, itemType])
+}
+
+// ระบบ Order Items (สำหรับ multiple items ต่อ order)
+model OrderItem {
+  id         String   @id @default(uuid())
+  orderId    String
+  itemType   ItemType
+  itemId     String
+  title      String   // เก็บชื่อสินค้าตอนสั่งซื้อ
+  quantity   Int      @default(1)
+  unitPrice  Float
+  totalPrice Float
+  createdAt  DateTime @default(now())
+  
+  order      Order    @relation(fields: [orderId], references: [id])
+}
+
+// ระบบ Download Management
+model EbookDownload {
+  id           String    @id @default(uuid())
+  userId       String
+  ebookId      String
+  orderId      String
+  downloadUrl  String
+  expiresAt    DateTime
+  downloadedAt DateTime?
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime  @default(now())
+  
+  user         User      @relation(fields: [userId], references: [id])
+  ebook        Ebook     @relation(fields: [ebookId], references: [id])
+  order        Order     @relation(fields: [orderId], references: [id])
+}
+// ระบบข้อสอบพื้นฐาน
+model Exam {
+  id              String       @id @default(uuid())
+  title           String
+  description     String?
+  courseId        String?      // เชื่อมกับ Course
+  examType        ExamType     @default(QUIZ)
+  timeLimit       Int?         // เวลาจำกัด (นาที)
+  totalMarks      Int          @default(0)
+  passingMarks    Int          @default(0)
+  attemptsAllowed Int          @default(1)
+  showResults     Boolean      @default(true)
+  showAnswers     Boolean      @default(false)
+  isActive        Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  
+  course          Course?      @relation(fields: [courseId], references: [id])
+  questions       Question[]
+  attempts        ExamAttempt[]
+  
+  @@index([courseId])
+}
+
+// คำถาม
+model Question {
+  id              String         @id @default(uuid())
+  examId          String
+  questionText    String
+  questionImage   String?        // รูปประกอบ (optional)
+  questionType    QuestionType   @default(MULTIPLE_CHOICE)
+  marks           Int            @default(1)
+  explanation     String?        // เฉลย
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  exam            Exam           @relation(fields: [examId], references: [id], onDelete: Cascade)
+  options         QuestionOption[]
+  answers         StudentAnswer[]
+  
+  @@index([examId])
+}
+
+// ตัวเลือกคำตอบ
+model QuestionOption {
+  id          String   @id @default(uuid())
+  questionId  String
+  optionText  String
+  isCorrect   Boolean  @default(false)
+  order       Int      @default(0)
+  
+  question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  
+  @@index([questionId])
+}
+
+// การทำข้อสอบ
+model ExamAttempt {
+  id              String          @id @default(uuid())
+  examId          String
+  userId          String
+  status          ExamStatus      @default(IN_PROGRESS)
+  startedAt       DateTime        @default(now())
+  completedAt     DateTime?
+  totalQuestions  Int             @default(0)
+  correctAnswers  Int             @default(0)
+  totalMarks      Int             @default(0)
+  obtainedMarks   Int             @default(0)
+  percentage      Float           @default(0)
+  passed          Boolean         @default(false)
+  
+  exam            Exam            @relation(fields: [examId], references: [id])
+  user            User            @relation(fields: [userId], references: [id])
+  answers         StudentAnswer[]
+  
+  @@unique([examId, userId]) // ทำได้ครั้งเดียว (ถ้าต้องการหลายครั้ง ให้เอาออก)
+  @@index([examId])
+  @@index([userId])
+}
+
+// คำตอบนักเรียน
+model StudentAnswer {
+  id           String      @id @default(uuid())
+  attemptId    String
+  questionId   String
+  optionId     String?     // สำหรับ Multiple Choice
+  textAnswer   String?     // สำหรับ Text Answer
+  isCorrect    Boolean     @default(false)
+  marks        Int         @default(0)
+  answeredAt   DateTime    @default(now())
+  
+  attempt      ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question     Question    @relation(fields: [questionId], references: [id])
+  
+  @@unique([attemptId, questionId])
+  @@index([attemptId])
+}
+
+
+enum ExamType {
+  PRETEST     // ทดสอบก่อนเรียน
+  POSTTEST    // ทดสอบหลังเรียน
+  QUIZ        // แบบทดสอบ
+  MIDTERM     // สอบกลางภาค
+  FINAL       // สอบปลายภาค
+  PRACTICE    // ฝึกทำ
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE  // เลือกตอบ
+  TRUE_FALSE       // จริง/เท็จ
+  SHORT_ANSWER     // ตอบสั้น
+}
+
+enum ExamStatus {
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum Subjects {
+  Thai                    // ภาษาไทย / 泰语
+  Mathematics             // คณิตศาสตร์ / 数学
+  Science                 // วิทยาศาสตร์ / 科学
+  Physics                 // ฟิสิกส์ / 物理
+  Chemistry               // เคมี / 化学
+  Biology                 // ชีววิทยา / 生物
+  SocialStudies           // สังคมศึกษา ศาสนา วัฒนธรรม / 社会学, 宗教, 文化
+  History                 // ประวัติศาสตร์ / 历史
+  Geography               // ภูมิศาสตร์ / 地理
+  HealthAndPE             // สุขศึกษาและพลศึกษา / 健康与体育
+  Art                     // ศิลปะ / 美术
+  Music                   // ดนตรี / 音乐
+  OccupationsAndTechnology // การงานอาชีพและเทคโนโลยี / 职业与技术
+  ComputerScience         // วิทยาการคอมพิวเตอร์ / 计算机科学
+  ForeignLanguages        // ภาษาต่างประเทศ / 外语
+  English                 // ภาษาอังกฤษ / 英语
+  Chinese                 // ภาษาจีน / 汉语
+  Japanese                // ภาษาญี่ปุ่น / 日语
+}
+enum GradeLevel {
+  JUNIOR_HIGH             // ม.ต้น (มัธยมศึกษาตอนต้น)
+  SENIOR_HIGH             // ม.ปลาย (มัธยมศึกษาตอนปลาย)
+}

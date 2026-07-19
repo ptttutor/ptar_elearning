@@ -9,12 +9,8 @@ import { useAuth } from "@/components/auth-provider"
 import LoginModal from "@/components/login-modal"
 import http from "@/lib/http"
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || '').replace(/\/$/, '')
 const normalizeUrl = (u?: string | null): string => {
   const url = String(u || '').trim()
-  if (!url) return ''
-  if (/^https?:\/\//i.test(url)) return url
-  if (API_BASE) return `${API_BASE}${url.startsWith('/') ? '' : '/'}${url}`
   return url
 }
 

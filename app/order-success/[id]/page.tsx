@@ -650,11 +650,6 @@ export default function OrderSuccessPage() {
   const canManualEnroll =
     isCompleted && isAuthenticated && !!getSafeUserId(user);
 
-  const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(
-    /\/$/,
-    ""
-  );
-
   useEffect(() => {
     let cancelled = false;
     (async () => {
