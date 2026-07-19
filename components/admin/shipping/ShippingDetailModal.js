@@ -1,411 +1,249 @@
 "use client";
 import {
-  Modal,
-  Descriptions,
-  Card,
-  Space,
-  Typography,
-  Tag,
-  Spin,
-  Button,
-} from "antd";
+  Eye,
+  User,
+  Phone,
+  MapPin,
+  Calendar,
+  FileText,
+  ShoppingCart,
+  Truck,
+  Send,
+  Rocket,
+  Zap,
+  Package,
+  Car,
+  Copy,
+  Loader2,
+} from "lucide-react";
 import {
-  EyeOutlined,
-  UserOutlined,
-  PhoneOutlined,
-  EnvironmentOutlined,
-  CalendarOutlined,
-  FileTextOutlined,
-  ShoppingCartOutlined,
-  TruckOutlined,
-  SendOutlined,
-  RocketOutlined,
-  ThunderboltOutlined,
-  InboxOutlined,
-  CarOutlined,
-  CopyOutlined,
-} from "@ant-design/icons";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 
-const { Text } = Typography;
+const STATUS_META = {
+  PENDING: { label: "รอดำเนินการ", className: "border-gray-200 bg-gray-50 text-gray-700" },
+  PROCESSING: { label: "กำลังเตรียม", className: "border-blue-200 bg-blue-50 text-blue-700" },
+  SHIPPED: { label: "จัดส่งแล้ว", className: "border-amber-200 bg-amber-50 text-amber-700" },
+  DELIVERED: { label: "ส่งถึงแล้ว", className: "border-green-200 bg-green-50 text-green-700" },
+  CANCELLED: { label: "ยกเลิก", className: "border-red-200 bg-red-50 text-red-700" },
+};
 
-export default function ShippingDetailModal({
-  open,
-  onClose,
-  shipment,
-  loading,
-}) {
-  const formatDate = (dateString) => {
-    return dateString ? new Date(dateString).toLocaleString("th-TH") : "-";
-  };
+const COMPANY_META = {
+  KERRY: { label: "Kerry Express", icon: Truck, className: "text-emerald-600" },
+  THAILAND_POST: { label: "ไปรษณีย์ไทย", icon: Send, className: "text-blue-600" },
+  JT_EXPRESS: { label: "J&T Express", icon: Package, className: "text-purple-600" },
+  FLASH_EXPRESS: { label: "Flash Express", icon: Zap, className: "text-orange-600" },
+  NINJA_VAN: { label: "Ninja Van", icon: Rocket, className: "text-pink-600" },
+  PENDING: { label: "รอเลือก", icon: Car, className: "text-gray-400" },
+};
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "PENDING":
-        return "default";
-      case "PROCESSING":
-        return "processing";
-      case "SHIPPED":
-        return "warning";
-      case "DELIVERED":
-        return "success";
-      case "CANCELLED":
-        return "error";
-      default:
-        return "default";
-    }
-  };
+export default function ShippingDetailModal({ open, onClose, shipment, loading }) {
+  const { toast } = useToast();
 
-  const getStatusText = (status) => {
-    switch (status) {
-      case "PENDING":
-        return "รอดำเนินการ";
-      case "PROCESSING":
-        return "กำลังเตรียม";
-      case "SHIPPED":
-        return "จัดส่งแล้ว";
-      case "DELIVERED":
-        return "ส่งถึงแล้ว";
-      case "CANCELLED":
-        return "ยกเลิก";
-      default:
-        return status;
-    }
-  };
+  const formatDate = (dateString) => (dateString ? new Date(dateString).toLocaleString("th-TH") : "-");
+  const statusMeta = shipment ? STATUS_META[shipment.status] || { label: shipment.status, className: "" } : null;
+  const companyMeta = shipment ? COMPANY_META[shipment.shippingMethod] || { label: shipment.shippingMethod || "ไม่ระบุ", icon: Car, className: "text-gray-400" } : null;
+  const CompanyIcon = companyMeta?.icon || Car;
 
-  const getCompanyIcon = (company) => {
-    switch (company) {
-      case "KERRY":
-        return <TruckOutlined style={{ color: "#52c41a" }} />;
-      case "THAILAND_POST":
-        return <SendOutlined style={{ color: "#1890ff" }} />;
-      case "JT_EXPRESS":
-        return <InboxOutlined style={{ color: "#722ed1" }} />;
-      case "FLASH_EXPRESS":
-        return <ThunderboltOutlined style={{ color: "#fa8c16" }} />;
-      case "NINJA_VAN":
-        return <RocketOutlined style={{ color: "#eb2f96" }} />;
-      default:
-        return <CarOutlined style={{ color: "#8c8c8c" }} />;
-    }
-  };
-
-  const getCompanyName = (company) => {
-    switch (company) {
-      case "KERRY":
-        return "Kerry Express";
-      case "THAILAND_POST":
-        return "ไปรษณีย์ไทย";
-      case "JT_EXPRESS":
-        return "J&T Express";
-      case "FLASH_EXPRESS":
-        return "Flash Express";
-      case "NINJA_VAN":
-        return "Ninja Van";
-      case "PENDING":
-        return "รอเลือก";
-      default:
-        return company || "ไม่ระบุ";
-    }
-  };
-
-  // ฟังก์ชันรวมข้อมูลทั้งหมดเป็นข้อความเดียว
   const getAllShippingText = () => {
     if (!shipment) return "";
-    let lines = [];
-    lines.push(`ชื่อผู้รับ: ${shipment.recipientName || "-"}`);
-    lines.push(`เบอร์โทร: ${shipment.recipientPhone || "-"}`);
-    lines.push(`ที่อยู่: ${shipment.address || "-"}`);
-    lines.push(`ตำบล/แขวง: ${shipment.district || "-"}`);
-    lines.push(`จังหวัด: ${shipment.province || "-"}`);
-    lines.push(`รหัสไปรษณีย์: ${shipment.postalCode || "-"}`);
-    lines.push(`ประเทศ: ${shipment.country || "-"}`);
-    lines.push(`บริษัทขนส่ง: ${getCompanyName(shipment.shippingMethod)}`);
-    lines.push(`สถานะ: ${getStatusText(shipment.status)}`);
-    lines.push(`เลขติดตาม: ${shipment.trackingNumber || "-"}`);
-    lines.push(`วันที่จัดส่ง: ${formatDate(shipment.shippedAt)}`);
-    lines.push(`วันที่ส่งถึง: ${formatDate(shipment.deliveredAt)}`);
-    lines.push(`หมายเหตุ: ${shipment.notes || "-"}`);
+    const lines = [
+      `ชื่อผู้รับ: ${shipment.recipientName || "-"}`,
+      `เบอร์โทร: ${shipment.recipientPhone || "-"}`,
+      `ที่อยู่: ${shipment.address || "-"}`,
+      `ตำบล/แขวง: ${shipment.district || "-"}`,
+      `จังหวัด: ${shipment.province || "-"}`,
+      `รหัสไปรษณีย์: ${shipment.postalCode || "-"}`,
+      `ประเทศ: ${shipment.country || "-"}`,
+      `บริษัทขนส่ง: ${companyMeta?.label || "-"}`,
+      `สถานะ: ${statusMeta?.label || "-"}`,
+      `เลขติดตาม: ${shipment.trackingNumber || "-"}`,
+      `วันที่จัดส่ง: ${formatDate(shipment.shippedAt)}`,
+      `วันที่ส่งถึง: ${formatDate(shipment.deliveredAt)}`,
+      `หมายเหตุ: ${shipment.notes || "-"}`,
+    ];
     if (shipment.order) {
       lines.push(`รหัสคำสั่งซื้อ: #${shipment.order.id?.slice(-8)}`);
       lines.push(`ลูกค้า: ${shipment.order.user?.name || "-"}`);
-      lines.push(
-        `สินค้า: ${shipment.order.ebook?.title || shipment.order.course?.title || "-"}`
-      );
-      lines.push(
-        `ประเภท: ${
-          shipment.order.ebook
-            ? "E-book"
-            : shipment.order.course
-            ? "Course"
-            : "อื่นๆ"
-        }`
-      );
+      lines.push(`สินค้า: ${shipment.order.ebook?.title || shipment.order.course?.title || "-"}`);
+      lines.push(`ประเภท: ${shipment.order.ebook ? "E-book" : shipment.order.course ? "Course" : "อื่นๆ"}`);
       lines.push(`วันที่สั่งซื้อ: ${formatDate(shipment.order.createdAt)}`);
       lines.push(`สถานะคำสั่งซื้อ: ${shipment.order.status || "-"}`);
     }
     return lines.join("\n");
   };
 
-  // ฟังก์ชัน copy
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(getAllShippingText());
+      toast({ title: "คัดลอกข้อมูลการจัดส่งสำเร็จ" });
     } catch (e) {
-      alert("คัดลอกข้อมูลไม่สำเร็จ");
+      toast({ variant: "destructive", title: "คัดลอกข้อมูลไม่สำเร็จ" });
     }
   };
 
   return (
-    <Modal
-      title={
-        <Space>
-          <EyeOutlined />
-          <Text strong>
-            รายละเอียดการจัดส่ง #{shipment?.orderId?.slice(-8) || "..."}{" "}
-          </Text>
-          {/* ปุ่มคัดลอก */}
-          {shipment && (
-            <Button
-              icon={<CopyOutlined />}
-              size="small"
-              onClick={handleCopy}
-              style={{ marginLeft: 8 }}
-            >
-              คัดลอกข้อมูล
-            </Button>
-          )}
-        </Space>
-      }
-      open={open}
-      onCancel={onClose}
-      footer={null}
-      width={800}
-      style={{ top: 20 }}
-    >
-      {loading ? (
-        <div style={{ textAlign: "center", padding: "60px" }}>
-          <Spin size="large" />
-          <div style={{ marginTop: "16px", fontSize: "16px", color: "#666" }}>
-            กำลังโหลดรายละเอียด...
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[800px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Eye className="h-5 w-5" />
+            รายละเอียดการจัดส่ง #{shipment?.orderId?.slice(-8) || "..."}
+            {shipment && (
+              <Button variant="outline" size="sm" className="ml-2" onClick={handleCopy}>
+                <Copy className="mr-1.5 h-3.5 w-3.5" /> คัดลอกข้อมูล
+              </Button>
+            )}
+          </DialogTitle>
+        </DialogHeader>
+
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <Loader2 className="mb-3 h-6 w-6 animate-spin text-gray-400" />
+            <div className="text-sm text-gray-500">กำลังโหลดรายละเอียด...</div>
           </div>
-        </div>
-      ) : shipment ? (
-        <div>
-          {/* Recipient Information */}
-          <Card
-            title={
-              <Space>
-                <UserOutlined style={{ color: "#1890ff" }} />
-                <Text strong>ข้อมูลผู้รับ</Text>
-              </Space>
-            }
-            style={{ marginBottom: "20px" }}
-            size="small"
-          >
-            <Descriptions column={2} size="small">
-              <Descriptions.Item
-                label={
-                  <Space size={6}>
-                    <UserOutlined style={{ color: "#8c8c8c" }} />
-                    <Text>ชื่อผู้รับ</Text>
-                  </Space>
-                }
-              >
-                <Text strong>{shipment.recipientName}</Text>
-              </Descriptions.Item>
-              <Descriptions.Item
-                label={
-                  <Space size={6}>
-                    <PhoneOutlined style={{ color: "#8c8c8c" }} />
-                    <Text>เบอร์โทร</Text>
-                  </Space>
-                }
-              >
-                <Text>{shipment.recipientPhone}</Text>
-              </Descriptions.Item>
-              <Descriptions.Item
-                label={
-                  <Space size={6}>
-                    <EnvironmentOutlined style={{ color: "#8c8c8c" }} />
-                    <Text>ที่อยู่</Text>
-                  </Space>
-                }
-                span={2}
-              >
-                <Text>{shipment.address}</Text>
-              </Descriptions.Item>
-              <Descriptions.Item label={<Text>ตำบล/แขวง</Text>}>
-                <Text>{shipment.district}</Text>
-              </Descriptions.Item>
-              <Descriptions.Item label={<Text>จังหวัด</Text>}>
-                <Text>{shipment.province}</Text>
-              </Descriptions.Item>
-              <Descriptions.Item label={<Text>รหัสไปรษณีย์</Text>}>
-                <Text>{shipment.postalCode}</Text>
-              </Descriptions.Item>
-              <Descriptions.Item label={<Text>ประเทศ</Text>}>
-                <Text>{shipment.country}</Text>
-              </Descriptions.Item>
-            </Descriptions>
-          </Card>
+        ) : shipment ? (
+          <div className="space-y-5">
+            <div className="rounded-lg border border-gray-200 p-4">
+              <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900">
+                <User className="h-4 w-4 text-blue-600" /> ข้อมูลผู้รับ
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
+                    <User className="h-3.5 w-3.5" /> ชื่อผู้รับ
+                  </div>
+                  <div className="text-sm font-semibold text-gray-900">{shipment.recipientName}</div>
+                </div>
+                <div>
+                  <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
+                    <Phone className="h-3.5 w-3.5" /> เบอร์โทร
+                  </div>
+                  <div className="text-sm text-gray-700">{shipment.recipientPhone}</div>
+                </div>
+                <div className="sm:col-span-2">
+                  <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
+                    <MapPin className="h-3.5 w-3.5" /> ที่อยู่
+                  </div>
+                  <div className="text-sm text-gray-700">{shipment.address}</div>
+                </div>
+                <div>
+                  <div className="mb-1 text-xs text-gray-500">ตำบล/แขวง</div>
+                  <div className="text-sm text-gray-700">{shipment.district}</div>
+                </div>
+                <div>
+                  <div className="mb-1 text-xs text-gray-500">จังหวัด</div>
+                  <div className="text-sm text-gray-700">{shipment.province}</div>
+                </div>
+                <div>
+                  <div className="mb-1 text-xs text-gray-500">รหัสไปรษณีย์</div>
+                  <div className="text-sm text-gray-700">{shipment.postalCode}</div>
+                </div>
+                <div>
+                  <div className="mb-1 text-xs text-gray-500">ประเทศ</div>
+                  <div className="text-sm text-gray-700">{shipment.country}</div>
+                </div>
+              </div>
+            </div>
 
-          {/* Shipping Information */}
-          <Card
-            title={
-              <Space>
-                <TruckOutlined style={{ color: "#1890ff" }} />
-                <Text strong>ข้อมูลการจัดส่ง</Text>
-              </Space>
-            }
-            style={{ marginBottom: "20px" }}
-            size="small"
-          >
-            <Descriptions column={2} size="small">
-              <Descriptions.Item
-                label={
-                  <Space size={6}>
-                    <TruckOutlined style={{ color: "#8c8c8c" }} />
-                    <Text>บริษัทขนส่ง</Text>
-                  </Space>
-                }
-              >
-                <Space size={8}>
-                  <span style={{ fontSize: "16px" }}>
-                    {getCompanyIcon(shipment.shippingMethod)}
-                  </span>
-                  <Text>
-                    {getCompanyName(shipment.shippingMethod)}
-                  </Text>
-                </Space>
-              </Descriptions.Item>
-              <Descriptions.Item label={<Text>สถานะ</Text>}>
-                <Tag
-                  color={getStatusColor(shipment.status)}
-                  style={{ borderRadius: "4px" }}
-                >
-                  {getStatusText(shipment.status)}
-                </Tag>
-              </Descriptions.Item>
-              <Descriptions.Item
-                label={
-                  <Space size={6}>
-                    <FileTextOutlined style={{ color: "#8c8c8c" }} />
-                    <Text>เลขติดตาม</Text>
-                  </Space>
-                }
-              >
-                {shipment.trackingNumber ? (
-                  <Text code>{shipment.trackingNumber}</Text>
-                ) : (
-                  <Text type="secondary">-</Text>
-                )}
-              </Descriptions.Item>
-              <Descriptions.Item
-                label={
-                  <Space size={6}>
-                    <CalendarOutlined style={{ color: "#8c8c8c" }} />
-                    <Text>วันที่จัดส่ง</Text>
-                  </Space>
-                }
-              >
-                <Text>{formatDate(shipment.shippedAt)}</Text>
-              </Descriptions.Item>
-              <Descriptions.Item
-                label={
-                  <Space size={6}>
-                    <CalendarOutlined style={{ color: "#8c8c8c" }} />
-                    <Text>วันที่ส่งถึง</Text>
-                  </Space>
-                }
-              >
-                <Text>{formatDate(shipment.deliveredAt)}</Text>
-              </Descriptions.Item>
-              <Descriptions.Item label={<Text>หมายเหตุ</Text>}>
-                <Text>{shipment.notes || "-"}</Text>
-              </Descriptions.Item>
-            </Descriptions>
-          </Card>
+            <div className="rounded-lg border border-gray-200 p-4">
+              <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900">
+                <Truck className="h-4 w-4 text-blue-600" /> ข้อมูลการจัดส่ง
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
+                    <Truck className="h-3.5 w-3.5" /> บริษัทขนส่ง
+                  </div>
+                  <div className="flex items-center gap-1.5 text-sm text-gray-700">
+                    <CompanyIcon className={`h-4 w-4 ${companyMeta?.className}`} />
+                    {companyMeta?.label}
+                  </div>
+                </div>
+                <div>
+                  <div className="mb-1 text-xs text-gray-500">สถานะ</div>
+                  <Badge variant="outline" className={statusMeta?.className}>{statusMeta?.label}</Badge>
+                </div>
+                <div>
+                  <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
+                    <FileText className="h-3.5 w-3.5" /> เลขติดตาม
+                  </div>
+                  {shipment.trackingNumber ? (
+                    <span className="font-mono text-sm text-gray-700">{shipment.trackingNumber}</span>
+                  ) : (
+                    <span className="text-sm text-gray-400">-</span>
+                  )}
+                </div>
+                <div>
+                  <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
+                    <Calendar className="h-3.5 w-3.5" /> วันที่จัดส่ง
+                  </div>
+                  <div className="text-sm text-gray-700">{formatDate(shipment.shippedAt)}</div>
+                </div>
+                <div>
+                  <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
+                    <Calendar className="h-3.5 w-3.5" /> วันที่ส่งถึง
+                  </div>
+                  <div className="text-sm text-gray-700">{formatDate(shipment.deliveredAt)}</div>
+                </div>
+                <div>
+                  <div className="mb-1 text-xs text-gray-500">หมายเหตุ</div>
+                  <div className="text-sm text-gray-700">{shipment.notes || "-"}</div>
+                </div>
+              </div>
+            </div>
 
-          {/* Order Information */}
-          {shipment.order && (
-            <Card
-              title={
-                <Space>
-                  <ShoppingCartOutlined style={{ color: "#1890ff" }} />
-                  <Text strong>ข้อมูลคำสั่งซื้อ</Text>
-                </Space>
-              }
-              size="small"
-            >
-              <Descriptions column={2} size="small">
-                <Descriptions.Item
-                  label={
-                    <Space size={6}>
-                      <FileTextOutlined style={{ color: "#8c8c8c" }} />
-                      <Text>รหัสคำสั่งซื้อ</Text>
-                    </Space>
-                  }
-                >
-                  <Text code>#{shipment.order.id.slice(-8)}</Text>
-                </Descriptions.Item>
-                <Descriptions.Item
-                  label={
-                    <Space size={6}>
-                      <UserOutlined style={{ color: "#8c8c8c" }} />
-                      <Text>ลูกค้า</Text>
-                    </Space>
-                  }
-                >
-                  <Text strong>{shipment.order.user?.name}</Text>
-                </Descriptions.Item>
-                <Descriptions.Item label={<Text>สินค้า</Text>} span={2}>
-                  <Space direction="vertical" size={4}>
-                    <Space size={8}>
-                      <Text strong>
-                        {shipment.order.ebook?.title ||
-                          shipment.order.course?.title}
-                      </Text>
-                      <Tag
-                        color={
-                          shipment.order.ebook
-                            ? "blue"
-                            : shipment.order.course
-                            ? "green"
-                            : "default"
-                        }
-                        style={{ fontSize: "11px" }}
-                      >
-                        {shipment.order.ebook
-                          ? "📚 E-book"
-                          : shipment.order.course
-                          ? "🎓 Course"
-                          : "อื่นๆ"}
-                      </Tag>
-                    </Space>
-                  </Space>
-                </Descriptions.Item>
-                <Descriptions.Item
-                  label={
-                    <Space size={6}>
-                      <CalendarOutlined style={{ color: "#8c8c8c" }} />
-                      <Text>วันที่สั่งซื้อ</Text>
-                    </Space>
-                  }
-                >
-                  <Text>{formatDate(shipment.order.createdAt)}</Text>
-                </Descriptions.Item>
-                <Descriptions.Item label={<Text>สถานะคำสั่งซื้อ</Text>}>
-                  <Tag color="success">{shipment.order.status}</Tag>
-                </Descriptions.Item>
-              </Descriptions>
-            </Card>
-          )}
-        </div>
-      ) : (
-        <div style={{ textAlign: "center", padding: "60px" }}>
-          <Text type="secondary">ไม่พบข้อมูล</Text>
-        </div>
-      )}
-    </Modal>
+            {shipment.order && (
+              <div className="rounded-lg border border-gray-200 p-4">
+                <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900">
+                  <ShoppingCart className="h-4 w-4 text-blue-600" /> ข้อมูลคำสั่งซื้อ
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
+                      <FileText className="h-3.5 w-3.5" /> รหัสคำสั่งซื้อ
+                    </div>
+                    <span className="font-mono text-sm text-gray-700">#{shipment.order.id.slice(-8)}</span>
+                  </div>
+                  <div>
+                    <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
+                      <User className="h-3.5 w-3.5" /> ลูกค้า
+                    </div>
+                    <div className="text-sm font-semibold text-gray-900">{shipment.order.user?.name}</div>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <div className="mb-1 text-xs text-gray-500">สินค้า</div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-gray-900">{shipment.order.ebook?.title || shipment.order.course?.title}</span>
+                      <Badge variant="outline" className={shipment.order.ebook ? "border-blue-200 bg-blue-50 text-blue-700" : shipment.order.course ? "border-green-200 bg-green-50 text-green-700" : ""}>
+                        {shipment.order.ebook ? "E-book" : shipment.order.course ? "Course" : "อื่นๆ"}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
+                      <Calendar className="h-3.5 w-3.5" /> วันที่สั่งซื้อ
+                    </div>
+                    <div className="text-sm text-gray-700">{formatDate(shipment.order.createdAt)}</div>
+                  </div>
+                  <div>
+                    <div className="mb-1 text-xs text-gray-500">สถานะคำสั่งซื้อ</div>
+                    <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">{shipment.order.status}</Badge>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="py-16 text-center text-sm text-gray-400">ไม่พบข้อมูล</div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

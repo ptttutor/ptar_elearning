@@ -1,93 +1,50 @@
-import { Card, Row, Col, Input, Select, Button, Space } from 'antd';
-import { SearchOutlined, FilterOutlined, ClearOutlined } from '@ant-design/icons';
-import ResultsCount from "@/components/admin/shared/ResultsCount";
-import { RESET_FILTERS_LABEL } from "@/components/admin/shared/adminUiConstants";
+"use client";
+import AdminFilterBar from "@/components/admin/shared/AdminFilterBar";
 
-const { Option } = Select;
+const TYPE_OPTIONS = [
+  { value: "all", label: "ทั้งหมด" },
+  { value: "PERCENTAGE", label: "ส่วนลด %" },
+  { value: "FIXED_AMOUNT", label: "ส่วนลดจำนวนคงที่" },
+  { value: "FREE_SHIPPING", label: "ฟรีค่าส่ง" },
+];
 
-export default function CouponFilters({
-  filters,
-  searchInput,
-  setSearchInput,
-  onFilterChange,
-  onReset,
-  loading,
-  totalCount,
-  currentCount,
-}) {
+const STATUS_OPTIONS = [
+  { value: "all", label: "ทั้งหมด" },
+  { value: "active", label: "ใช้งานได้" },
+  { value: "inactive", label: "ไม่ใช้งาน" },
+];
+
+const APPLICABLE_OPTIONS = [
+  { value: "all", label: "ทั้งหมด" },
+  { value: "ALL", label: "ทุกสินค้า" },
+  { value: "COURSE_ONLY", label: "คอร์สเท่านั้น" },
+  { value: "EBOOK_ONLY", label: "E-book เท่านั้น" },
+  { value: "CATEGORY", label: "หมวดหมู่ที่กำหนด" },
+  { value: "SPECIFIC_ITEM", label: "สินค้าที่กำหนด" },
+];
+
+export default function CouponFilters({ filters, searchInput, setSearchInput, onFilterChange, onReset, loading, totalCount, currentCount }) {
   return (
-    <Card style={{ marginBottom: 24 }} title="ตัวกรอง">
-      <Row gutter={[16, 16]}>
-        {/* Search */}
-        <Col xs={24} sm={12} md={6}>
-          <Input
-            placeholder="ค้นหารหัสคูปอง, ชื่อ หรือคำอธิบาย..."
-            prefix={<SearchOutlined />}
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            allowClear
-          />
-        </Col>
-
-        {/* Type Filter */}
-        <Col xs={24} sm={12} md={6}>
-          <Select
-            placeholder="ประเภทคูปอง"
-            style={{ width: '100%' }}
-            value={filters.type || undefined}
-            onChange={(value) => onFilterChange('type', value)}
-            allowClear
-          >
-            <Option value="PERCENTAGE">ส่วนลด %</Option>
-            <Option value="FIXED_AMOUNT">ส่วนลดจำนวนคงที่</Option>
-            <Option value="FREE_SHIPPING">ฟรีค่าส่ง</Option>
-          </Select>
-        </Col>
-
-        {/* Status Filter */}
-        <Col xs={24} sm={12} md={6}>
-          <Select
-            placeholder="สถานะ"
-            style={{ width: '100%' }}
-            value={filters.status || undefined}
-            onChange={(value) => onFilterChange('status', value)}
-            allowClear
-          >
-            <Option value="active">ใช้งานได้</Option>
-            <Option value="inactive">ไม่ใช้งาน</Option>
-          </Select>
-        </Col>
-
-        {/* Applicable Type Filter */}
-        <Col xs={24} sm={12} md={6}>
-          <Select
-            placeholder="ขอบเขตการใช้งาน"
-            style={{ width: '100%' }}
-            value={filters.applicable || undefined}
-            onChange={(value) => onFilterChange('applicable', value)}
-            allowClear
-          >
-            <Option value="ALL">ทุกสินค้า</Option>
-            <Option value="COURSE_ONLY">คอร์สเท่านั้น</Option>
-            <Option value="EBOOK_ONLY">E-book เท่านั้น</Option>
-            <Option value="CATEGORY">หมวดหมู่ที่กำหนด</Option>
-            <Option value="SPECIFIC_ITEM">สินค้าที่กำหนด</Option>
-          </Select>
-        </Col>
-      </Row>
-
-      <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <ResultsCount current={currentCount} total={totalCount} />
-        <Space>
-          <Button
-            icon={<ClearOutlined />}
-            onClick={onReset}
-            disabled={loading}
-          >
-            {RESET_FILTERS_LABEL}
-          </Button>
-        </Space>
-      </div>
-    </Card>
+    <AdminFilterBar
+      searchLabel="ค้นหาคูปอง"
+      searchValue={searchInput}
+      onSearchChange={setSearchInput}
+      searchPlaceholder="ค้นหารหัสคูปอง, ชื่อ หรือคำอธิบาย..."
+      selects={[
+        { key: "type", value: filters.type, onChange: (v) => onFilterChange("type", v), label: "ประเภทคูปอง", placeholder: "ประเภทคูปอง", options: TYPE_OPTIONS },
+        { key: "status", value: filters.status, onChange: (v) => onFilterChange("status", v), label: "สถานะ", placeholder: "สถานะ", options: STATUS_OPTIONS },
+        { key: "applicable", value: filters.applicable, onChange: (v) => onFilterChange("applicable", v), label: "ขอบเขตการใช้งาน", placeholder: "ขอบเขตการใช้งาน", options: APPLICABLE_OPTIONS },
+      ]}
+      onReset={onReset}
+      totalCount={totalCount}
+      currentCount={currentCount}
+      loading={loading}
+      activeSummary={[
+        searchInput && `ค้นหา: "${searchInput}"`,
+        filters.type !== "all" && `ประเภท: ${TYPE_OPTIONS.find((o) => o.value === filters.type)?.label}`,
+        filters.status !== "all" && `สถานะ: ${STATUS_OPTIONS.find((o) => o.value === filters.status)?.label}`,
+        filters.applicable !== "all" && `ขอบเขต: ${APPLICABLE_OPTIONS.find((o) => o.value === filters.applicable)?.label}`,
+      ]}
+    />
   );
 }

@@ -1,115 +1,111 @@
-import { useState, useEffect, useCallback } from 'react';
+"use client";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useToast } from "@/components/ui/use-toast";
 
-export const useCoupons = () => {
+export function useCoupons() {
+  const { toast } = useToast();
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchInput, setSearchInput] = useState('');
-  
-  // Filters state
+  const [searchInput, setSearchInput] = useState("");
+
   const [filters, setFilters] = useState({
-    search: '',
-    type: '',
-    status: '',
-    applicable: ''
+    search: "",
+    type: "all",
+    status: "all",
+    applicable: "all",
   });
 
-  // Pagination state
   const [pagination, setPagination] = useState({
-    current: 1,
+    page: 1,
     pageSize: 10,
-    total: 0,
-    showSizeChanger: true,
-    showQuickJumper: true,
-    showTotal: (total, range) => 
-      `${range[0]}-${range[1]} จาก ${total} คูปอง`,
+    totalCount: 0,
+    totalPages: 0,
   });
 
-  // Fetch coupons function
-  const fetchCoupons = useCallback(async () => {
+  const filtersRef = useRef(filters);
+  filtersRef.current = filters;
+
+  const fetchCoupons = useCallback(async (customFilters = null, customPagination = null) => {
+    setLoading(true);
+    const currentFilters = customFilters || filtersRef.current;
+    const currentPagination = customPagination || pagination;
+
     try {
-      setLoading(true);
       const params = new URLSearchParams({
-        page: pagination.current.toString(),
-        limit: pagination.pageSize.toString(),
-        search: filters.search || '',
-        type: filters.type || '',
-        status: filters.status || '',
-        applicable: filters.applicable || ''
+        page: (currentPagination?.page || 1).toString(),
+        limit: (currentPagination?.pageSize || 10).toString(),
+        search: currentFilters?.search || "",
+        type: currentFilters?.type !== "all" ? currentFilters?.type || "" : "",
+        status: currentFilters?.status !== "all" ? currentFilters?.status || "" : "",
+        applicable: currentFilters?.applicable !== "all" ? currentFilters?.applicable || "" : "",
       });
 
       const response = await fetch(`/api/admin/coupons?${params}`);
-      
-      if (!response.ok) {
-        throw new Error('เกิดข้อผิดพลาดในการดึงข้อมูล');
-      }
-
+      if (!response.ok) throw new Error("เกิดข้อผิดพลาดในการดึงข้อมูล");
       const result = await response.json();
-      
+
       if (result.success) {
         setCoupons(result.data.coupons);
-        setPagination(prev => ({
-          ...prev,
-          current: result.data.pagination.current,
-          total: result.data.pagination.total,
-        }));
+        setPagination({
+          page: result.data.pagination.current,
+          pageSize: result.data.pagination.pageSize,
+          totalCount: result.data.pagination.total,
+          totalPages: result.data.pagination.totalPages,
+        });
+        if (customFilters) setFilters(currentFilters);
       }
     } catch (error) {
-      console.error('Fetch coupons error:', error);
+      console.error("Fetch coupons error:", error);
+      toast({ variant: "destructive", title: "เกิดข้อผิดพลาดในการดึงข้อมูลคูปอง" });
       setCoupons([]);
     } finally {
       setLoading(false);
     }
-  }, [filters, pagination.current, pagination.pageSize]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toast]);
 
-  // Handle filter changes
   const handleFilterChange = useCallback((key, value) => {
-    setFilters(prev => ({ 
-      ...prev, 
-      [key]: value 
-    }));
-    setPagination(prev => ({ 
-      ...prev, 
-      current: 1 
-    }));
-  }, []);
+    const newFilters = { ...filtersRef.current, [key]: value };
+    fetchCoupons(newFilters, { page: 1, pageSize: pagination.pageSize });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchCoupons, pagination.pageSize]);
 
-  // Handle table changes (pagination, sorting)
-  const handleTableChange = useCallback((newPagination, _, sorter) => {
-    setPagination(prev => ({
-      ...prev,
-      current: newPagination.current,
-      pageSize: newPagination.pageSize,
-    }));
-  }, []);
-
-  // Reset filters
-  const resetFilters = useCallback(() => {
-    setFilters({
-      search: '',
-      type: '',
-      status: '',
-      applicable: ''
+  const handlePageChange = useCallback((page) => {
+    fetchCoupons(filtersRef.current, {
+      page,
+      pageSize: pagination.pageSize,
+      totalCount: pagination.totalCount,
+      totalPages: pagination.totalPages,
     });
-    setSearchInput('');
-    setPagination(prev => ({ 
-      ...prev, 
-      current: 1 
-    }));
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchCoupons, pagination.pageSize, pagination.totalCount, pagination.totalPages]);
 
-  // Apply search with debounce
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      handleFilterChange('search', searchInput);
-    }, 500);
+  const resetFilters = useCallback(() => {
+    const defaultFilters = { search: "", type: "all", status: "all", applicable: "all" };
+    setSearchInput("");
+    fetchCoupons(defaultFilters, { page: 1, pageSize: pagination.pageSize });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchCoupons, pagination.pageSize]);
 
-    return () => clearTimeout(timeoutId);
-  }, [searchInput, handleFilterChange]);
-
-  // Fetch data when dependencies change
+  // Initial fetch
   useEffect(() => {
     fetchCoupons();
-  }, [fetchCoupons]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Debounced search (skip the run that fires immediately on mount)
+  const isFirstRun = useRef(true);
+  useEffect(() => {
+    if (isFirstRun.current) {
+      isFirstRun.current = false;
+      return;
+    }
+    const timer = setTimeout(() => {
+      handleFilterChange("search", searchInput);
+    }, 500);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchInput]);
 
   return {
     coupons,
@@ -120,7 +116,7 @@ export const useCoupons = () => {
     pagination,
     fetchCoupons,
     handleFilterChange,
-    handleTableChange,
+    handlePageChange,
     resetFilters,
   };
-};
+}

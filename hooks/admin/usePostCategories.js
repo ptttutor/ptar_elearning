@@ -1,9 +1,9 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useMessage } from "./useAntdApp";
+import { useToast } from "@/components/ui/use-toast";
 
 export function usePostCategories() {
-  const message = useMessage();
+  const { toast } = useToast();
   const [postCategories, setPostCategories] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -57,14 +57,14 @@ export function usePostCategories() {
           setFilters(currentFilters);
         }
       } else {
-        message.error(data.error || "โหลดข้อมูลหมวดหมู่โพสต์ไม่สำเร็จ");
+        toast({ variant: "destructive", title: data.error || "โหลดข้อมูลหมวดหมู่โพสต์ไม่สำเร็จ" });
       }
     } catch (e) {
       console.error("Fetch post categories error:", e);
-      message.error("โหลดข้อมูลหมวดหมู่โพสต์ไม่สำเร็จ");
+      toast({ variant: "destructive", title: "โหลดข้อมูลหมวดหมู่โพสต์ไม่สำเร็จ" });
     }
     setLoading(false);
-  }, [pagination, message]);
+  }, [pagination, toast]);
 
   // Handle filter change
   const handleFilterChange = useCallback((key, value) => {
@@ -72,31 +72,27 @@ export function usePostCategories() {
     fetchPostCategories(newFilters, { page: 1, pageSize: pagination.pageSize });
   }, [fetchPostCategories, pagination.pageSize]);
 
-  // Handle table change (pagination, sorting)
-  const handleTableChange = useCallback((pag, _, sorter) => {
-    let newSortBy = "createdAt";
-    let newSortOrder = "desc";
-
-    if (sorter && sorter.field) {
-      newSortBy = sorter.field;
-      newSortOrder = sorter.order === "ascend" ? "asc" : "desc";
-    }
-
+  // Handle sortable column header clicks — toggles asc/desc when clicking
+  // the already-active column, otherwise switches to that column desc-first.
+  const handleSortChange = useCallback((field) => {
+    const prev = filtersRef.current;
     const newFilters = {
-      ...filtersRef.current,
-      sortBy: newSortBy,
-      sortOrder: newSortOrder,
+      ...prev,
+      sortBy: field,
+      sortOrder: prev.sortBy === field && prev.sortOrder === "desc" ? "asc" : "desc",
     };
+    fetchPostCategories(newFilters, { page: 1, pageSize: pagination.pageSize });
+  }, [fetchPostCategories, pagination.pageSize]);
 
-    const newPagination = {
-      page: pag.current,
-      pageSize: pag.pageSize,
+  // Handle pagination page changes
+  const handlePageChange = useCallback((page) => {
+    fetchPostCategories(filtersRef.current, {
+      page,
+      pageSize: pagination.pageSize,
       totalCount: pagination.totalCount,
       totalPages: pagination.totalPages,
-    };
-
-    fetchPostCategories(newFilters, newPagination);
-  }, [fetchPostCategories, pagination.totalCount, pagination.totalPages]);
+    });
+  }, [fetchPostCategories, pagination.pageSize, pagination.totalCount, pagination.totalPages]);
 
   // Reset filters
   const resetFilters = useCallback(() => {
@@ -125,7 +121,8 @@ export function usePostCategories() {
     pagination,
     fetchPostCategories,
     handleFilterChange,
-    handleTableChange,
+    handleSortChange,
+    handlePageChange,
     resetFilters,
   };
 }

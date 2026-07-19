@@ -1,18 +1,17 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useMessage } from "./useAntdApp";
+import { useToast } from "@/components/ui/use-toast";
 
 export function useShipping() {
-  const message = useMessage();
+  const { toast } = useToast();
   const [shipments, setShipments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
 
-  // Server-side filtering and pagination states
   const [filters, setFilters] = useState({
     search: "",
     status: "ALL",
-    shippingMethod: "",
+    shippingMethod: "all",
     startDate: "",
     endDate: "",
     sortBy: "createdAt",
@@ -26,34 +25,21 @@ export function useShipping() {
     totalPages: 0,
   });
 
-  // Use ref to keep track of current state
   const filtersRef = useRef(filters);
-  const paginationRef = useRef(pagination);
+  filtersRef.current = filters;
 
-  // Update refs when state changes
-  useEffect(() => {
-    filtersRef.current = filters;
-  }, [filters]);
-
-  useEffect(() => {
-    paginationRef.current = pagination;
-  }, [pagination]);
-
-  // Fetch shipments with server-side filtering and pagination
-  const fetchShipments = useCallback(async (customFilters, customPagination) => {
+  const fetchShipments = useCallback(async (customFilters = null, customPagination = null) => {
     setLoading(true);
-    try {
-      // ใช้ ref เพื่อได้ current state หรือใช้ parameters ที่ส่งมา
-      const currentFilters = customFilters || filtersRef.current;
-      const currentPagination = customPagination || paginationRef.current;
+    const currentFilters = customFilters || filtersRef.current;
+    const currentPagination = customPagination || pagination;
 
-      // สร้าง query string สำหรับ API request
+    try {
       const params = new URLSearchParams({
-        page: currentPagination.page.toString(),
-        pageSize: currentPagination.pageSize.toString(),
+        page: (currentPagination?.page || 1).toString(),
+        pageSize: (currentPagination?.pageSize || 10).toString(),
         search: currentFilters.search || "",
         status: currentFilters.status || "ALL",
-        shippingMethod: currentFilters.shippingMethod || "",
+        shippingMethod: currentFilters.shippingMethod !== "all" ? currentFilters.shippingMethod || "" : "",
         startDate: currentFilters.startDate || "",
         endDate: currentFilters.endDate || "",
         sortBy: currentFilters.sortBy || "createdAt",
@@ -65,151 +51,141 @@ export function useShipping() {
 
       if (result.success) {
         setShipments(result.data);
-        setPagination(prev => ({
-          ...prev,
+        setPagination({
+          page: currentPagination?.page || 1,
+          pageSize: currentPagination?.pageSize || 10,
           totalCount: result.totalCount,
           totalPages: result.totalPages,
-        }));
+        });
+        if (customFilters) setFilters(currentFilters);
       } else {
-        message.error(result.error || "เกิดข้อผิดพลาดในการโหลดข้อมูลการจัดส่ง");
+        toast({ variant: "destructive", title: result.error || "เกิดข้อผิดพลาดในการโหลดข้อมูลการจัดส่ง" });
       }
     } catch (error) {
       console.error("Error fetching shipments:", error);
-      message.error("เกิดข้อผิดพลาดในการโหลดข้อมูล");
+      toast({ variant: "destructive", title: "เกิดข้อผิดพลาดในการโหลดข้อมูล" });
     } finally {
       setLoading(false);
     }
-  }, [message]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toast]);
 
-  // Fetch shipment detail
   const fetchShipmentDetail = useCallback(async (id) => {
     setDetailLoading(true);
     try {
       const response = await fetch(`/api/admin/shipping/${id}`);
       const result = await response.json();
 
-      if (result.success) {
-        return result.data;
-      } else {
-        message.error(result.error || "เกิดข้อผิดพลาดในการโหลดรายละเอียด");
-        return null;
-      }
+      if (result.success) return result.data;
+      toast({ variant: "destructive", title: result.error || "เกิดข้อผิดพลาดในการโหลดรายละเอียด" });
+      return null;
     } catch (error) {
       console.error("Error fetching shipment detail:", error);
-      message.error("เกิดข้อผิดพลาดในการโหลดรายละเอียด");
+      toast({ variant: "destructive", title: "เกิดข้อผิดพลาดในการโหลดรายละเอียด" });
       return null;
     } finally {
       setDetailLoading(false);
     }
-  }, [message]);
+  }, [toast]);
 
-  // Update shipment
   const updateShipment = useCallback(async (id, updateData) => {
     try {
       const response = await fetch(`/api/admin/shipping/${id}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updateData),
       });
 
       const result = await response.json();
 
       if (result.success) {
-        message.success("อัพเดทข้อมูลการจัดส่งสำเร็จ");
-        // Refresh data
+        toast({ title: "อัพเดทข้อมูลการจัดส่งสำเร็จ" });
         fetchShipments();
         return true;
       } else {
-        message.error(result.error || "เกิดข้อผิดพลาดในการอัพเดทข้อมูล");
+        toast({ variant: "destructive", title: result.error || "เกิดข้อผิดพลาดในการอัพเดทข้อมูล" });
         return false;
       }
     } catch (error) {
       console.error("Error updating shipment:", error);
-      message.error("เกิดข้อผิดพลาดในการอัพเดทข้อมูล");
+      toast({ variant: "destructive", title: "เกิดข้อผิดพลาดในการอัพเดทข้อมูล" });
       return false;
     }
-  }, [message, fetchShipments]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toast, fetchShipments]);
 
-  // Handle filter changes
-  const handleFilterChange = useCallback((newFilters) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
-    setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page
-  }, []);
+  const handleFilterChange = useCallback((key, value) => {
+    const newFilters = { ...filtersRef.current, [key]: value };
+    fetchShipments(newFilters, { page: 1, pageSize: pagination.pageSize });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchShipments, pagination.pageSize]);
 
-  // Handle table changes (pagination, sorting)
-  const handleTableChange = useCallback((pagination, filters, sorter) => {
-    // Update pagination
-    setPagination(prev => ({
-      ...prev,
-      page: pagination.current,
+  const handleSortSelectChange = useCallback((value) => {
+    const [sortBy, sortOrder] = value.split("_");
+    const newFilters = { ...filtersRef.current, sortBy, sortOrder };
+    fetchShipments(newFilters, { page: 1, pageSize: pagination.pageSize });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchShipments, pagination.pageSize]);
+
+  const handlePageChange = useCallback((page) => {
+    fetchShipments(filtersRef.current, {
+      page,
       pageSize: pagination.pageSize,
-    }));
+      totalCount: pagination.totalCount,
+      totalPages: pagination.totalPages,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchShipments, pagination.pageSize, pagination.totalCount, pagination.totalPages]);
 
-    // Update sorting
-    if (sorter && sorter.field) {
-      const sortOrder = sorter.order === 'ascend' ? 'asc' : 'desc';
-      setFilters(prev => ({
-        ...prev,
-        sortBy: sorter.field,
-        sortOrder,
-      }));
-    }
-  }, []);
-
-  // Reset filters
   const resetFilters = useCallback(() => {
-    const resetFilters = {
+    const defaultFilters = {
       search: "",
       status: "ALL",
-      shippingMethod: "",
+      shippingMethod: "all",
       startDate: "",
       endDate: "",
       sortBy: "createdAt",
       sortOrder: "desc",
     };
-    setFilters(resetFilters);
     setSearchInput("");
-    setPagination(prev => ({ ...prev, page: 1 }));
-  }, []);
+    fetchShipments(defaultFilters, { page: 1, pageSize: pagination.pageSize });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchShipments, pagination.pageSize]);
 
-  // Search function with debouncing
-  const handleSearch = useCallback(() => {
-    setFilters(prev => ({ ...prev, search: searchInput }));
-    setPagination(prev => ({ ...prev, page: 1 }));
-  }, [searchInput]);
-
-  // Load data when filters or pagination change
+  // Debounced search (skip the run that fires immediately on mount)
+  const isFirstRun = useRef(true);
   useEffect(() => {
-    fetchShipments();
-  }, [filters, pagination.page, pagination.pageSize]);
+    if (isFirstRun.current) {
+      isFirstRun.current = false;
+      return;
+    }
+    const timer = setTimeout(() => {
+      handleFilterChange("search", searchInput);
+    }, 500);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchInput]);
 
   // Initial load
   useEffect(() => {
     fetchShipments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {
-    // Data
     shipments,
     setShipments,
     loading,
     detailLoading,
-    
-    // Filters and pagination
     filters,
     searchInput,
     setSearchInput,
     pagination,
-    
-    // Functions
-    fetchShipments,
     fetchShipmentDetail,
     updateShipment,
     handleFilterChange,
-    handleTableChange,
-    handleSearch,
+    handleSortSelectChange,
+    handlePageChange,
     resetFilters,
   };
 }

@@ -1,345 +1,167 @@
-import {
-  Card,
-  Space,
-  Typography,
-  Tag,
-  Descriptions,
-  Divider,
-  Image,
-  Button,
-  Flex,
-} from "antd";
-import {
-  BankOutlined,
-  CalendarOutlined,
-  FileTextOutlined,
-  UserOutlined,
-  CloseOutlined,
-  DollarOutlined,
-  EyeOutlined,
-  WarningOutlined,
-  CheckCircleOutlined,
-  LineHeightOutlined,
-} from "@ant-design/icons";
+"use client";
+import { Landmark, Calendar, FileText, User, X, DollarSign, Eye, AlertTriangle, CheckCircle2, Info } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
-const { Title, Text } = Typography;
+const STATUS_BOX = {
+  PENDING_VERIFICATION: { bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-800", icon: AlertTriangle, label: "รอการตรวจสอบ" },
+  COMPLETED: { bg: "bg-green-50", border: "border-green-200", text: "text-green-800", icon: CheckCircle2, label: "ตรวจสอบแล้ว" },
+  REJECTED: { bg: "bg-red-50", border: "border-red-200", text: "text-red-800", icon: X, label: "ปฏิเสธแล้ว" },
+};
 
 export default function PaymentInfoCard({
   selectedOrder,
-  slipAnalysis,
-  analyzingSlip,
-  onAnalyzeSlip,
   formatPrice,
   formatDate,
   getPaymentStatusColor,
   getPaymentStatusText,
 }) {
+  const status = selectedOrder.payment?.status;
+  const statusBox = STATUS_BOX[status] || { bg: "bg-gray-50", border: "border-gray-200", text: "text-gray-700", icon: Info, label: status || "ไม่ระบุสถานะ" };
+  const StatusIcon = statusBox.icon;
+
+  const isBankTransfer = selectedOrder.payment?.method === "BANK_TRANSFER" || selectedOrder.payment?.method === "bank_transfer";
+
   return (
-    <Card
-      title={
-        <Space>
-          <BankOutlined style={{ color: "#1890ff" }} />
-          <Text strong>ข้อมูลการชำระเงิน</Text>
-        </Space>
-      }
-      style={{ marginBottom: "20px" }}
-      size="small"
-    >
-      {/* Payment Status Summary */}
-      <div
-        style={{
-          marginBottom: "16px",
-          padding: "12px",
-          backgroundColor:
-            selectedOrder.payment?.status === "PENDING_VERIFICATION"
-              ? "#fff3cd"
-              : selectedOrder.payment?.status === "COMPLETED"
-              ? "#d4edda"
-              : selectedOrder.payment?.status === "REJECTED"
-              ? "#f8d7da"
-              : "#f8f9fa",
-          border: `1px solid ${
-            selectedOrder.payment?.status === "PENDING_VERIFICATION"
-              ? "#ffeaa7"
-              : selectedOrder.payment?.status === "COMPLETED"
-              ? "#c3e6cb"
-              : selectedOrder.payment?.status === "REJECTED"
-              ? "#f5c6cb"
-              : "#dee2e6"
-          }`,
-          borderRadius: "6px",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
+    <div className="mb-5 rounded-lg border border-gray-200 p-4">
+      <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900">
+        <Landmark className="h-4 w-4 text-blue-600" />
+        ข้อมูลการชำระเงิน
+      </div>
+
+      <div className={`mb-4 rounded-md border p-3 ${statusBox.bg} ${statusBox.border}`}>
+        <div className="flex items-center justify-between">
           <div>
-            <Text strong style={{ fontSize: "16px" }}>
-              {selectedOrder.payment?.status === "PENDING_VERIFICATION" ? (
-                <Flex gap={8} align="center" style={{ color: "#856404" }}>
-                  <WarningOutlined />
-                  รอการตรวจสอบ
-                </Flex>
-              ) : selectedOrder.payment?.status === "COMPLETED" ? (
-                <Flex gap={8} align="center" style={{ color: "#155724" }}>
-                  <CheckCircleOutlined />
-                  ตรวจสอบแล้ว
-                </Flex>
-              ) : selectedOrder.payment?.status === "REJECTED" ? (
-                <Flex gap={8} align="center" style={{ color: "#721c24" }}>
-                  <CloseOutlined />
-                  ปฏิเสธแล้ว
-                </Flex>
-              ) : (
-                selectedOrder.payment?.status || "ไม่ระบุสถานะ"
-              )}
-            </Text>
-            <div style={{ marginTop: "4px" }}>
-              <Text type="secondary" style={{ fontSize: "12px" }}>
-                {selectedOrder.payment?.slipUrl
-                  ? "มีสลิปการโอนเงิน"
-                  : "ยังไม่มีสลิปการโอนเงิน"}
-              </Text>
+            <div className={`flex items-center gap-2 text-base font-semibold ${statusBox.text}`}>
+              <StatusIcon className="h-4 w-4" />
+              {statusBox.label}
+            </div>
+            <div className="mt-1 text-xs text-gray-500">
+              {selectedOrder.payment?.slipUrl ? "มีสลิปการโอนเงิน" : "ยังไม่มีสลิปการโอนเงิน"}
             </div>
           </div>
-          <Tag
-            color={getPaymentStatusColor(selectedOrder.payment?.status)}
-            style={{
-              borderRadius: "4px",
-              fontSize: "14px",
-              padding: "4px 12px",
-            }}
-          >
-            {getPaymentStatusText(selectedOrder.payment?.status)}
-          </Tag>
+          <Badge variant="outline" className={`${statusBox.text} ${statusBox.border} ${statusBox.bg}`}>
+            {getPaymentStatusText(status)}
+          </Badge>
         </div>
       </div>
 
-      <Descriptions column={1} size="small">
-        <Descriptions.Item
-          label={
-            <Space size={6}>
-              <BankOutlined style={{ color: "#8c8c8c" }} />
-              <Text>วิธีการชำระ</Text>
-            </Space>
-          }
-        >
-          <Text>
-            {selectedOrder.payment?.method === "BANK_TRANSFER" ||
-            selectedOrder.payment?.method === "bank_transfer"
-              ? "โอนเงินผ่านธนาคาร"
-              : selectedOrder.payment?.method === "FREE"
-              ? "ฟรี"
-              : selectedOrder.payment?.method || "ไม่ระบุ"}
-          </Text>
-        </Descriptions.Item>
-        <Descriptions.Item label={<Text>สถานะรายละเอียด</Text>}>
-          <div>
-            <Tag
-              color={getPaymentStatusColor(selectedOrder.payment?.status)}
-              style={{ borderRadius: "4px" }}
-            >
-              {getPaymentStatusText(selectedOrder.payment?.status)}
-            </Tag>
-            {selectedOrder.payment?.slipUrl && (
-              <Tag color="blue" style={{ marginLeft: "4px" }}>
-                มีสลิป
-              </Tag>
-            )}
+      <div className="space-y-3">
+        <div>
+          <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
+            <Landmark className="h-3.5 w-3.5" /> วิธีการชำระ
           </div>
-        </Descriptions.Item>
+          <div className="text-sm text-gray-700">
+            {isBankTransfer ? "โอนเงินผ่านธนาคาร" : selectedOrder.payment?.method === "FREE" ? "ฟรี" : selectedOrder.payment?.method || "ไม่ระบุ"}
+          </div>
+        </div>
+
+        <div>
+          <div className="mb-1 text-xs text-gray-500">สถานะรายละเอียด</div>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className={`${statusBox.text} ${statusBox.border} ${statusBox.bg}`}>{getPaymentStatusText(status)}</Badge>
+            {selectedOrder.payment?.slipUrl && <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">มีสลิป</Badge>}
+          </div>
+        </div>
+
         {selectedOrder.payment?.ref && (
-          <Descriptions.Item
-            label={
-              <Space size={6}>
-                <FileTextOutlined style={{ color: "#8c8c8c" }} />
-                <Text>เลขอ้างอิง</Text>
-              </Space>
-            }
-          >
-            <Text code>{selectedOrder.payment.ref}</Text>
-          </Descriptions.Item>
+          <div>
+            <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
+              <FileText className="h-3.5 w-3.5" /> เลขอ้างอิง
+            </div>
+            <span className="font-mono text-sm text-gray-700">{selectedOrder.payment.ref}</span>
+          </div>
         )}
         {selectedOrder.payment?.paidAt && (
-          <Descriptions.Item
-            label={
-              <Space size={6}>
-                <CalendarOutlined style={{ color: "#8c8c8c" }} />
-                <Text>วันที่ชำระ</Text>
-              </Space>
-            }
-          >
-            <Text>{formatDate(selectedOrder.payment.paidAt)}</Text>
-          </Descriptions.Item>
+          <div>
+            <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
+              <Calendar className="h-3.5 w-3.5" /> วันที่ชำระ
+            </div>
+            <div className="text-sm text-gray-700">{formatDate(selectedOrder.payment.paidAt)}</div>
+          </div>
         )}
         {selectedOrder.payment?.uploadedAt && (
-          <Descriptions.Item
-            label={
-              <Space size={6}>
-                <CalendarOutlined style={{ color: "#8c8c8c" }} />
-                <Text>วันที่อัพโหลดสลิป</Text>
-              </Space>
-            }
-          >
-            <Text>{formatDate(selectedOrder.payment.uploadedAt)}</Text>
-          </Descriptions.Item>
+          <div>
+            <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
+              <Calendar className="h-3.5 w-3.5" /> วันที่อัพโหลดสลิป
+            </div>
+            <div className="text-sm text-gray-700">{formatDate(selectedOrder.payment.uploadedAt)}</div>
+          </div>
         )}
         {selectedOrder.payment?.verifiedAt && (
-          <Descriptions.Item
-            label={
-              <Space size={6}>
-                <CalendarOutlined style={{ color: "#8c8c8c" }} />
-                <Text>วันที่ตรวจสอบ</Text>
-              </Space>
-            }
-          >
-            <Text>{formatDate(selectedOrder.payment.verifiedAt)}</Text>
-          </Descriptions.Item>
+          <div>
+            <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
+              <Calendar className="h-3.5 w-3.5" /> วันที่ตรวจสอบ
+            </div>
+            <div className="text-sm text-gray-700">{formatDate(selectedOrder.payment.verifiedAt)}</div>
+          </div>
         )}
         {selectedOrder.payment?.verifiedBy && (
-          <Descriptions.Item
-            label={
-              <Space size={6}>
-                <UserOutlined style={{ color: "#8c8c8c" }} />
-                <Text>ตรวจสอบโดย</Text>
-              </Space>
-            }
-          >
-            <Text>{selectedOrder.payment.verifiedBy}</Text>
-          </Descriptions.Item>
+          <div>
+            <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
+              <User className="h-3.5 w-3.5" /> ตรวจสอบโดย
+            </div>
+            <div className="text-sm text-gray-700">{selectedOrder.payment.verifiedBy}</div>
+          </div>
         )}
         {selectedOrder.payment?.rejectionReason && (
-          <Descriptions.Item
-            label={
-              <Space size={6}>
-                <CloseOutlined style={{ color: "#ff4d4f" }} />
-                <Text>เหตุผลการปฏิเสธ</Text>
-              </Space>
-            }
-          >
-            <Text style={{ color: "#ff4d4f" }}>
-              {selectedOrder.payment.rejectionReason}
-            </Text>
-          </Descriptions.Item>
+          <div>
+            <div className="mb-1 flex items-center gap-1.5 text-xs text-red-500">
+              <X className="h-3.5 w-3.5" /> เหตุผลการปฏิเสธ
+            </div>
+            <div className="text-sm text-red-600">{selectedOrder.payment.rejectionReason}</div>
+          </div>
         )}
         {selectedOrder.payment?.notes && (
-          <Descriptions.Item
-            label={
-              <Space size={6}>
-                <FileTextOutlined style={{ color: "#8c8c8c" }} />
-                <Text>หมายเหตุ</Text>
-              </Space>
-            }
-          >
-            <Text>{selectedOrder.payment.notes}</Text>
-          </Descriptions.Item>
+          <div>
+            <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
+              <FileText className="h-3.5 w-3.5" /> หมายเหตุ
+            </div>
+            <div className="text-sm text-gray-700">{selectedOrder.payment.notes}</div>
+          </div>
         )}
-        <Descriptions.Item
-          label={
-            <Space size={6}>
-              <DollarOutlined style={{ color: "#8c8c8c" }} />
-              <Text>จำนวนเงิน</Text>
-            </Space>
-          }
-        >
-          <Text strong style={{ fontSize: "16px", color: "#52c41a" }}>
-            {formatPrice(selectedOrder.payment?.amount || selectedOrder.total)}
-          </Text>
-        </Descriptions.Item>
-      </Descriptions>
+        <div>
+          <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
+            <DollarSign className="h-3.5 w-3.5" /> จำนวนเงิน
+          </div>
+          <div className="text-base font-semibold text-emerald-600">{formatPrice(selectedOrder.payment?.amount || selectedOrder.total)}</div>
+        </div>
+      </div>
 
-      {/* Transfer Slip Preview (if available) */}
-      {(selectedOrder.payment?.method === "BANK_TRANSFER" ||
-        selectedOrder.payment?.method === "bank_transfer") && (
-        <div style={{ marginTop: "20px" }}>
-          <Divider style={{ margin: "16px 0" }} />
-          <Title level={5} style={{ marginBottom: "12px" }}>
-            <FileTextOutlined
-              style={{ color: "#1890ff", marginRight: "8px" }}
-            />
+      {isBankTransfer && (
+        <div className="mt-5 border-t border-gray-100 pt-4">
+          <div className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-gray-900">
+            <FileText className="h-4 w-4 text-blue-600" />
             หลักฐานการโอนเงิน
-          </Title>
+          </div>
 
           {selectedOrder.payment?.slipUrl ? (
             <div>
-              <Card
-                style={{
-                  textAlign: "center",
-                  borderRadius: "8px",
-                  overflow: "hidden",
-                  marginBottom: "16px",
-                }}
-              >
-                <Image
-                  src={selectedOrder.payment.slipUrl}
-                  alt="หลักฐานการโอนเงิน"
-                  style={{
-                    maxWidth: "100%",
-                    maxHeight: "400px",
-                    borderRadius: "6px",
-                    border: "1px solid #f0f0f0",
-                  }}
-                  preview={{
-                    mask: (
-                      <Space direction="vertical" align="center">
-                        <EyeOutlined style={{ fontSize: "24px" }} />
-                        <Text style={{ color: "white" }}>ดูรูปเต็ม</Text>
-                      </Space>
-                    ),
-                  }}
-                />
-                <div style={{ marginTop: "12px" }}>
-                  <Text type="secondary" style={{ fontSize: "12px" }}>
-                    คลิกที่รูปเพื่อดูขนาดเต็ม • อัพโหลดเมื่อ{" "}
-                    {formatDate(selectedOrder.payment.uploadedAt)}
-                  </Text>
-                </div>
-              </Card>
+              <div className="rounded-lg border border-gray-100 p-4 text-center">
+                <a href={selectedOrder.payment.slipUrl} target="_blank" rel="noopener noreferrer" className="group relative mx-auto block max-w-full">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={selectedOrder.payment.slipUrl}
+                    alt="หลักฐานการโอนเงิน"
+                    className="mx-auto max-h-[400px] max-w-full rounded-md border border-gray-100 object-contain"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center gap-1.5 rounded-md bg-black/0 text-transparent transition group-hover:bg-black/40 group-hover:text-white">
+                    <Eye className="h-5 w-5" />
+                    <span className="text-sm">ดูรูปเต็ม</span>
+                  </div>
+                </a>
+                <p className="mt-3 text-xs text-gray-500">
+                  คลิกที่รูปเพื่อดูขนาดเต็ม • อัพโหลดเมื่อ {formatDate(selectedOrder.payment.uploadedAt)}
+                </p>
+              </div>
 
-              {/* Admin Guidelines */}
-              {selectedOrder.payment?.status === "PENDING_VERIFICATION" && (
-                <Card
-                  size="small"
-                  style={{
-                    backgroundColor: "#e6f7ff",
-                    border: "1px solid #91d5ff",
-                    marginTop: "12px",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: "12px",
-                    }}
-                  >
-                    <div style={{ fontSize: "20px" }}><LineHeightOutlined/></div>
-                    <div style={{ flex: 1 }}>
-                      <Text
-                        strong
-                        style={{
-                          color: "#0050b3",
-                          display: "block",
-                          marginBottom: "8px",
-                        }}
-                      >
-                        คำแนะนำการตรวจสอบสลิป
-                      </Text>
-                      <div
-                        style={{
-                          fontSize: "12px",
-                          color: "#096dd9",
-                          lineHeight: "1.5",
-                        }}
-                      >
-                        <div>
-                          ✓ ตรวจสอบจำนวนเงินให้ตรงกับยอดรวม (
-                          {formatPrice(selectedOrder.total)})
-                        </div>
+              {status === "PENDING_VERIFICATION" && (
+                <div className="mt-3 rounded-md border border-blue-200 bg-blue-50 p-3">
+                  <div className="flex items-start gap-3">
+                    <Info className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
+                    <div className="flex-1">
+                      <div className="mb-2 font-semibold text-blue-900">คำแนะนำการตรวจสอบสลิป</div>
+                      <div className="space-y-0.5 text-xs leading-relaxed text-blue-700">
+                        <div>✓ ตรวจสอบจำนวนเงินให้ตรงกับยอดรวม ({formatPrice(selectedOrder.total)})</div>
                         <div>✓ ตรวจสอบวันที่และเวลาการโอนเงิน</div>
                         <div>✓ ตรวจสอบหมายเลขบัญชีปลายทาง</div>
                         <div>✓ ตรวจสอบความชัดเจนของสลิป</div>
@@ -347,51 +169,23 @@ export default function PaymentInfoCard({
                       </div>
                     </div>
                   </div>
-                </Card>
+                </div>
               )}
             </div>
           ) : (
-            <Card
-              style={{
-                textAlign: "center",
-                backgroundColor: "#fff2e8",
-                border: "1px dashed #ffbb96",
-                borderRadius: "8px",
-              }}
-            >
-              <Space direction="vertical" size={12}>
-                <FileTextOutlined
-                  style={{ fontSize: "48px", color: "#fa8c16" }}
-                />
-                <Text
-                  style={{
-                    fontSize: "16px",
-                    color: "#d46b08",
-                    fontWeight: "500",
-                  }}
-                >
-                  <WarningOutlined/> ไม่มีหลักฐานการโอนเงิน
-                </Text>
-                <Text type="secondary" style={{ fontSize: "14px" }}>
-                  ลูกค้ายังไม่ได้อัพโหลดสลิปการโอนเงิน
-                </Text>
-                <div
-                  style={{
-                    padding: "8px 16px",
-                    backgroundColor: "#fff7e6",
-                    borderRadius: "4px",
-                    border: "1px solid #ffd591",
-                  }}
-                >
-                  <Text style={{ fontSize: "12px", color: "#ad6800" }}>
-                    <LineHeightOutlined /> กรุณารอให้ลูกค้าอัพโหลดสลิปการโอนเงินก่อนดำเนินการตรวจสอบ
-                  </Text>
-                </div>
-              </Space>
-            </Card>
+            <div className="rounded-lg border border-dashed border-orange-300 bg-orange-50 p-6 text-center">
+              <FileText className="mx-auto mb-3 h-10 w-10 text-orange-500" />
+              <div className="mb-1 flex items-center justify-center gap-1.5 text-base font-medium text-orange-700">
+                <AlertTriangle className="h-4 w-4" /> ไม่มีหลักฐานการโอนเงิน
+              </div>
+              <p className="mb-3 text-sm text-gray-500">ลูกค้ายังไม่ได้อัพโหลดสลิปการโอนเงิน</p>
+              <div className="mx-auto inline-block rounded-md border border-orange-200 bg-orange-100 px-3 py-1.5 text-xs text-orange-800">
+                กรุณารอให้ลูกค้าอัพโหลดสลิปการโอนเงินก่อนดำเนินการตรวจสอบ
+              </div>
+            </div>
           )}
         </div>
       )}
-    </Card>
+    </div>
   );
 }

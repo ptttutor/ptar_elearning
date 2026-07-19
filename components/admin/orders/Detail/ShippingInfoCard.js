@@ -1,125 +1,86 @@
-import { Card, Space, Typography, Descriptions, Tag, Button, App } from "antd";
-import {
-  EnvironmentOutlined,
-  UserOutlined,
-  PhoneOutlined,
-  FileTextOutlined,
-  CopyOutlined,
-} from "@ant-design/icons";
-
-const { Text } = Typography;
+"use client";
+import { MapPin, User, Phone, FileText, Copy } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function ShippingInfoCard({ selectedOrder }) {
-  const { message } = App.useApp();
-  
-  // Only render if shipping exists
-  if (!selectedOrder.shipping) {
-    return null;
-  }
+  const { toast } = useToast();
 
-  // ฟังก์ชันรวมข้อมูลการจัดส่งทั้งหมดเป็นข้อความเดียว
+  if (!selectedOrder.shipping) return null;
+
   const getShippingText = () => {
     const shipping = selectedOrder.shipping;
-    let lines = [];
-    lines.push(`ผู้รับ: ${shipping.recipientName || "-"}`);
-    lines.push(`เบอร์โทร: ${shipping.recipientPhone || "-"}`);
-    lines.push(`ที่อยู่: ${shipping.address || "-"}, ${shipping.district || "-"}, ${shipping.province || "-"} ${shipping.postalCode || "-"}`);
-    lines.push(`สถานะการจัดส่ง: ${shipping.status || "-"}`);
-    if (shipping.trackingNumber) {
-      lines.push(`เลขติดตาม: ${shipping.trackingNumber}`);
-    }
+    const lines = [
+      `ผู้รับ: ${shipping.recipientName || "-"}`,
+      `เบอร์โทร: ${shipping.recipientPhone || "-"}`,
+      `ที่อยู่: ${shipping.address || "-"}, ${shipping.district || "-"}, ${shipping.province || "-"} ${shipping.postalCode || "-"}`,
+      `สถานะการจัดส่ง: ${shipping.status || "-"}`,
+    ];
+    if (shipping.trackingNumber) lines.push(`เลขติดตาม: ${shipping.trackingNumber}`);
     return lines.join("\n");
   };
 
-  // ฟังก์ชัน copy
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(getShippingText());
-      message.success("คัดลอกข้อมูลการจัดส่งสำเร็จ");
+      toast({ title: "คัดลอกข้อมูลการจัดส่งสำเร็จ" });
     } catch (e) {
-      message.error("คัดลอกข้อมูลไม่สำเร็จ");
+      toast({ variant: "destructive", title: "คัดลอกข้อมูลไม่สำเร็จ" });
     }
   };
 
   return (
-    <Card
-      title={
-        <Space>
-          <EnvironmentOutlined style={{ color: "#1890ff" }} />
-          <Text strong>ข้อมูลการจัดส่ง</Text>
-        </Space>
-      }
-      extra={
-        <Button
-          icon={<CopyOutlined />}
-          size="small"
-          onClick={handleCopy}
-          style={{ borderRadius: "6px" }}
-        >
-          คัดลอก
+    <div className="mb-5 rounded-lg border border-gray-200 p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+          <MapPin className="h-4 w-4 text-blue-600" />
+          ข้อมูลการจัดส่ง
+        </div>
+        <Button variant="outline" size="sm" onClick={handleCopy}>
+          <Copy className="mr-1.5 h-3.5 w-3.5" /> คัดลอก
         </Button>
-      }
-      size="small"
-    >
-      <Descriptions column={1} size="small">
-        <Descriptions.Item
-          label={
-            <Space size={6}>
-              <UserOutlined style={{ color: "#8c8c8c" }} />
-              <Text>ผู้รับ</Text>
-            </Space>
-          }
-        >
-          <Text strong>{selectedOrder.shipping.recipientName}</Text>
-        </Descriptions.Item>
-        <Descriptions.Item
-          label={
-            <Space size={6}>
-              <PhoneOutlined style={{ color: "#8c8c8c" }} />
-              <Text>เบอร์โทร</Text>
-            </Space>
-          }
-        >
-          <Text>{selectedOrder.shipping.recipientPhone}</Text>
-        </Descriptions.Item>
-        <Descriptions.Item
-          label={
-            <Space size={6}>
-              <EnvironmentOutlined style={{ color: "#8c8c8c" }} />
-              <Text>ที่อยู่</Text>
-            </Space>
-          }
-        >
-          <Text>
-            {selectedOrder.shipping.address}, {selectedOrder.shipping.district},{" "}
-            {selectedOrder.shipping.province} {selectedOrder.shipping.postalCode}
-          </Text>
-        </Descriptions.Item>
-        <Descriptions.Item label={<Text>สถานะการจัดส่ง</Text>}>
-          <Tag
-            color={
-              selectedOrder.shipping.status === "DELIVERED"
-                ? "success"
-                : "processing"
-            }
-            style={{ borderRadius: "4px" }}
+      </div>
+
+      <div className="space-y-3">
+        <div>
+          <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
+            <User className="h-3.5 w-3.5" /> ผู้รับ
+          </div>
+          <div className="text-sm font-semibold text-gray-900">{selectedOrder.shipping.recipientName}</div>
+        </div>
+        <div>
+          <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
+            <Phone className="h-3.5 w-3.5" /> เบอร์โทร
+          </div>
+          <div className="text-sm text-gray-700">{selectedOrder.shipping.recipientPhone}</div>
+        </div>
+        <div>
+          <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
+            <MapPin className="h-3.5 w-3.5" /> ที่อยู่
+          </div>
+          <div className="text-sm text-gray-700">
+            {selectedOrder.shipping.address}, {selectedOrder.shipping.district}, {selectedOrder.shipping.province} {selectedOrder.shipping.postalCode}
+          </div>
+        </div>
+        <div>
+          <div className="mb-1 text-xs text-gray-500">สถานะการจัดส่ง</div>
+          <Badge
+            variant="outline"
+            className={selectedOrder.shipping.status === "DELIVERED" ? "border-green-200 bg-green-50 text-green-700" : "border-blue-200 bg-blue-50 text-blue-700"}
           >
             {selectedOrder.shipping.status}
-          </Tag>
-        </Descriptions.Item>
+          </Badge>
+        </div>
         {selectedOrder.shipping.trackingNumber && (
-          <Descriptions.Item
-            label={
-              <Space size={6}>
-                <FileTextOutlined style={{ color: "#8c8c8c" }} />
-                <Text>เลขติดตาม</Text>
-              </Space>
-            }
-          >
-            <Text code>{selectedOrder.shipping.trackingNumber}</Text>
-          </Descriptions.Item>
+          <div>
+            <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
+              <FileText className="h-3.5 w-3.5" /> เลขติดตาม
+            </div>
+            <span className="font-mono text-sm text-gray-700">{selectedOrder.shipping.trackingNumber}</span>
+          </div>
         )}
-      </Descriptions>
-    </Card>
+      </div>
+    </div>
   );
 }

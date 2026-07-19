@@ -1,73 +1,44 @@
-import { Card, Space, Typography, Descriptions } from "antd";
-import { FileTextOutlined, DollarOutlined } from "@ant-design/icons";
-
-const { Text } = Typography;
+"use client";
+import { FileText, DollarSign } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 export default function CouponInfoCard({ selectedOrder, formatPrice }) {
-  // Only render if coupon exists
-  if (!selectedOrder.coupon) {
-    return null;
-  }
+  if (!selectedOrder.coupon) return null;
 
   return (
-    <Card
-      title={
-        <Space>
-          <FileTextOutlined style={{ color: "#1890ff" }} />
-          <Text strong>ข้อมูลคูปองส่วนลด</Text>
-        </Space>
-      }
-      style={{ marginBottom: "20px" }}
-      size="small"
-    >
-      <Descriptions column={2} size="small">
-        <Descriptions.Item
-          label={
-            <Space size={6}>
-              <FileTextOutlined style={{ color: "#8c8c8c" }} />
-              <Text>รหัสคูปอง</Text>
-            </Space>
-          }
-        >
-          <Text code>{selectedOrder.couponCode}</Text>
-        </Descriptions.Item>
-        <Descriptions.Item
-          label={
-            <Space size={6}>
-              <FileTextOutlined style={{ color: "#8c8c8c" }} />
-              <Text>ชื่อคูปอง</Text>
-            </Space>
-          }
-        >
-          <Text>{selectedOrder.coupon.name}</Text>
-        </Descriptions.Item>
-        <Descriptions.Item
-          label={
-            <Space size={6}>
-              <DollarOutlined style={{ color: "#8c8c8c" }} />
-              <Text>ส่วนลด</Text>
-            </Space>
-          }
-        >
-          <Text style={{ color: "#52c41a" }}>
-            {selectedOrder.coupon.type === "PERCENTAGE"
-              ? `${selectedOrder.coupon.value}%`
-              : formatPrice(selectedOrder.coupon.value)}
-          </Text>
-        </Descriptions.Item>
-        <Descriptions.Item
-          label={
-            <Space size={6}>
-              <DollarOutlined style={{ color: "#8c8c8c" }} />
-              <Text>จำนวนเงินที่ลด</Text>
-            </Space>
-          }
-        >
-          <Text style={{ color: "#52c41a" }}>
-            -{formatPrice(selectedOrder.couponDiscount)}
-          </Text>
-        </Descriptions.Item>
-      </Descriptions>
-    </Card>
+    <div className="mb-5 rounded-lg border border-gray-200 p-4">
+      <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900">
+        <FileText className="h-4 w-4 text-blue-600" />
+        ข้อมูลคูปองส่วนลด
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div>
+          <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
+            <FileText className="h-3.5 w-3.5" /> รหัสคูปอง
+          </div>
+          <Badge variant="outline" className="font-mono">{selectedOrder.couponCode}</Badge>
+        </div>
+        <div>
+          <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
+            <FileText className="h-3.5 w-3.5" /> ชื่อคูปอง
+          </div>
+          <div className="text-sm text-gray-700">{selectedOrder.coupon.name}</div>
+        </div>
+        <div>
+          <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
+            <DollarSign className="h-3.5 w-3.5" /> ส่วนลด
+          </div>
+          <div className="text-sm text-emerald-600">
+            {selectedOrder.coupon.type === "PERCENTAGE" ? `${selectedOrder.coupon.value}%` : formatPrice(selectedOrder.coupon.value)}
+          </div>
+        </div>
+        <div>
+          <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
+            <DollarSign className="h-3.5 w-3.5" /> จำนวนเงินที่ลด
+          </div>
+          <div className="text-sm text-emerald-600">-{formatPrice(selectedOrder.couponDiscount)}</div>
+        </div>
+      </div>
+    </div>
   );
 }

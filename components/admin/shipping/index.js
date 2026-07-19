@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
-import { TruckOutlined } from "@ant-design/icons";
+import { Truck } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 import AdminPageHeader from "@/components/admin/shared/AdminPageHeader";
 
 // Components
@@ -11,10 +12,9 @@ import ShippingDetailModal from "./ShippingDetailModal";
 
 // Hooks
 import { useShipping } from "@/hooks/admin/useShipping";
-import { useMessage } from "@/hooks/admin/useAntdApp";
 
 export default function AdminShippingPage() {
-  const message = useMessage();
+  const { toast } = useToast();
 
   // Modal states
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -36,28 +36,28 @@ export default function AdminShippingPage() {
     fetchShipmentDetail,
     updateShipment,
     handleFilterChange,
-    handleTableChange,
-    handleSearch,
+    handleSortSelectChange,
+    handlePageChange,
     resetFilters,
   } = useShipping();
 
   // Handle view detail with loading state
   const handleViewDetail = async (shipment) => {
     setDetailModalOpen(true);
-    setDetailShipment(null); // Reset previous data
-    
+    setDetailShipment(null);
+
     try {
       const detail = await fetchShipmentDetail(shipment.id);
       if (detail) {
         setDetailShipment(detail);
       } else {
         setDetailModalOpen(false);
-        message.error("ไม่สามารถโหลดรายละเอียดการจัดส่งได้");
+        toast({ variant: "destructive", title: "ไม่สามารถโหลดรายละเอียดการจัดส่งได้" });
       }
     } catch (error) {
       console.error("Error fetching shipment detail:", error);
       setDetailModalOpen(false);
-      message.error("เกิดข้อผิดพลาดในการโหลดรายละเอียด");
+      toast({ variant: "destructive", title: "เกิดข้อผิดพลาดในการโหลดรายละเอียด" });
     }
   };
 
@@ -72,70 +72,46 @@ export default function AdminShippingPage() {
     setUpdating(true);
     try {
       if (!selectedShipment?.id) {
-        message.error("ไม่พบข้อมูลการจัดส่งที่จะอัพเดท");
+        toast({ variant: "destructive", title: "ไม่พบข้อมูลการจัดส่งที่จะอัพเดท" });
         return false;
       }
 
-      // Optimistic update - อัพเดท UI ทันที
       const originalShipment = selectedShipment;
-      const updatedShipment = {
-        ...originalShipment,
-        ...values,
-        updatedAt: new Date().toISOString(),
-      };
+      const updatedShipment = { ...originalShipment, ...values, updatedAt: new Date().toISOString() };
 
-      // อัพเดทในรายการทันที
-      setShipments(prevShipments => 
-        prevShipments.map(shipment => 
-          shipment.id === selectedShipment.id ? updatedShipment : shipment
-        )
-      );
+      setShipments((prev) => prev.map((s) => (s.id === selectedShipment.id ? updatedShipment : s)));
 
       try {
         const success = await updateShipment(selectedShipment.id, values);
-        
+
         if (success) {
-          message.success("อัพเดทสถานะการจัดส่งสำเร็จ");
           setEditModalOpen(false);
           setSelectedShipment(null);
           return true;
         } else {
-          // Rollback optimistic update on error
-          setShipments(prevShipments => 
-            prevShipments.map(shipment => 
-              shipment.id === selectedShipment.id ? originalShipment : shipment
-            )
-          );
-          message.error("อัพเดทสถานะการจัดส่งไม่สำเร็จ");
+          setShipments((prev) => prev.map((s) => (s.id === selectedShipment.id ? originalShipment : s)));
           return false;
         }
       } catch (error) {
-        // Rollback optimistic update on error
-        setShipments(prevShipments => 
-          prevShipments.map(shipment => 
-            shipment.id === selectedShipment.id ? originalShipment : shipment
-          )
-        );
+        setShipments((prev) => prev.map((s) => (s.id === selectedShipment.id ? originalShipment : s)));
         console.error("Error updating shipment:", error);
-        message.error("เกิดข้อผิดพลาดในการอัพเดทสถานะ");
+        toast({ variant: "destructive", title: "เกิดข้อผิดพลาดในการอัพเดทสถานะ" });
         return false;
       }
     } catch (error) {
       console.error("Error in handleUpdateSubmit:", error);
-      message.error("เกิดข้อผิดพลาดไม่คาดคิด");
+      toast({ variant: "destructive", title: "เกิดข้อผิดพลาดไม่คาดคิด" });
       return false;
     } finally {
       setUpdating(false);
     }
   };
 
-  // Handle close edit modal
   const handleCloseEditModal = () => {
     setEditModalOpen(false);
     setSelectedShipment(null);
   };
 
-  // Handle close detail modal
   const handleCloseDetailModal = () => {
     setDetailModalOpen(false);
     setDetailShipment(null);
@@ -143,7 +119,7 @@ export default function AdminShippingPage() {
 
   return (
     <AdminPageHeader
-      icon={<TruckOutlined />}
+      icon={<Truck className="h-6 w-6" />}
       title="จัดการการจัดส่ง"
       subtitle="ติดตามและอัพเดทสถานะการจัดส่งสินค้า"
     >
@@ -153,10 +129,11 @@ export default function AdminShippingPage() {
         searchInput={searchInput}
         setSearchInput={setSearchInput}
         onFilterChange={handleFilterChange}
-        onSearch={handleSearch}
+        onSortSelectChange={handleSortSelectChange}
         onReset={resetFilters}
         totalCount={pagination.totalCount}
         currentCount={shipments.length}
+        loading={loading}
       />
 
       {/* Table */}
@@ -164,28 +141,17 @@ export default function AdminShippingPage() {
         shipments={shipments}
         loading={loading}
         pagination={pagination}
+        onPageChange={handlePageChange}
         onViewDetail={handleViewDetail}
         onEdit={handleEdit}
-        onTableChange={handleTableChange}
         updatingId={updating ? selectedShipment?.id : null}
       />
 
       {/* Edit Modal */}
-      <ShippingModal
-        open={editModalOpen}
-        onClose={handleCloseEditModal}
-        onSubmit={handleUpdateSubmit}
-        loading={updating}
-        shipment={selectedShipment}
-      />
+      <ShippingModal open={editModalOpen} onClose={handleCloseEditModal} onSubmit={handleUpdateSubmit} loading={updating} shipment={selectedShipment} />
 
       {/* Detail Modal */}
-      <ShippingDetailModal
-        open={detailModalOpen}
-        onClose={handleCloseDetailModal}
-        shipment={detailShipment}
-        loading={detailLoading}
-      />
+      <ShippingDetailModal open={detailModalOpen} onClose={handleCloseDetailModal} shipment={detailShipment} loading={detailLoading} />
     </AdminPageHeader>
   );
 }

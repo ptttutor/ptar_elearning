@@ -1,528 +1,332 @@
 "use client";
-import React, { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { FileText, Tag, Link as LinkIcon, Calendar, Monitor, Smartphone, Upload, Trash2, Loader2, Image as ImageIcon } from "lucide-react";
 import {
-  Modal,
-  Form,
-  Input,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
   Select,
-  Button,
-  Space,
-  Typography,
-  Checkbox,
-  DatePicker,
-  Image,
-  Card,
-  Upload,
-  Row,
-  Col,
-  Divider,
-} from "antd";
-import {
-  FileTextOutlined,
-  EditOutlined,
-  PlusOutlined,
-  TagOutlined,
-  LinkOutlined,
-  CalendarOutlined,
-  DesktopOutlined,
-  MobileOutlined,
-  PictureOutlined,
-  UploadOutlined,
-  DeleteOutlined,
-  LoadingOutlined,
-} from "@ant-design/icons";
-import dayjs from 'dayjs';
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from "@/components/ui/use-toast";
 import { uploadDiagnostics } from "@/lib/upload-diagnostics";
-import { useMessage } from "@/hooks/admin/useAntdApp";
-import { MODAL_WIDTH } from "@/components/admin/shared/adminUiConstants";
 
-const { Text } = Typography;
-const { TextArea } = Input;
-const { Option } = Select;
+const EMPTY_FORM = {
+  title: "",
+  postTypeId: "",
+  slug: "",
+  excerpt: "",
+  content: "",
+  imageUrl: "",
+  imageUrlMobileMode: "",
+  publishedAt: "",
+  isActive: true,
+  isFeatured: false,
+};
 
-export default function PostModal({
-  open,
-  editing,
-  postTypes,
-  onCancel,
-  onSubmit,
-}) {
-  const [form] = Form.useForm();
-  const message = useMessage();
+const generateSlug = (title) =>
+  title
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .trim();
+
+const toDatetimeLocal = (value) => {
+  if (!value) return "";
+  const d = new Date(value);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+export default function PostModal({ open, editing, postTypes, onCancel, onSubmit }) {
+  const { toast } = useToast();
+  const [values, setValues] = useState(EMPTY_FORM);
+  const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadingMobile, setUploadingMobile] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const desktopFileRef = useRef(null);
+  const mobileFileRef = useRef(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (open) {
-      if (editing) {
-        form.setFieldsValue({
-          ...editing,
-          publishedAt: editing.publishedAt ? dayjs(editing.publishedAt) : null
-        });
-      } else {
-        form.resetFields();
-      }
+      setValues(
+        editing
+          ? { ...EMPTY_FORM, ...editing, publishedAt: toDatetimeLocal(editing.publishedAt) }
+          : EMPTY_FORM
+      );
+      setErrors({});
     }
-  }, [open, editing, form]);
+  }, [open, editing]);
 
-  const generateSlug = (title) => {
-    return title
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .trim();
-  };
+  const set = (patch) => setValues((p) => ({ ...p, ...patch }));
 
   const handleTitleChange = (e) => {
     const title = e.target.value;
-    form.setFieldsValue({
-      title,
-      slug: generateSlug(title)
-    });
+    set({ title, slug: generateSlug(title) });
   };
 
-  // Upload image to Vercel Blob
   const uploadImage = async (file, isMobile = false) => {
     const monitor = uploadDiagnostics.createPerformanceMonitor();
-    const errorHandler = uploadDiagnostics.createErrorHandler('PostModal', {
-      component: 'PostModal',
-      field: isMobile ? 'imageUrlMobileMode' : 'imageUrl',
-      isMobile
+    const errorHandler = uploadDiagnostics.createErrorHandler("PostModal", {
+      component: "PostModal",
+      field: isMobile ? "imageUrlMobileMode" : "imageUrl",
+      isMobile,
     });
 
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast({ variant: "destructive", title: "รองรับเฉพาะไฟล์รูปภาพ (JPG, PNG, WebP)" });
+      return;
+    }
+
     try {
-      // Check file compatibility first
       const compatibilityCheck = uploadDiagnostics.checkFileCompatibility(file);
       if (!compatibilityCheck.compatible) {
-        throw new Error(compatibilityCheck.issues.join(', '));
+        throw new Error(compatibilityCheck.issues.join(", "));
       }
-      
-      // Log warnings but proceed
       if (compatibilityCheck.hasWarnings) {
-        console.warn('⚠️ File compatibility warnings detected, but proceeding:', compatibilityCheck.warnings);
+        console.warn("File compatibility warnings detected, but proceeding:", compatibilityCheck.warnings);
       }
 
       if (isMobile) setUploadingMobile(true);
       else setUploading(true);
 
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('type', 'post-image');
+      formData.append("file", file);
+      formData.append("type", "post-image");
 
-      console.log('PostModal Upload starting:', {
-        fileName: file.name,
-        fileSize: file.size,
-        isMobile,
-        component: 'PostModal'
-      });
-
-      const response = await fetch('/api/upload-blob', {
-        method: 'POST',
-        body: formData,
-      });
-
+      const response = await fetch("/api/upload-blob", { method: "POST", body: formData });
       const data = await response.json();
 
       if (data.success) {
-        const fieldName = isMobile ? 'imageUrlMobileMode' : 'imageUrl';
-        form.setFieldsValue({
-          [fieldName]: data.data.url
-        });
-        
+        set({ [isMobile ? "imageUrlMobileMode" : "imageUrl"]: data.data.url });
         monitor.end();
-        console.log('PostModal Upload success:', {
-          url: data.data.url,
-          compressionInfo: data.data.compressionInfo,
-          performance: monitor.getMetrics(),
-          isMobile
+        toast({
+          title: `อัพโหลดรูปภาพ${isMobile ? "มือถือ" : "เดสก์ท็อป"}สำเร็จ${data.data.compressionInfo?.wasCompressed ? " (ถูกบีบอัดเพื่อคุณภาพที่เหมาะสม)" : ""}`,
         });
-        
-        message.success(`อัพโหลดรูปภาพ${isMobile ? 'มือถือ' : 'เดสก์ท็อป'}สำเร็จ${data.data.compressionInfo?.wasCompressed ? ' (ถูกบีบอัดเพื่อคุณภาพที่เหมาะสม)' : ''}`);
-        return data.data.url;
       } else {
-        throw new Error(data.error || 'Upload failed');
+        throw new Error(data.error || "Upload failed");
       }
     } catch (error) {
-      console.error('PostModal Upload error:', error);
+      console.error("PostModal Upload error:", error);
       const handledError = errorHandler(error);
-      message.error(`เกิดข้อผิดพลาดในการอัพโหลดรูปภาพ: ${handledError.userMessage}`);
-      throw error;
+      toast({ variant: "destructive", title: `เกิดข้อผิดพลาดในการอัพโหลดรูปภาพ: ${handledError.userMessage}` });
     } finally {
       if (isMobile) setUploadingMobile(false);
       else setUploading(false);
     }
   };
 
-  // Handle file upload
-  const handleUpload = (info, isMobile = false) => {
-    const { file } = info;
-    
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    if (!allowedTypes.includes(file.type)) {
-      message.error('รองรับเฉพาะไฟล์รูปภาพ (JPG, PNG, WebP)');
-      return false;
-    }
-
-    uploadImage(file, isMobile);
-    return false; // Prevent default upload
-  };
-
-  // Delete image from Cloudinary
   const deleteImage = async (imageUrl, isMobile = false) => {
     try {
-      const fieldName = isMobile ? 'imageUrlMobileMode' : 'imageUrl';
-      
-      // Delete from Vercel Blob
-      const response = await fetch(`/api/upload-blob/delete?url=${encodeURIComponent(imageUrl)}`, {
-        method: 'DELETE',
-      });
-
+      const fieldName = isMobile ? "imageUrlMobileMode" : "imageUrl";
+      const response = await fetch(`/api/upload-blob/delete?url=${encodeURIComponent(imageUrl)}`, { method: "DELETE" });
       const data = await response.json();
-      if (data.success) {
-        form.setFieldsValue({
-          [fieldName]: ''
-        });
-        message.success(`ลบรูปภาพ${isMobile ? 'มือถือ' : 'เดสก์ท็อป'}สำเร็จ`);
-      } else {
-        // If can't extract public_id, just clear the field
-        form.setFieldsValue({
-          [fieldName]: ''
-        });
-        message.success('ลบรูปภาพสำเร็จ');
-      }
+      set({ [fieldName]: "" });
+      toast({ title: data.success ? `ลบรูปภาพ${isMobile ? "มือถือ" : "เดสก์ท็อป"}สำเร็จ` : "ลบรูปภาพสำเร็จ" });
     } catch (error) {
-      console.error('Delete error:', error);
-      message.error('เกิดข้อผิดพลาดในการลบรูปภาพ');
+      console.error("Delete error:", error);
+      toast({ variant: "destructive", title: "เกิดข้อผิดพลาดในการลบรูปภาพ" });
     }
   };
 
-  const handleSubmit = async () => {
-    try {
-      const values = await form.validateFields();
-      setSubmitting(true);
+  const validate = () => {
+    const next = {};
+    if (!values.title.trim()) next.title = "กรุณากรอกหัวข้อ";
+    else if (values.title.trim().length < 2) next.title = "หัวข้อต้องมีอย่างน้อย 2 ตัวอักษร";
+    else if (values.title.trim().length > 255) next.title = "หัวข้อต้องไม่เกิน 255 ตัวอักษร";
+    if (!values.postTypeId) next.postTypeId = "กรุณาเลือกประเภทโพสต์";
+    if (values.slug && !/^[a-z0-9-]+$/.test(values.slug)) next.slug = "Slug ต้องเป็นตัวอักษรเล็ก ตัวเลข และ - เท่านั้น";
+    if (values.excerpt && values.excerpt.length > 500) next.excerpt = "สรุปต้องไม่เกิน 500 ตัวอักษร";
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
 
-      // Convert publishedAt to proper format if provided
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+    setSubmitting(true);
+    try {
       const submitData = {
         ...values,
-        publishedAt: values.publishedAt ? dayjs(values.publishedAt).toISOString() : null
+        publishedAt: values.publishedAt ? new Date(values.publishedAt).toISOString() : null,
       };
-
       await onSubmit(submitData);
-      form.resetFields();
-    } catch (error) {
-      console.error('Error submitting post:', error);
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <Modal
-      title={
-        <Space>
-          {editing ? <EditOutlined /> : <PlusOutlined />}
-          <Text strong>
-            {editing ? "แก้ไขโพสต์" : "เพิ่มโพสต์ใหม่"}
-          </Text>
-        </Space>
-      }
-      open={open}
-      onCancel={onCancel}
-      onOk={handleSubmit}
-      confirmLoading={submitting}
-      okText={editing ? "อัพเดท" : "สร้าง"}
-      cancelText="ยกเลิก"
-      width={MODAL_WIDTH.lg}
-      style={{ top: 20 }}
-    >
-      <Form
-        form={form}
-        layout="vertical"
-        initialValues={{
-          isActive: true,
-          isFeatured: false
-        }}
-      >
-        <Form.Item
-          name="title"
-          label={
-            <Space size={6}>
-              <FileTextOutlined style={{ color: "#8c8c8c" }} />
-              <Text>หัวข้อ</Text>
-            </Space>
-          }
-          rules={[
-            { required: true, message: "กรุณากรอกหัวข้อ" },
-            { min: 2, message: "หัวข้อต้องมีอย่างน้อย 2 ตัวอักษร" },
-            { max: 255, message: "หัวข้อต้องไม่เกิน 255 ตัวอักษร" }
-          ]}
-        >
-          <Input 
-            placeholder="ใส่หัวข้อโพสต์"
-            onChange={handleTitleChange}
-            style={{ borderRadius: "6px" }}
-          />
-        </Form.Item>
+    <Dialog open={open} onOpenChange={(next) => !next && onCancel()}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[720px]">
+        <DialogHeader>
+          <DialogTitle>{editing ? "แก้ไขโพสต์" : "เพิ่มโพสต์ใหม่"}</DialogTitle>
+        </DialogHeader>
 
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item
-              name="postTypeId"
-              label={
-                <Space size={6}>
-                  <TagOutlined style={{ color: "#8c8c8c" }} />
-                  <Text>ประเภทโพสต์</Text>
-                </Space>
-              }
-              rules={[
-                { required: true, message: "กรุณาเลือกประเภทโพสต์" }
-              ]}
-            >
-              <Select placeholder="เลือกประเภท">
-                {postTypes.map(type => (
-                  <Option key={type.id} value={type.id}>
-                    {type.name}
-                  </Option>
-                ))}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="title">หัวข้อ</Label>
+            <Input id="title" placeholder="ใส่หัวข้อโพสต์" value={values.title} disabled={submitting} onChange={handleTitleChange} />
+            {errors.title && <p className="text-xs text-red-600">{errors.title}</p>}
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>ประเภทโพสต์</Label>
+              <Select value={values.postTypeId} onValueChange={(v) => set({ postTypeId: v })} disabled={submitting}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="เลือกประเภท" />
+                </SelectTrigger>
+                <SelectContent>
+                  {postTypes.map((type) => (
+                    <SelectItem key={type.id} value={type.id}>
+                      {type.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
-            </Form.Item>
-          </Col>
+              {errors.postTypeId && <p className="text-xs text-red-600">{errors.postTypeId}</p>}
+            </div>
 
-          <Col span={12}>
-            <Form.Item
-              name="slug"
-              label={
-                <Space size={6}>
-                  <LinkOutlined style={{ color: "#8c8c8c" }} />
-                  <Text>URL Slug</Text>
-                </Space>
-              }
-              rules={[
-                { pattern: /^[a-z0-9-]+$/, message: "Slug ต้องเป็นตัวอักษรเล็ก ตัวเลข และ - เท่านั้น" }
-              ]}
-            >
-              <Input
-                placeholder="url-slug"
-                style={{ borderRadius: "6px" }}
-              />
-            </Form.Item>
-          </Col>
-        </Row>
+            <div className="space-y-1.5">
+              <Label htmlFor="slug">URL Slug</Label>
+              <Input id="slug" placeholder="url-slug" value={values.slug} disabled={submitting} onChange={(e) => set({ slug: e.target.value })} />
+              {errors.slug && <p className="text-xs text-red-600">{errors.slug}</p>}
+            </div>
+          </div>
 
-        <Form.Item
-          name="excerpt"
-          label={
-            <Space size={6}>
-              <FileTextOutlined style={{ color: "#8c8c8c" }} />
-              <Text>สรุป</Text>
-            </Space>
-          }
-          rules={[
-            { max: 500, message: "สรุปต้องไม่เกิน 500 ตัวอักษร" }
-          ]}
-        >
-          <TextArea
-            rows={3}
-            placeholder="ใส่สรุปโพสต์"
-            style={{ borderRadius: "6px" }}
-          />
-        </Form.Item>
+          <div className="space-y-1.5">
+            <Label htmlFor="excerpt">สรุป</Label>
+            <Textarea id="excerpt" rows={3} placeholder="ใส่สรุปโพสต์" value={values.excerpt} disabled={submitting} maxLength={500} onChange={(e) => set({ excerpt: e.target.value })} />
+            {errors.excerpt && <p className="text-xs text-red-600">{errors.excerpt}</p>}
+          </div>
 
-        <Form.Item
-          name="content"
-          label={
-            <Space size={6}>
-              <FileTextOutlined style={{ color: "#8c8c8c" }} />
-              <Text>เนื้อหา</Text>
-            </Space>
-          }
-        >
-          <TextArea
-            rows={8}
-            placeholder="ใส่เนื้อหาโพสต์"
-            style={{ borderRadius: "6px" }}
-          />
-        </Form.Item>
+          <div className="space-y-1.5">
+            <Label htmlFor="content">เนื้อหา</Label>
+            <Textarea id="content" rows={8} placeholder="ใส่เนื้อหาโพสต์" value={values.content} disabled={submitting} onChange={(e) => set({ content: e.target.value })} />
+          </div>
 
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item
-              name="imageUrl"
-              label={
-                <Space size={6}>
-                  <DesktopOutlined style={{ color: "#8c8c8c" }} />
-                  <Text>รูปภาพเดสก์ท็อป</Text>
-                </Space>
-              }
-            >
-              <Input
-                placeholder="https://example.com/image.jpg"
-                style={{ borderRadius: "6px" }}
-              />
-            </Form.Item>
-          </Col>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>รูปภาพเดสก์ท็อป</Label>
+              <Input placeholder="https://example.com/image.jpg" value={values.imageUrl} disabled={submitting} onChange={(e) => set({ imageUrl: e.target.value })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>รูปภาพมือถือ</Label>
+              <Input placeholder="https://example.com/mobile-image.jpg" value={values.imageUrlMobileMode} disabled={submitting} onChange={(e) => set({ imageUrlMobileMode: e.target.value })} />
+            </div>
+          </div>
 
-          <Col span={12}>
-            <Form.Item
-              name="imageUrlMobileMode"
-              label={
-                <Space size={6}>
-                  <MobileOutlined style={{ color: "#8c8c8c" }} />
-                  <Text>รูปภาพมือถือ</Text>
-                </Space>
-              }
-            >
-              <Input
-                placeholder="https://example.com/mobile-image.jpg"
-                style={{ borderRadius: "6px" }}
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        {/* Image Upload Section */}
-        <Card 
-          title={
-            <Space>
-              <PictureOutlined style={{ color: "#1890ff" }} />
-              <Text strong>อัพโหลดรูปภาพ</Text>
-            </Space>
-          }
-          size="small" 
-          style={{ marginBottom: "16px" }}
-        >
-          <Row gutter={16}>
-            <Col span={12}>
-              <div style={{ textAlign: 'center' }}>
-                <Text strong style={{ display: 'block', marginBottom: '8px' }}>
-                  <DesktopOutlined /> รูปภาพเดสก์ท็อป
-                </Text>
-                <Form.Item noStyle shouldUpdate={(prev, curr) => prev.imageUrl !== curr.imageUrl}>
-                  {({ getFieldValue }) => {
-                    const imageUrl = getFieldValue('imageUrl');
-                    return imageUrl ? (
-                      <div style={{ marginBottom: '12px' }}>
-                        <Image 
-                          src={imageUrl} 
-                          alt="Desktop preview"
-                          width={200}
-                          height={120}
-                          style={{ objectFit: 'cover', borderRadius: '6px' }}
-                          fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3UoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgeHANwDrkl1AuO+pmgAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAwqADAAQAAAABAAAAwwAAAAD9b/HnAAAHlklEQVR4Ae3dP3Ik1RnG4W+FgYxN"
-                        />
-                        <div style={{ marginTop: '8px' }}>
-                          <Button 
-                            size="small" 
-                            danger 
-                            icon={<DeleteOutlined />}
-                            onClick={() => deleteImage(imageUrl, false)}
-                          >
-                            ลบรูป
-                          </Button>
-                        </div>
-                      </div>
-                    ) : null;
-                  }}
-                </Form.Item>
-                <Upload
-                  beforeUpload={(file) => handleUpload({ file }, false)}
-                  showUploadList={false}
+          <div className="rounded-md border border-gray-200 p-4">
+            <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900">
+              <ImageIcon className="h-4 w-4 text-blue-600" />
+              อัพโหลดรูปภาพ
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="text-center">
+                <div className="mb-2 flex items-center justify-center gap-1.5 text-sm font-medium text-gray-700">
+                  <Monitor className="h-4 w-4" /> รูปภาพเดสก์ท็อป
+                </div>
+                {values.imageUrl && (
+                  <div className="mb-2">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={values.imageUrl} alt="Desktop preview" className="mx-auto h-[120px] w-[200px] rounded-md object-cover" />
+                    <Button type="button" variant="destructive" size="sm" className="mt-2" onClick={() => deleteImage(values.imageUrl, false)}>
+                      <Trash2 className="mr-1.5 h-3.5 w-3.5" /> ลบรูป
+                    </Button>
+                  </div>
+                )}
+                <input
+                  ref={desktopFileRef}
+                  type="file"
                   accept="image/*"
-                >
-                  <Button 
-                    icon={uploading ? <LoadingOutlined /> : <UploadOutlined />}
-                    loading={uploading}
-                    style={{ borderRadius: "6px" }}
-                  >
-                    {uploading ? 'กำลังอัพโหลด...' : 'เลือกรูปภาพ'}
-                  </Button>
-                </Upload>
+                  className="hidden"
+                  onChange={(e) => e.target.files?.[0] && uploadImage(e.target.files[0], false)}
+                />
+                <Button type="button" variant="outline" size="sm" disabled={uploading} onClick={() => desktopFileRef.current?.click()}>
+                  {uploading ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Upload className="mr-1.5 h-3.5 w-3.5" />}
+                  {uploading ? "กำลังอัพโหลด..." : "เลือกรูปภาพ"}
+                </Button>
               </div>
-            </Col>
-            
-            <Col span={12}>
-              <div style={{ textAlign: 'center' }}>
-                <Text strong style={{ display: 'block', marginBottom: '8px' }}>
-                  <MobileOutlined /> รูปภาพมือถือ
-                </Text>
-                <Form.Item noStyle shouldUpdate={(prev, curr) => prev.imageUrlMobileMode !== curr.imageUrlMobileMode}>
-                  {({ getFieldValue }) => {
-                    const mobileImageUrl = getFieldValue('imageUrlMobileMode');
-                    return mobileImageUrl ? (
-                      <div style={{ marginBottom: '12px' }}>
-                        <Image 
-                          src={mobileImageUrl} 
-                          alt="Mobile preview"
-                          width={120}
-                          height={120}
-                          style={{ objectFit: 'cover', borderRadius: '6px' }}
-                          fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3UoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgeHANwDrkl1AuO+pmgAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAwqADAAQAAAABAAAAwwAAAAD9b/HnAAAHlklEQVR4Ae3dP3Ik1RnG4W+FgYxN"
-                        />
-                        <div style={{ marginTop: '8px' }}>
-                          <Button 
-                            size="small" 
-                            danger 
-                            icon={<DeleteOutlined />}
-                            onClick={() => deleteImage(mobileImageUrl, true)}
-                          >
-                            ลบรูป
-                          </Button>
-                        </div>
-                      </div>
-                    ) : null;
-                  }}
-                </Form.Item>
-                <Upload
-                  beforeUpload={(file) => handleUpload({ file }, true)}
-                  showUploadList={false}
+
+              <div className="text-center">
+                <div className="mb-2 flex items-center justify-center gap-1.5 text-sm font-medium text-gray-700">
+                  <Smartphone className="h-4 w-4" /> รูปภาพมือถือ
+                </div>
+                {values.imageUrlMobileMode && (
+                  <div className="mb-2">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={values.imageUrlMobileMode} alt="Mobile preview" className="mx-auto h-[120px] w-[120px] rounded-md object-cover" />
+                    <Button type="button" variant="destructive" size="sm" className="mt-2" onClick={() => deleteImage(values.imageUrlMobileMode, true)}>
+                      <Trash2 className="mr-1.5 h-3.5 w-3.5" /> ลบรูป
+                    </Button>
+                  </div>
+                )}
+                <input
+                  ref={mobileFileRef}
+                  type="file"
                   accept="image/*"
-                >
-                  <Button 
-                    icon={uploadingMobile ? <LoadingOutlined /> : <UploadOutlined />}
-                    loading={uploadingMobile}
-                    style={{ borderRadius: "6px" }}
-                  >
-                    {uploadingMobile ? 'กำลังอัพโหลด...' : 'เลือกรูปภาพ'}
-                  </Button>
-                </Upload>
+                  className="hidden"
+                  onChange={(e) => e.target.files?.[0] && uploadImage(e.target.files[0], true)}
+                />
+                <Button type="button" variant="outline" size="sm" disabled={uploadingMobile} onClick={() => mobileFileRef.current?.click()}>
+                  {uploadingMobile ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Upload className="mr-1.5 h-3.5 w-3.5" />}
+                  {uploadingMobile ? "กำลังอัพโหลด..." : "เลือกรูปภาพ"}
+                </Button>
               </div>
-            </Col>
-          </Row>
-          
-          <Divider style={{ margin: '12px 0' }} />
-          <Text type="secondary" style={{ fontSize: '12px' }}>
-            <PictureOutlined /> รองรับไฟล์: JPG, PNG, WebP (รูปภาพขนาดใหญ่จะถูกบีบอัดอัตโนมัติ)
-          </Text>
-        </Card>
+            </div>
+            <p className="mt-3 text-center text-xs text-gray-400">รองรับไฟล์: JPG, PNG, WebP (รูปภาพขนาดใหญ่จะถูกบีบอัดอัตโนมัติ)</p>
+          </div>
 
-        <Form.Item
-          name="publishedAt"
-          label={
-            <Space size={6}>
-              <CalendarOutlined style={{ color: "#8c8c8c" }} />
-              <Text>วันที่เผยแพร่</Text>
-            </Space>
-          }
-        >
-          <DatePicker 
-            showTime
-            placeholder="เลือกวันที่และเวลา"
-            style={{ width: '100%', borderRadius: "6px" }}
-            format="DD/MM/YYYY HH:mm"
-          />
-        </Form.Item>
+          <div className="space-y-1.5">
+            <Label htmlFor="publishedAt">วันที่เผยแพร่</Label>
+            <Input id="publishedAt" type="datetime-local" value={values.publishedAt} disabled={submitting} onChange={(e) => set({ publishedAt: e.target.value })} />
+          </div>
 
-        <div style={{ display: 'flex', gap: '24px', marginBottom: '16px' }}>
-          <Form.Item name="isActive" valuePropName="checked">
-            <Checkbox>เปิดใช้งาน</Checkbox>
-          </Form.Item>
-          <Form.Item name="isFeatured" valuePropName="checked">
-            <Checkbox>โพสต์แนะนำ</Checkbox>
-          </Form.Item>
-        </div>
-      </Form>
-    </Modal>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <Checkbox id="isActive" checked={values.isActive} disabled={submitting} onCheckedChange={(checked) => set({ isActive: !!checked })} />
+              <Label htmlFor="isActive" className="cursor-pointer font-normal">เปิดใช้งาน</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox id="isFeatured" checked={values.isFeatured} disabled={submitting} onCheckedChange={(checked) => set({ isFeatured: !!checked })} />
+              <Label htmlFor="isFeatured" className="cursor-pointer font-normal">โพสต์แนะนำ</Label>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onCancel}>
+              ยกเลิก
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  กำลังบันทึก...
+                </>
+              ) : editing ? (
+                "อัพเดท"
+              ) : (
+                "สร้าง"
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

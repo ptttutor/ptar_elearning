@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
-import { Button } from "antd";
-import { TagOutlined, PlusOutlined } from "@ant-design/icons";
+import { Tag, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 import AdminPageHeader from "@/components/admin/shared/AdminPageHeader";
 
 // Components
@@ -12,11 +13,10 @@ import DeleteModal from "./DeleteModal";
 
 // Hooks
 import { usePostCategories } from "@/hooks/admin/usePostCategories";
-import { useMessage } from "@/hooks/admin/useAntdApp";
 
 export default function PostCategoriesPage() {
-  const message = useMessage();
-  
+  const { toast } = useToast();
+
   // Modal states
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -36,7 +36,8 @@ export default function PostCategoriesPage() {
     pagination,
     fetchPostCategories,
     handleFilterChange,
-    handleTableChange,
+    handleSortChange,
+    handlePageChange,
     resetFilters,
   } = usePostCategories();
 
@@ -45,16 +46,10 @@ export default function PostCategoriesPage() {
     setSubmitting(true);
     try {
       if (editing) {
-        // Optimistic update for edit
         const originalCategory = editing;
         const updatedCategory = { ...originalCategory, ...categoryData, updatedAt: new Date().toISOString() };
-        
-        // Update UI immediately
-        setPostCategories(prevCategories => 
-          prevCategories.map(cat => 
-            cat.id === editing.id ? updatedCategory : cat
-          )
-        );
+
+        setPostCategories((prev) => prev.map((cat) => (cat.id === editing.id ? updatedCategory : cat)));
 
         try {
           const res = await fetch(`/api/admin/post-types/${editing.id}`, {
@@ -66,29 +61,18 @@ export default function PostCategoriesPage() {
           const data = await res.json();
 
           if (data.success) {
-            message.success("แก้ไขหมวดหมู่โพสต์สำเร็จ");
+            toast({ title: "แก้ไขหมวดหมู่โพสต์สำเร็จ" });
             setModalOpen(false);
             setEditing(null);
           } else {
-            // Rollback on error
-            setPostCategories(prevCategories => 
-              prevCategories.map(cat => 
-                cat.id === editing.id ? originalCategory : cat
-              )
-            );
-            message.error(data.error || "แก้ไขหมวดหมู่โพสต์ไม่สำเร็จ");
+            setPostCategories((prev) => prev.map((cat) => (cat.id === editing.id ? originalCategory : cat)));
+            toast({ variant: "destructive", title: data.error || "แก้ไขหมวดหมู่โพสต์ไม่สำเร็จ" });
           }
         } catch (error) {
-          // Rollback on error
-          setPostCategories(prevCategories => 
-            prevCategories.map(cat => 
-              cat.id === editing.id ? originalCategory : cat
-            )
-          );
-          message.error("เกิดข้อผิดพลาดในการแก้ไขหมวดหมู่โพสต์");
+          setPostCategories((prev) => prev.map((cat) => (cat.id === editing.id ? originalCategory : cat)));
+          toast({ variant: "destructive", title: "เกิดข้อผิดพลาดในการแก้ไขหมวดหมู่โพสต์" });
         }
       } else {
-        // Optimistic update for create
         const tempId = Date.now().toString();
         const newCategory = {
           id: tempId,
@@ -96,11 +80,10 @@ export default function PostCategoriesPage() {
           postCount: 0,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-          _isOptimistic: true
+          _isOptimistic: true,
         };
-        
-        // Add to UI immediately
-        setPostCategories(prevCategories => [newCategory, ...prevCategories]);
+
+        setPostCategories((prev) => [newCategory, ...prev]);
 
         try {
           const res = await fetch("/api/admin/post-types", {
@@ -112,33 +95,22 @@ export default function PostCategoriesPage() {
           const data = await res.json();
 
           if (data.success) {
-            // Replace optimistic item with real data
-            setPostCategories(prevCategories => 
-              prevCategories.map(cat => 
-                cat.id === tempId ? { ...data.data, _isOptimistic: false } : cat
-              )
-            );
-            message.success("สร้างหมวดหมู่โพสต์สำเร็จ");
+            setPostCategories((prev) => prev.map((cat) => (cat.id === tempId ? { ...data.data, _isOptimistic: false } : cat)));
+            toast({ title: "สร้างหมวดหมู่โพสต์สำเร็จ" });
             setModalOpen(false);
             setEditing(null);
           } else {
-            // Remove optimistic item on error
-            setPostCategories(prevCategories => 
-              prevCategories.filter(cat => cat.id !== tempId)
-            );
-            message.error(data.error || "สร้างหมวดหมู่โพสต์ไม่สำเร็จ");
+            setPostCategories((prev) => prev.filter((cat) => cat.id !== tempId));
+            toast({ variant: "destructive", title: data.error || "สร้างหมวดหมู่โพสต์ไม่สำเร็จ" });
           }
         } catch (error) {
-          // Remove optimistic item on error
-          setPostCategories(prevCategories => 
-            prevCategories.filter(cat => cat.id !== tempId)
-          );
-          message.error("เกิดข้อผิดพลาดในการสร้างหมวดหมู่โพสต์");
+          setPostCategories((prev) => prev.filter((cat) => cat.id !== tempId));
+          toast({ variant: "destructive", title: "เกิดข้อผิดพลาดในการสร้างหมวดหมู่โพสต์" });
         }
       }
     } catch (error) {
       console.error("Error submitting category:", error);
-      message.error("เกิดข้อผิดพลาดไม่คาดคิด");
+      toast({ variant: "destructive", title: "เกิดข้อผิดพลาดไม่คาดคิด" });
     } finally {
       setSubmitting(false);
     }
@@ -153,16 +125,12 @@ export default function PostCategoriesPage() {
   // Confirm delete with optimistic updates
   const confirmDelete = async () => {
     if (!categoryToDelete?.id) {
-      message.error("ไม่พบ ID ของหมวดหมู่โพสต์");
+      toast({ variant: "destructive", title: "ไม่พบ ID ของหมวดหมู่โพสต์" });
       return;
     }
 
     setDeleting(true);
-
-    // Optimistic update - remove immediately
-    setPostCategories(prevCategories => 
-      prevCategories.filter(cat => cat.id !== categoryToDelete.id)
-    );
+    setPostCategories((prev) => prev.filter((cat) => cat.id !== categoryToDelete.id));
 
     try {
       const response = await fetch(`/api/admin/post-types/${categoryToDelete.id}`, {
@@ -176,19 +144,17 @@ export default function PostCategoriesPage() {
       const data = await response.json();
 
       if (data.success) {
-        message.success("ลบหมวดหมู่โพสต์สำเร็จ");
+        toast({ title: "ลบหมวดหมู่โพสต์สำเร็จ" });
         setDeleteModalOpen(false);
         setCategoryToDelete(null);
       } else {
-        // Rollback on error
-        setPostCategories(prevCategories => [...prevCategories, categoryToDelete]);
-        message.error(data.error || "เกิดข้อผิดพลาดในการลบหมวดหมู่โพสต์");
+        setPostCategories((prev) => [...prev, categoryToDelete]);
+        toast({ variant: "destructive", title: data.error || "เกิดข้อผิดพลาดในการลบหมวดหมู่โพสต์" });
       }
     } catch (error) {
       console.error("Delete post category error:", error);
-      // Rollback on error
-      setPostCategories(prevCategories => [...prevCategories, categoryToDelete]);
-      message.error(`เกิดข้อผิดพลาด: ${error.message}`);
+      setPostCategories((prev) => [...prev, categoryToDelete]);
+      toast({ variant: "destructive", title: `เกิดข้อผิดพลาด: ${error.message}` });
     } finally {
       setDeleting(false);
     }
@@ -214,16 +180,12 @@ export default function PostCategoriesPage() {
 
   return (
     <AdminPageHeader
-      icon={<TagOutlined />}
+      icon={<Tag className="h-6 w-6" />}
       title="จัดการหมวดหมู่โพสต์"
       subtitle="สร้างและจัดการหมวดหมู่สำหรับโพสต์"
       actions={
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => openModal(null)}
-          loading={submitting}
-        >
+        <Button onClick={() => openModal(null)} disabled={submitting}>
+          <Plus className="mr-2 h-4 w-4" />
           สร้างหมวดหมู่ใหม่
         </Button>
       }
@@ -246,7 +208,8 @@ export default function PostCategoriesPage() {
         pagination={pagination}
         onEdit={openModal}
         onDelete={handleDelete}
-        onTableChange={handleTableChange}
+        onSortChange={handleSortChange}
+        onPageChange={handlePageChange}
         deletingId={deleting ? categoryToDelete?.id : null}
       />
 

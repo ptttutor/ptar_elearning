@@ -1,68 +1,41 @@
-import { Card, Space, Typography, Descriptions } from "antd";
-import { DollarOutlined, CalculatorOutlined } from "@ant-design/icons";
-
-const { Text } = Typography;
+"use client";
+import { Calculator, DollarSign } from "lucide-react";
 
 export default function OrderSummaryCard({ selectedOrder, formatPrice }) {
   return (
-    <Card
-      title={
-        <Space>
-          <CalculatorOutlined style={{ color: "#1890ff" }} />
-          <Text strong>สรุปยอดสั่งซื้อ</Text>
-        </Space>
-      }
-      style={{ marginBottom: "20px" }}
-      size="small"
-    >
-      <Descriptions column={2} size="small">
-        <Descriptions.Item
-          label={
-            <Space size={6}>
-              <DollarOutlined style={{ color: "#8c8c8c" }} />
-              <Text>ราคาสินค้า</Text>
-            </Space>
-          }
-        >
-          <Text>{formatPrice(selectedOrder.subtotal || selectedOrder.total)}</Text>
-        </Descriptions.Item>
-        <Descriptions.Item
-          label={
-            <Space size={6}>
-              <DollarOutlined style={{ color: "#8c8c8c" }} />
-              <Text>ค่าจัดส่ง</Text>
-            </Space>
-          }
-        >
-          <Text>{formatPrice(selectedOrder.shippingFee || 0)}</Text>
-        </Descriptions.Item>
+    <div className="mb-5 rounded-lg border border-gray-200 p-4">
+      <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900">
+        <Calculator className="h-4 w-4 text-blue-600" />
+        สรุปยอดสั่งซื้อ
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div>
+          <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
+            <DollarSign className="h-3.5 w-3.5" /> ราคาสินค้า
+          </div>
+          <div className="text-sm text-gray-700">{formatPrice(selectedOrder.subtotal || selectedOrder.total)}</div>
+        </div>
+        <div>
+          <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
+            <DollarSign className="h-3.5 w-3.5" /> ค่าจัดส่ง
+          </div>
+          <div className="text-sm text-gray-700">{formatPrice(selectedOrder.shippingFee || 0)}</div>
+        </div>
         {selectedOrder.couponDiscount > 0 && (
-          <Descriptions.Item
-            label={
-              <Space size={6}>
-                <DollarOutlined style={{ color: "#8c8c8c" }} />
-                <Text>ส่วนลด</Text>
-              </Space>
-            }
-          >
-            <Text style={{ color: "#52c41a" }}>
-              -{formatPrice(selectedOrder.couponDiscount)}
-            </Text>
-          </Descriptions.Item>
+          <div>
+            <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
+              <DollarSign className="h-3.5 w-3.5" /> ส่วนลด
+            </div>
+            <div className="text-sm text-emerald-600">-{formatPrice(selectedOrder.couponDiscount)}</div>
+          </div>
         )}
-        <Descriptions.Item
-          label={
-            <Space size={6}>
-              <DollarOutlined style={{ color: "#8c8c8c" }} />
-              <Text strong>ยอดรวมทั้งสิ้น</Text>
-            </Space>
-          }
-        >
-          <Text strong style={{ fontSize: "18px", color: "#52c41a" }}>
-            {formatPrice(selectedOrder.total)}
-          </Text>
-        </Descriptions.Item>
-      </Descriptions>
-    </Card>
+        <div>
+          <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
+            <DollarSign className="h-3.5 w-3.5" /> ยอดรวมทั้งสิ้น
+          </div>
+          <div className="text-lg font-bold text-emerald-600">{formatPrice(selectedOrder.total)}</div>
+        </div>
+      </div>
+    </div>
   );
 }

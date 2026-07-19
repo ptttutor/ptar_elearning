@@ -1,17 +1,8 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import {
-  Button,
-  Space,
-  Modal,
-  Form,
-  Typography,
-} from "antd";
-import {
-  AppstoreOutlined,
-  PlusOutlined,
-} from "@ant-design/icons";
-import { useMessage } from "@/hooks/admin/useAntdApp";
+import { Layers, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 import AdminPageHeader from "@/components/admin/shared/AdminPageHeader";
 
 // Components
@@ -20,7 +11,7 @@ import CategoryModal from "./CategoryModal";
 import DeleteModal from "./DeleteModal";
 
 export default function CategoriesManagement() {
-  const message = useMessage();
+  const { toast } = useToast();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -29,7 +20,6 @@ export default function CategoriesManagement() {
   const [deleting, setDeleting] = useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState(null);
-  const [form] = Form.useForm();
 
   // Fetch categories
   const fetchCategories = useCallback(async () => {
@@ -39,10 +29,10 @@ export default function CategoriesManagement() {
       const data = await res.json();
       setCategories(data.data || []);
     } catch (e) {
-      message.error("โหลดข้อมูลหมวดหมู่ไม่สำเร็จ");
+      toast({ variant: "destructive", title: "โหลดข้อมูลหมวดหมู่ไม่สำเร็จ" });
     }
     setLoading(false);
-  }, [message]);
+  }, [toast]);
 
   useEffect(() => {
     fetchCategories();
@@ -50,23 +40,15 @@ export default function CategoriesManagement() {
 
   // Helper functions for optimistic updates
   const updateCategoryInList = (categoryId, updatedData) => {
-    setCategories(prevCategories => 
-      prevCategories.map(category => 
-        category.id === categoryId 
-          ? { ...category, ...updatedData }
-          : category
-      )
-    );
+    setCategories((prev) => prev.map((c) => (c.id === categoryId ? { ...c, ...updatedData } : c)));
   };
 
   const addCategoryToList = (newCategory) => {
-    setCategories(prevCategories => [newCategory, ...prevCategories]);
+    setCategories((prev) => [newCategory, ...prev]);
   };
 
   const removeCategoryFromList = (categoryId) => {
-    setCategories(prevCategories => 
-      prevCategories.filter(category => category.id !== categoryId)
-    );
+    setCategories((prev) => prev.filter((c) => c.id !== categoryId));
   };
 
   // Create or update category
@@ -89,28 +71,21 @@ export default function CategoriesManagement() {
       }
       const data = await res.json();
       if (data.success) {
-        message.success(
-          editing ? "แก้ไขหมวดหมู่สำเร็จ" : "สร้างหมวดหมู่สำเร็จ"
-        );
+        toast({ title: editing ? "แก้ไขหมวดหมู่สำเร็จ" : "สร้างหมวดหมู่สำเร็จ" });
         setModalOpen(false);
         setEditing(null);
-        form.resetFields();
-        
-        // Optimistic update without full page refresh
+
         if (editing) {
-          // Update existing category in the list
           updateCategoryInList(editing.id, data.data);
         } else {
-          // Add new category to the list
           addCategoryToList(data.data);
         }
       } else {
-        message.error(data.error || "เกิดข้อผิดพลาด");
+        toast({ variant: "destructive", title: data.error || "เกิดข้อผิดพลาด" });
       }
     } catch (error) {
       console.error("Error saving category:", error);
-      message.error("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
-      // On error, refresh the data to ensure consistency
+      toast({ variant: "destructive", title: "เกิดข้อผิดพลาดในการบันทึกข้อมูล" });
       fetchCategories();
     } finally {
       setSubmitting(false);
@@ -118,8 +93,8 @@ export default function CategoriesManagement() {
   };
 
   // Delete category
-  const handleDelete = (id, name) => {
-    const category = categories.find(cat => cat.id === id);
+  const handleDelete = (id) => {
+    const category = categories.find((cat) => cat.id === id);
     setCategoryToDelete(category);
     setDeleteModalOpen(true);
   };
@@ -127,7 +102,7 @@ export default function CategoriesManagement() {
   // Confirm delete
   const confirmDelete = async () => {
     if (!categoryToDelete?.id) {
-      message.error("ไม่พบ ID ของหมวดหมู่");
+      toast({ variant: "destructive", title: "ไม่พบ ID ของหมวดหมู่" });
       return;
     }
 
@@ -138,19 +113,16 @@ export default function CategoriesManagement() {
       });
       const data = await res.json();
       if (data.success) {
-        message.success("ลบหมวดหมู่สำเร็จ");
+        toast({ title: "ลบหมวดหมู่สำเร็จ" });
         setDeleteModalOpen(false);
         setCategoryToDelete(null);
-        
-        // Optimistic update - remove from list without full refresh
         removeCategoryFromList(categoryToDelete.id);
       } else {
-        message.error(data.error || "เกิดข้อผิดพลาด");
+        toast({ variant: "destructive", title: data.error || "เกิดข้อผิดพลาด" });
       }
     } catch (error) {
       console.error("Error deleting category:", error);
-      message.error("เกิดข้อผิดพลาดในการลบข้อมูล");
-      // On error, refresh the data to ensure consistency
+      toast({ variant: "destructive", title: "เกิดข้อผิดพลาดในการลบข้อมูล" });
       fetchCategories();
     } finally {
       setDeleting(null);
@@ -167,32 +139,22 @@ export default function CategoriesManagement() {
   const openModal = (record) => {
     setEditing(record || null);
     setModalOpen(true);
-    if (record) {
-      form.setFieldsValue(record);
-    } else {
-      form.resetFields();
-    }
   };
 
   // Close modal
   const closeModal = () => {
     setModalOpen(false);
     setEditing(null);
-    form.resetFields();
   };
 
   return (
     <AdminPageHeader
-      icon={<AppstoreOutlined />}
+      icon={<Layers className="h-6 w-6" />}
       title="จัดการหมวดหมู่"
       subtitle="จัดการหมวดหมู่สินค้าและเนื้อหา"
       actions={
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => openModal(null)}
-          disabled={submitting || deleting}
-        >
+        <Button onClick={() => openModal(null)} disabled={submitting || !!deleting}>
+          <Plus className="mr-2 h-4 w-4" />
           สร้างหมวดหมู่ใหม่
         </Button>
       }
@@ -209,7 +171,6 @@ export default function CategoriesManagement() {
       <CategoryModal
         open={modalOpen}
         editing={editing}
-        form={form}
         submitting={submitting}
         onSubmit={handleSubmit}
         onCancel={closeModal}
@@ -218,7 +179,7 @@ export default function CategoriesManagement() {
       <DeleteModal
         open={deleteModalOpen}
         category={categoryToDelete}
-        loading={deleting}
+        loading={!!deleting}
         onConfirm={confirmDelete}
         onCancel={cancelDelete}
       />

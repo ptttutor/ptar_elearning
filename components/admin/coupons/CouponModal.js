@@ -1,306 +1,272 @@
-import { Modal, Form, Input, Select, InputNumber, Switch, DatePicker, Row, Col, message } from 'antd';
-import { useState, useEffect } from 'react';
-import dayjs from 'dayjs';
+"use client";
+import { useState, useEffect } from "react";
+import { Loader2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from "@/components/ui/use-toast";
 
-const { Option } = Select;
-const { TextArea } = Input;
-const { RangePicker } = DatePicker;
+const toDatetimeLocal = (value) => {
+  if (!value) return "";
+  const d = new Date(value);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
 
-export default function CouponModal({
-  open,
-  onCancel,
-  onSubmit,
-  initialData,
-  title
-}) {
-  const [form] = Form.useForm();
+const defaultValidFrom = () => toDatetimeLocal(new Date());
+const defaultValidUntil = () => toDatetimeLocal(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
+
+const EMPTY_FORM = {
+  code: "",
+  name: "",
+  description: "",
+  type: "PERCENTAGE",
+  value: "",
+  minOrderAmount: "",
+  maxDiscount: "",
+  usageLimit: "",
+  userUsageLimit: "",
+  applicableType: "ALL",
+  isActive: true,
+  validFrom: defaultValidFrom(),
+  validUntil: defaultValidUntil(),
+};
+
+export default function CouponModal({ open, onCancel, onSubmit, initialData, title }) {
+  const { toast } = useToast();
+  const [values, setValues] = useState(EMPTY_FORM);
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [couponType, setCouponType] = useState('PERCENTAGE');
 
   useEffect(() => {
     if (open) {
       if (initialData) {
-        // แก้ไขข้อมูล
-        setCouponType(initialData.type);
-        form.setFieldsValue({
+        setValues({
+          ...EMPTY_FORM,
           ...initialData,
-          validRange: [
-            dayjs(initialData.validFrom),
-            dayjs(initialData.validUntil)
-          ],
-          isActive: initialData.isActive
+          value: initialData.value ?? "",
+          minOrderAmount: initialData.minOrderAmount ?? "",
+          maxDiscount: initialData.maxDiscount ?? "",
+          usageLimit: initialData.usageLimit ?? "",
+          userUsageLimit: initialData.userUsageLimit ?? "",
+          validFrom: toDatetimeLocal(initialData.validFrom),
+          validUntil: toDatetimeLocal(initialData.validUntil),
         });
       } else {
-        // สร้างใหม่
-        setCouponType('PERCENTAGE');
-        form.resetFields();
-        form.setFieldsValue({
-          type: 'PERCENTAGE',
-          applicableType: 'ALL',
-          isActive: true,
-          validRange: [dayjs(), dayjs().add(30, 'day')]
-        });
+        setValues(EMPTY_FORM);
       }
+      setErrors({});
     }
-  }, [open, initialData, form]);
+  }, [open, initialData]);
 
-  const handleSubmit = async () => {
+  const set = (patch) => setValues((p) => ({ ...p, ...patch }));
+
+  const handleTypeChange = (value) => {
+    set({ type: value, value: "", maxDiscount: "" });
+  };
+
+  const validate = () => {
+    const next = {};
+    if (!values.code) next.code = "กรุณาใส่รหัสคูปอง";
+    else if (values.code.length < 3) next.code = "รหัสคูปองต้องมีอย่างน้อย 3 ตัวอักษร";
+    else if (!/^[A-Z0-9]+$/.test(values.code.toUpperCase())) next.code = "รหัสคูปองใช้ได้เฉพาะตัวอักษรและตัวเลขเท่านั้น";
+
+    if (!values.name.trim()) next.name = "กรุณาใส่ชื่อคูปอง";
+
+    if (values.type !== "FREE_SHIPPING") {
+      const v = parseFloat(values.value);
+      if (values.value === "" || isNaN(v)) next.value = "กรุณาใส่ค่าส่วนลด";
+      else if (values.type === "PERCENTAGE" && (v <= 0 || v > 100)) next.value = "เปอร์เซ็นต์ส่วนลดต้องอยู่ระหว่าง 1-100";
+      else if (values.type === "FIXED_AMOUNT" && v <= 0) next.value = "จำนวนเงินส่วนลดต้องมากกว่า 0";
+    }
+
+    if (!values.applicableType) next.applicableType = "กรุณาเลือกขอบเขตการใช้งาน";
+    if (!values.validFrom || !values.validUntil) next.validRange = "กรุณาเลือกช่วงเวลาที่ใช้ได้";
+
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validate()) {
+      toast({ variant: "destructive", title: "กรุณากรอกข้อมูลให้ครบถ้วน" });
+      return;
+    }
+    setLoading(true);
     try {
-      setLoading(true);
-      const values = await form.validateFields();
-      
       const submitData = {
-        ...values,
-        validFrom: values.validRange[0].toISOString(),
-        validUntil: values.validRange[1].toISOString(),
+        code: values.code.toUpperCase(),
+        name: values.name,
+        description: values.description,
+        type: values.type,
+        value: values.type === "FREE_SHIPPING" ? 0 : parseFloat(values.value),
+        minOrderAmount: values.minOrderAmount === "" ? null : parseFloat(values.minOrderAmount),
+        maxDiscount: values.maxDiscount === "" ? null : parseFloat(values.maxDiscount),
+        usageLimit: values.usageLimit === "" ? null : parseInt(values.usageLimit),
+        userUsageLimit: values.userUsageLimit === "" ? null : parseInt(values.userUsageLimit),
+        applicableType: values.applicableType,
+        isActive: values.isActive,
+        validFrom: new Date(values.validFrom).toISOString(),
+        validUntil: new Date(values.validUntil).toISOString(),
       };
-      delete submitData.validRange;
-
       await onSubmit(submitData);
-    } catch (error) {
-      console.error('Form validation error:', error);
-      if (error.errorFields) {
-        message.error('กรุณากรอกข้อมูลให้ครบถ้วน');
-      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCancel = () => {
-    form.resetFields();
-    onCancel();
-  };
-
-  const handleTypeChange = (value) => {
-    setCouponType(value);
-    // รีเซ็ตค่าที่เกี่ยวข้อง
-    form.setFieldsValue({
-      value: undefined,
-      maxDiscount: undefined
-    });
-  };
-
-  const validateCouponCode = (_, value) => {
-    if (!value) {
-      return Promise.reject(new Error('กรุณาใส่รหัสคูปอง'));
-    }
-    if (value.length < 3) {
-      return Promise.reject(new Error('รหัสคูปองต้องมีอย่างน้อย 3 ตัวอักษร'));
-    }
-    if (!/^[A-Z0-9]+$/.test(value.toUpperCase())) {
-      return Promise.reject(new Error('รหัสคูปองใช้ได้เฉพาะตัวอักษรและตัวเลขเท่านั้น'));
-    }
-    return Promise.resolve();
-  };
-
-  const validateValue = (_, value) => {
-    if (value === undefined || value === null) {
-      return Promise.reject(new Error('กรุณาใส่ค่าส่วนลด'));
-    }
-    if (couponType === 'PERCENTAGE' && (value <= 0 || value > 100)) {
-      return Promise.reject(new Error('เปอร์เซ็นต์ส่วนลดต้องอยู่ระหว่าง 1-100'));
-    }
-    if (couponType === 'FIXED_AMOUNT' && value <= 0) {
-      return Promise.reject(new Error('จำนวนเงินส่วนลดต้องมากกว่า 0'));
-    }
-    return Promise.resolve();
-  };
-
   return (
-    <Modal
-      title={title}
-      open={open}
-      onOk={handleSubmit}
-      onCancel={handleCancel}
-      okText="บันทึก"
-      cancelText="ยกเลิก"
-      width={800}
-      confirmLoading={loading}
-      
-    >
-      <Form
-        form={form}
-        layout="vertical"
-        preserve={false}
-      >
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item
-              label="รหัสคูปอง"
-              name="code"
-              rules={[{ validator: validateCouponCode }]}
-            >
+    <Dialog open={open} onOpenChange={(next) => !next && onCancel()}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[720px]">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="code">รหัสคูปอง</Label>
               <Input
+                id="code"
                 placeholder="เช่น SAVE20, NEWUSER"
-                style={{ textTransform: 'uppercase' }}
-                onChange={(e) => {
-                  const value = e.target.value.toUpperCase();
-                  form.setFieldsValue({ code: value });
-                }}
+                value={values.code}
+                disabled={loading}
+                onChange={(e) => set({ code: e.target.value.toUpperCase() })}
+                className="uppercase"
               />
-            </Form.Item>
-          </Col>
+              {errors.code && <p className="text-xs text-red-600">{errors.code}</p>}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="name">ชื่อคูปอง</Label>
+              <Input id="name" placeholder="เช่น ลด 20% สำหรับสมาชิกใหม่" value={values.name} disabled={loading} onChange={(e) => set({ name: e.target.value })} />
+              {errors.name && <p className="text-xs text-red-600">{errors.name}</p>}
+            </div>
+          </div>
 
-          <Col span={12}>
-            <Form.Item
-              label="ชื่อคูปอง"
-              name="name"
-              rules={[{ required: true, message: 'กรุณาใส่ชื่อคูปอง' }]}
-            >
-              <Input placeholder="เช่น ลด 20% สำหรับสมาชิกใหม่" />
-            </Form.Item>
-          </Col>
-        </Row>
+          <div className="space-y-1.5">
+            <Label htmlFor="description">คำอธิบาย</Label>
+            <Textarea id="description" rows={3} placeholder="อธิบายรายละเอียดคูปอง เงื่อนไข และข้อกำหนด" value={values.description || ""} disabled={loading} onChange={(e) => set({ description: e.target.value })} />
+          </div>
 
-        <Form.Item
-          label="คำอธิบาย"
-          name="description"
-        >
-          <TextArea 
-            rows={3} 
-            placeholder="อธิบายรายละเอียดคูปอง เงื่อนไข และข้อกำหนด"
-          />
-        </Form.Item>
-
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item
-              label="ประเภทคูปอง"
-              name="type"
-              rules={[{ required: true, message: 'กรุณาเลือกประเภทคูปอง' }]}
-            >
-              <Select onChange={handleTypeChange}>
-                <Option value="PERCENTAGE">ส่วนลดเปอร์เซ็นต์ (%)</Option>
-                <Option value="FIXED_AMOUNT">ส่วนลดจำนวนคงที่ (฿)</Option>
-                <Option value="FREE_SHIPPING">ฟรีค่าจัดส่ง</Option>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>ประเภทคูปอง</Label>
+              <Select value={values.type} onValueChange={handleTypeChange} disabled={loading}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PERCENTAGE">ส่วนลดเปอร์เซ็นต์ (%)</SelectItem>
+                  <SelectItem value="FIXED_AMOUNT">ส่วนลดจำนวนคงที่ (฿)</SelectItem>
+                  <SelectItem value="FREE_SHIPPING">ฟรีค่าจัดส่ง</SelectItem>
+                </SelectContent>
               </Select>
-            </Form.Item>
-          </Col>
+            </div>
 
-          <Col span={12}>
-            {couponType !== 'FREE_SHIPPING' && (
-              <Form.Item
-                label={couponType === 'PERCENTAGE' ? 'เปอร์เซ็นต์ส่วนลด' : 'จำนวนเงินส่วนลด'}
-                name="value"
-                rules={[{ validator: validateValue }]}
-              >
-                <InputNumber
-                  style={{ width: '100%' }}
+            {values.type !== "FREE_SHIPPING" && (
+              <div className="space-y-1.5">
+                <Label htmlFor="value">{values.type === "PERCENTAGE" ? "เปอร์เซ็นต์ส่วนลด" : "จำนวนเงินส่วนลด"}</Label>
+                <Input
+                  id="value"
+                  type="number"
                   min={0}
-                  max={couponType === 'PERCENTAGE' ? 100 : undefined}
-                  placeholder={couponType === 'PERCENTAGE' ? '20' : '100'}
-                  suffix={couponType === 'PERCENTAGE' ? '%' : '฿'}
+                  max={values.type === "PERCENTAGE" ? 100 : undefined}
+                  placeholder={values.type === "PERCENTAGE" ? "20" : "100"}
+                  value={values.value}
+                  disabled={loading}
+                  onChange={(e) => set({ value: e.target.value })}
                 />
-              </Form.Item>
+                {errors.value && <p className="text-xs text-red-600">{errors.value}</p>}
+              </div>
             )}
-          </Col>
-        </Row>
+          </div>
 
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item
-              label="ยอดขั้นต่ำ (฿)"
-              name="minOrderAmount"
-            >
-              <InputNumber
-                style={{ width: '100%' }}
-                min={0}
-                placeholder="0"
-                formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-              />
-            </Form.Item>
-          </Col>
-
-          <Col span={12}>
-            {couponType === 'PERCENTAGE' && (
-              <Form.Item
-                label="ส่วนลดสูงสุด (฿)"
-                name="maxDiscount"
-              >
-                <InputNumber
-                  style={{ width: '100%' }}
-                  min={0}
-                  placeholder="ไม่จำกัด"
-                  formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                />
-              </Form.Item>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="minOrderAmount">ยอดขั้นต่ำ (฿)</Label>
+              <Input id="minOrderAmount" type="number" min={0} placeholder="0" value={values.minOrderAmount} disabled={loading} onChange={(e) => set({ minOrderAmount: e.target.value })} />
+            </div>
+            {values.type === "PERCENTAGE" && (
+              <div className="space-y-1.5">
+                <Label htmlFor="maxDiscount">ส่วนลดสูงสุด (฿)</Label>
+                <Input id="maxDiscount" type="number" min={0} placeholder="ไม่จำกัด" value={values.maxDiscount} disabled={loading} onChange={(e) => set({ maxDiscount: e.target.value })} />
+              </div>
             )}
-          </Col>
-        </Row>
+          </div>
 
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item
-              label="จำกัดจำนวนการใช้งานทั้งหมด"
-              name="usageLimit"
-            >
-              <InputNumber
-                style={{ width: '100%' }}
-                min={0}
-                placeholder="ไม่จำกัด"
-              />
-            </Form.Item>
-          </Col>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="usageLimit">จำกัดจำนวนการใช้งานทั้งหมด</Label>
+              <Input id="usageLimit" type="number" min={0} placeholder="ไม่จำกัด" value={values.usageLimit} disabled={loading} onChange={(e) => set({ usageLimit: e.target.value })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="userUsageLimit">จำกัดจำนวนการใช้งานต่อคน</Label>
+              <Input id="userUsageLimit" type="number" min={0} placeholder="ไม่จำกัด" value={values.userUsageLimit} disabled={loading} onChange={(e) => set({ userUsageLimit: e.target.value })} />
+            </div>
+          </div>
 
-          <Col span={12}>
-            <Form.Item
-              label="จำกัดจำนวนการใช้งานต่อคน"
-              name="userUsageLimit"
-            >
-              <InputNumber
-                style={{ width: '100%' }}
-                min={0}
-                placeholder="ไม่จำกัด"
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item
-              label="ขอบเขตการใช้งาน"
-              name="applicableType"
-              rules={[{ required: true, message: 'กรุณาเลือกขอบเขตการใช้งาน' }]}
-            >
-              <Select>
-                <Option value="ALL">ทุกสินค้า</Option>
-                <Option value="COURSE_ONLY">คอร์สเท่านั้น</Option>
-                <Option value="EBOOK_ONLY">E-book เท่านั้น</Option>
-                <Option value="CATEGORY">หมวดหมู่ที่กำหนด</Option>
-                <Option value="SPECIFIC_ITEM">สินค้าที่กำหนด</Option>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>ขอบเขตการใช้งาน</Label>
+              <Select value={values.applicableType} onValueChange={(v) => set({ applicableType: v })} disabled={loading}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">ทุกสินค้า</SelectItem>
+                  <SelectItem value="COURSE_ONLY">คอร์สเท่านั้น</SelectItem>
+                  <SelectItem value="EBOOK_ONLY">E-book เท่านั้น</SelectItem>
+                  <SelectItem value="CATEGORY">หมวดหมู่ที่กำหนด</SelectItem>
+                  <SelectItem value="SPECIFIC_ITEM">สินค้าที่กำหนด</SelectItem>
+                </SelectContent>
               </Select>
-            </Form.Item>
-          </Col>
+            </div>
+            <div className="space-y-1.5">
+              <Label>สถานะ</Label>
+              <div className="flex h-9 items-center gap-2">
+                <Switch checked={values.isActive} disabled={loading} onCheckedChange={(checked) => set({ isActive: checked })} />
+                <span className="text-sm text-gray-600">{values.isActive ? "เปิดใช้งาน" : "ปิดใช้งาน"}</span>
+              </div>
+            </div>
+          </div>
 
-          <Col span={12}>
-            <Form.Item
-              label="สถานะ"
-              name="isActive"
-              valuePropName="checked"
-            >
-              <Switch 
-                checkedChildren="เปิดใช้งาน" 
-                unCheckedChildren="ปิดใช้งาน"
-                style={{ marginTop: 8 }}
-              />
-            </Form.Item>
-          </Col>
-        </Row>
+          <div className="space-y-1.5">
+            <Label>ช่วงเวลาที่ใช้ได้</Label>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <Input type="datetime-local" value={values.validFrom} disabled={loading} onChange={(e) => set({ validFrom: e.target.value })} />
+              <Input type="datetime-local" value={values.validUntil} disabled={loading} onChange={(e) => set({ validUntil: e.target.value })} />
+            </div>
+            {errors.validRange && <p className="text-xs text-red-600">{errors.validRange}</p>}
+          </div>
 
-        <Form.Item
-          label="ช่วงเวลาที่ใช้ได้"
-          name="validRange"
-          rules={[{ required: true, message: 'กรุณาเลือกช่วงเวลาที่ใช้ได้' }]}
-        >
-          <RangePicker
-            style={{ width: '100%' }}
-            showTime={{ format: 'HH:mm' }}
-            format="DD/MM/YYYY HH:mm"
-          />
-        </Form.Item>
-      </Form>
-    </Modal>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onCancel}>
+              ยกเลิก
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              บันทึก
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

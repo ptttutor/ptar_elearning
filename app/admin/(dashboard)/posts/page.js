@@ -1,13 +1,8 @@
 "use client";
-import { useState } from 'react';
-import {
-  Button,
-  message,
-} from "antd";
-import {
-  FileTextOutlined,
-  PlusOutlined,
-} from "@ant-design/icons";
+import { useState } from "react";
+import { FileText, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 import AdminPageHeader from "@/components/admin/shared/AdminPageHeader";
 
 // Components
@@ -21,6 +16,8 @@ import PostContentModal from "@/components/admin/posts/PostContentModal";
 import { usePosts } from "@/hooks/admin/usePosts";
 
 export default function PostsPage() {
+  const { toast } = useToast();
+
   // Modal states
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -29,6 +26,7 @@ export default function PostsPage() {
   const [deleting, setDeleting] = useState(false);
   const [contentModalOpen, setContentModalOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
+  const [savingContent, setSavingContent] = useState(false);
 
   // Use custom hook for posts data
   const {
@@ -36,8 +34,6 @@ export default function PostsPage() {
     postTypes,
     authors,
     loading,
-    postTypesLoading,
-    authorsLoading,
     searchInput,
     setSearchInput,
     filters,
@@ -45,8 +41,8 @@ export default function PostsPage() {
     savePost,
     deletePost,
     handleFilterChange,
+    handleSortSelectChange,
     handlePageChange,
-    handlePageSizeChange,
     resetFilters,
   } = usePosts();
 
@@ -59,7 +55,7 @@ export default function PostsPage() {
         setEditing(null);
       }
     } catch (error) {
-      console.error('Error submitting post:', error);
+      console.error("Error submitting post:", error);
     }
   };
 
@@ -72,12 +68,11 @@ export default function PostsPage() {
   // Confirm delete
   const confirmDelete = async () => {
     if (!postToDelete?.id) {
-      message.error("ไม่พบ ID ของโพสต์");
+      toast({ variant: "destructive", title: "ไม่พบ ID ของโพสต์" });
       return;
     }
 
     setDeleting(true);
-
     try {
       const success = await deletePost(postToDelete.id);
       if (success) {
@@ -86,7 +81,7 @@ export default function PostsPage() {
       }
     } catch (error) {
       console.error("Delete post error:", error);
-      message.error(`เกิดข้อผิดพลาด: ${error.message}`);
+      toast({ variant: "destructive", title: `เกิดข้อผิดพลาด: ${error.message}` });
     } finally {
       setDeleting(false);
     }
@@ -122,34 +117,14 @@ export default function PostsPage() {
     setSelectedPost(null);
   };
 
-  if (loading) {
-    return (
-      <div
-        style={{
-          padding: "24px",
-          backgroundColor: "#f5f5f5",
-          minHeight: "100vh",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <div>กำลังโหลด...</div>
-      </div>
-    );
-  }
-
   return (
     <AdminPageHeader
-      icon={<FileTextOutlined />}
+      icon={<FileText className="h-6 w-6" />}
       title="จัดการโพสต์"
       subtitle="จัดการบทความและเนื้อหาต่างๆ"
       actions={
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => openModal()}
-        >
+        <Button onClick={() => openModal(null)}>
+          <Plus className="mr-2 h-4 w-4" />
           เพิ่มโพสต์ใหม่
         </Button>
       }
@@ -160,71 +135,60 @@ export default function PostsPage() {
         searchInput={searchInput}
         setSearchInput={setSearchInput}
         onFilterChange={handleFilterChange}
+        onSortSelectChange={handleSortSelectChange}
         onReset={resetFilters}
-        pagination={pagination}
-        onPageChange={handlePageChange}
-        onPageSizeChange={handlePageSizeChange}
         postTypes={postTypes}
+        authors={authors}
         totalCount={pagination.totalCount}
         currentCount={posts.length}
+        loading={loading}
       />
 
       <PostTable
         posts={posts}
         loading={loading}
+        pagination={pagination}
+        onPageChange={handlePageChange}
         onEdit={openModal}
         onDelete={handleDelete}
         onManageContent={handleManageContent}
       />
 
       {/* Create/Edit Modal */}
-      <PostModal
-        open={modalOpen}
-        editing={editing}
-        postTypes={postTypes}
-        onCancel={closeModal}
-        onSubmit={handleSubmitPost}
-      />
+      <PostModal open={modalOpen} editing={editing} postTypes={postTypes} onCancel={closeModal} onSubmit={handleSubmitPost} />
 
       {/* Delete Confirmation Modal */}
-      <DeleteModal
-        open={deleteModalOpen}
-        post={postToDelete}
-        loading={deleting}
-        onConfirm={confirmDelete}
-        onCancel={cancelDelete}
-      />
+      <DeleteModal open={deleteModalOpen} post={postToDelete} loading={deleting} onConfirm={confirmDelete} onCancel={cancelDelete} />
 
       {/* Post Content Management Modal */}
       <PostContentModal
         visible={contentModalOpen}
         postId={selectedPost?.id}
         post={selectedPost}
+        loading={savingContent}
         onCancel={closeContentModal}
         onSubmit={async (contentItems) => {
+          setSavingContent(true);
           try {
-            // Submit to API
             const response = await fetch(`/api/admin/posts/${selectedPost.id}/content`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                contentItems: contentItems
-              }),
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ contentItems }),
             });
 
             const result = await response.json();
 
             if (result.success) {
-              message.success(result.message || 'เพิ่มเนื้อหาสำเร็จ');
+              toast({ title: result.message || "เพิ่มเนื้อหาสำเร็จ" });
               closeContentModal();
             } else {
-              throw new Error(result.error || 'เกิดข้อผิดพลาดในการเพิ่มเนื้อหา');
+              throw new Error(result.error || "เกิดข้อผิดพลาดในการเพิ่มเนื้อหา");
             }
           } catch (error) {
-            console.error('Submit error:', error);
-            message.error(error.message || 'เกิดข้อผิดพลาดในการเพิ่มเนื้อหา');
+            console.error("Submit error:", error);
+            toast({ variant: "destructive", title: error.message || "เกิดข้อผิดพลาดในการเพิ่มเนื้อหา" });
+          } finally {
+            setSavingContent(false);
           }
         }}
       />

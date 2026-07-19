@@ -1,97 +1,63 @@
 "use client";
-import { Modal, Space, Typography } from "antd";
-import { CheckOutlined, CloseOutlined } from "@ant-design/icons";
+import { Check, X, Loader2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
-const { Text } = Typography;
-
-export default function ConfirmActionModal({
-  visible,
-  actionType,
-  selectedOrder,
-  loading = false,
-  onOk,
-  onCancel,
-}) {
-  // Debug logging
-  console.log("ConfirmActionModal props:", {
-    visible,
-    actionType,
-    selectedOrder,
-    loading
-  });
+export default function ConfirmActionModal({ visible, actionType, selectedOrder, loading = false, onOk, onCancel }) {
+  const isConfirm = actionType === "confirm";
 
   return (
-    <Modal
-      title={
-        <Space>
-          {actionType === "confirm" ? (
-            <CheckOutlined style={{ color: "#52c41a" }} />
-          ) : (
-            <CloseOutlined style={{ color: "#ff4d4f" }} />
-          )}
-          <Text strong>
-            {actionType === "confirm"
-              ? "ยืนยันการชำระเงิน"
-              : "ปฏิเสธการชำระเงิน"}
-          </Text>
-        </Space>
-      }
-      open={visible}
-      onOk={onOk}
-      onCancel={onCancel}
-      okText={actionType === "confirm" ? "ยืนยัน" : "ปฏิเสธ"}
-      cancelText="ยกเลิก"
-      okButtonProps={{
-        loading: loading,
-        danger: actionType === "reject",
-        style: {
-          backgroundColor: actionType === "confirm" ? "#52c41a" : undefined,
-          borderColor: actionType === "confirm" ? "#52c41a" : undefined,
-          borderRadius: "6px",
-        },
-      }}
-      cancelButtonProps={{
-        disabled: loading,
-        style: { borderRadius: "6px" },
-      }}
-    >
-      <div style={{ padding: "16px 0" }}>
-        <Text style={{ fontSize: "16px" }}>
-          {actionType === "confirm"
-            ? `ต้องการยืนยันการชำระเงินสำหรับคำสั่งซื้อ #${
-                selectedOrder?.id ? selectedOrder.id.slice(-8) : "N/A"
-              } หรือไม่?`
-            : `ต้องการปฏิเสธการชำระเงินสำหรับคำสั่งซื้อ #${
-                selectedOrder?.id ? selectedOrder.id.slice(-8) : "N/A"
-              } หรือไม่?`}
-        </Text>
+    <AlertDialog open={visible} onOpenChange={(next) => !next && onCancel()}>
+      <AlertDialogContent className="sm:max-w-[480px]">
+        <AlertDialogHeader>
+          <AlertDialogTitle className={`flex items-center gap-2 ${isConfirm ? "text-emerald-600" : "text-red-600"}`}>
+            {isConfirm ? <Check className="h-5 w-5" /> : <X className="h-5 w-5" />}
+            {isConfirm ? "ยืนยันการชำระเงิน" : "ปฏิเสธการชำระเงิน"}
+          </AlertDialogTitle>
+        </AlertDialogHeader>
 
-        <div
-          style={{
-            marginTop: "16px",
-            padding: "12px",
-            backgroundColor: "#f6f6f6",
-            borderRadius: "6px",
-          }}
-        >
-          {actionType === "confirm" && (
-            <Space>
-              <CheckOutlined style={{ color: "#52c41a", fontSize: "16px" }} />
-              <Text style={{ color: "#52c41a" }}>
+        <div className="space-y-3 py-2">
+          <p className="text-sm text-gray-700">
+            {isConfirm
+              ? `ต้องการยืนยันการชำระเงินสำหรับคำสั่งซื้อ #${selectedOrder?.id ? selectedOrder.id.slice(-8) : "N/A"} หรือไม่?`
+              : `ต้องการปฏิเสธการชำระเงินสำหรับคำสั่งซื้อ #${selectedOrder?.id ? selectedOrder.id.slice(-8) : "N/A"} หรือไม่?`}
+          </p>
+
+          <div className="rounded-md bg-gray-50 p-3">
+            {isConfirm ? (
+              <div className="flex items-center gap-2 text-sm text-emerald-600">
+                <Check className="h-4 w-4" />
                 ลูกค้าจะสามารถเข้าถึงเนื้อหาได้ทันที
-              </Text>
-            </Space>
-          )}
-          {actionType === "reject" && (
-            <Space>
-              <CloseOutlined style={{ color: "#ff4d4f", fontSize: "16px" }} />
-              <Text style={{ color: "#ff4d4f" }}>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-sm text-red-600">
+                <X className="h-4 w-4" />
                 คำสั่งซื้อจะถูกยกเลิกและลูกค้าจะได้รับแจ้งเตือน
-              </Text>
-            </Space>
-          )}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </Modal>
+
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={loading}>ยกเลิก</AlertDialogCancel>
+          <Button
+            className={isConfirm ? "bg-emerald-600 hover:bg-emerald-700" : undefined}
+            variant={isConfirm ? "default" : "destructive"}
+            onClick={onOk}
+            disabled={loading}
+          >
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isConfirm ? "ยืนยัน" : "ปฏิเสธ"}
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

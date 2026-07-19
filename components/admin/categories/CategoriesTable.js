@@ -1,25 +1,27 @@
 "use client";
-import React from "react";
+import { useState, useMemo } from "react";
+import { Layers, Edit, Trash2, FileText, Calendar, CheckCircle2 } from "lucide-react";
 import {
   Table,
-  Card,
-  Button,
-  Space,
-  Tag,
-  Avatar,
-  Typography,
-  Tooltip,
-} from "antd";
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
-  AppstoreOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  FileTextOutlined,
-  CalendarOutlined,
-  TagOutlined,
-} from "@ant-design/icons";
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import AdminFilterBar from "@/components/admin/shared/AdminFilterBar";
+import AdminPagination from "@/components/admin/shared/AdminPagination";
 
-const { Text } = Typography;
+const PAGE_SIZE = 10;
 
 export default function CategoriesTable({
   categories,
@@ -29,135 +31,144 @@ export default function CategoriesTable({
   disabled = false,
   deleting = null,
 }) {
-  const formatDate = (dateString) => {
-    return dateString ? new Date(dateString).toLocaleString("th-TH") : "-";
-  };
+  const [searchInput, setSearchInput] = useState("");
+  const [page, setPage] = useState(1);
 
-  const columns = [
-    {
-      title: "หมวดหมู่",
-      dataIndex: "name",
-      key: "name",
-      render: (name, record) => (
-        <Space size={12}>
-          <Avatar
-            icon={<AppstoreOutlined />}
-            style={{ backgroundColor: "#1890ff" }}
-            size="default"
-          />
-          <div>
-            <div>
-              <Text strong style={{ fontSize: "14px" }}>
-                {name}
-              </Text>
-            </div>
-            {record.description && (
-              <div>
-                <Text type="secondary" style={{ fontSize: "12px" }}>
-                  {record.description.length > 50
-                    ? `${record.description.substring(0, 50)}...`
-                    : record.description}
-                </Text>
-              </div>
-            )}
-          </div>
-        </Space>
-      ),
-      width: 300,
-    },
-    {
-      title: "รายละเอียด",
-      dataIndex: "description",
-      key: "description",
-      render: (description) => (
-        <Space size={8}>
-          <FileTextOutlined style={{ color: "#8c8c8c" }} />
-          <Text style={{ fontSize: "13px" }}>
-            {description || <Text type="secondary">ไม่มีรายละเอียด</Text>}
-          </Text>
-        </Space>
-      ),
-      width: 250,
-    },
-    {
-      title: "สถานะ",
-      key: "status",
-      render: () => (
-        <Tag color="success" style={{ borderRadius: "4px" }}>
-          <TagOutlined style={{ marginRight: "4px" }} />
-          ใช้งาน
-        </Tag>
-      ),
-      width: 100,
-    },
-    {
-      title: "วันที่สร้าง",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      render: (date) => (
-        <Space size={8}>
-          <CalendarOutlined style={{ color: "#8c8c8c" }} />
-          <Text style={{ fontSize: "13px" }}>{formatDate(date)}</Text>
-        </Space>
-      ),
-      width: 150,
-    },
-    {
-      title: "การดำเนินการ",
-      key: "actions",
-      render: (_, record) => (
-        <Space size={8} wrap>
-          <Tooltip title="แก้ไข">
-            <Button
-              type="text"
-              icon={<EditOutlined />}
-              onClick={() => onEdit(record)}
-              disabled={disabled}
-            />
-          </Tooltip>
-          <Tooltip title="ลบ">
-            <Button
-              type="text"
-              danger
-              icon={<DeleteOutlined />}
-              onClick={() => onDelete(record.id, record.name)}
-              loading={deleting === record.id}
-              disabled={disabled || (deleting && deleting !== record.id)}
-            />
-          </Tooltip>
-        </Space>
-      ),
-      width: 150,
-      fixed: "right",
-    },
-  ];
+  const formatDate = (dateString) => (dateString ? new Date(dateString).toLocaleString("th-TH") : "-");
+
+  const filtered = useMemo(() => {
+    const q = searchInput.trim().toLowerCase();
+    if (!q) return categories;
+    return categories.filter(
+      (c) => c.name?.toLowerCase().includes(q) || c.description?.toLowerCase().includes(q)
+    );
+  }, [categories, searchInput]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
-    <Card
-      title={
-        <Space>
-          รายการหมวดหมู่
-          <Tag color="blue" style={{ marginLeft: "8px" }}>
-            {categories.length} รายการ
-          </Tag>
-        </Space>
-      }
-    >
-      <Table
-        columns={columns}
-        dataSource={categories}
-        rowKey="id"
-        loading={loading}
-        scroll={{ x: 1000 }}
-        pagination={{
-          pageSize: 10,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total, range) =>
-            `${range[0]}-${range[1]} จาก ${total} รายการ`,
+    <TooltipProvider delayDuration={200}>
+      <AdminFilterBar
+        searchValue={searchInput}
+        onSearchChange={(v) => {
+          setSearchInput(v);
+          setPage(1);
         }}
-        size="middle"
+        searchPlaceholder="ค้นหาชื่อหรือรายละเอียดหมวดหมู่..."
+        onReset={() => {
+          setSearchInput("");
+          setPage(1);
+        }}
+        totalCount={categories.length}
+        currentCount={filtered.length}
+        loading={loading}
+        activeSummary={[searchInput && `ค้นหา: "${searchInput}"`]}
       />
-    </Card>
+
+      <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+        <div className="mb-4 flex items-center gap-2">
+          <h3 className="font-semibold text-gray-900">รายการหมวดหมู่</h3>
+          <Badge variant="secondary">{filtered.length} รายการ</Badge>
+        </div>
+
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="min-w-[220px]">หมวดหมู่</TableHead>
+                <TableHead>รายละเอียด</TableHead>
+                <TableHead>สถานะ</TableHead>
+                <TableHead>วันที่สร้าง</TableHead>
+                <TableHead className="text-right">การดำเนินการ</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell colSpan={5}>
+                      <Skeleton className="h-10 w-full" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : paged.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-gray-400">
+                    ไม่พบหมวดหมู่
+                  </TableCell>
+                </TableRow>
+              ) : (
+                paged.map((record) => (
+                  <TableRow key={record.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-500 text-white">
+                          <Layers className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-semibold text-gray-900">{record.name}</div>
+                          {record.description && (
+                            <div className="truncate text-xs text-gray-500">
+                              {record.description.length > 50 ? `${record.description.substring(0, 50)}...` : record.description}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                        <FileText className="h-3.5 w-3.5 text-gray-400" />
+                        {record.description || <span className="text-gray-400">ไม่มีรายละเอียด</span>}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
+                        <CheckCircle2 className="mr-1 h-3 w-3" />
+                        ใช้งาน
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5 text-sm text-gray-500">
+                        <Calendar className="h-3.5 w-3.5 text-gray-400" />
+                        {formatDate(record.createdAt)}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-end gap-1">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="text-blue-600" onClick={() => onEdit(record)} disabled={disabled}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>แก้ไข</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-red-600"
+                              onClick={() => onDelete(record.id, record.name)}
+                              disabled={disabled || (deleting && deleting !== record.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>ลบ</TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        <AdminPagination current={page} total={totalPages} onPageChange={setPage} className="mt-4" />
+      </div>
+    </TooltipProvider>
   );
 }

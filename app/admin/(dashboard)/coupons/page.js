@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
-import { Button, message } from "antd";
-import { TagsOutlined, PlusOutlined } from "@ant-design/icons";
+import { Tags, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 import AdminPageHeader from "@/components/admin/shared/AdminPageHeader";
 
 // Components
@@ -14,6 +15,8 @@ import DeleteModal from "@/components/admin/coupons/DeleteModal";
 import { useCoupons } from "@/hooks/admin/useCoupons";
 
 export default function CouponsPage() {
+  const { toast } = useToast();
+
   // Modal states
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -31,7 +34,7 @@ export default function CouponsPage() {
     pagination,
     fetchCoupons,
     handleFilterChange,
-    handleTableChange,
+    handlePageChange,
     resetFilters,
   } = useCoupons();
 
@@ -58,13 +61,13 @@ export default function CouponsPage() {
         throw new Error(error.error || "เกิดข้อผิดพลาด");
       }
 
-      message.success(editing ? "แก้ไขคูปองสำเร็จ" : "สร้างคูปองสำเร็จ");
+      toast({ title: editing ? "แก้ไขคูปองสำเร็จ" : "สร้างคูปองสำเร็จ" });
       setModalOpen(false);
       setEditing(null);
       fetchCoupons();
     } catch (error) {
       console.error("Submit error:", error);
-      message.error(error.message || "เกิดข้อผิดพลาดในการบันทึกคูปอง");
+      toast({ variant: "destructive", title: error.message || "เกิดข้อผิดพลาดในการบันทึกคูปอง" });
     }
   };
 
@@ -74,22 +77,20 @@ export default function CouponsPage() {
 
     setDeleting(true);
     try {
-      const res = await fetch(`/api/admin/coupons/${couponToDelete.id}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(`/api/admin/coupons/${couponToDelete.id}`, { method: "DELETE" });
 
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.error || "เกิดข้อผิดพลาด");
       }
 
-      message.success("ลบคูปองสำเร็จ");
+      toast({ title: "ลบคูปองสำเร็จ" });
       setDeleteModalOpen(false);
       setCouponToDelete(null);
       fetchCoupons();
     } catch (error) {
       console.error("Delete error:", error);
-      message.error(error.message || "เกิดข้อผิดพลาดในการลบคูปอง");
+      toast({ variant: "destructive", title: error.message || "เกิดข้อผิดพลาดในการลบคูปอง" });
     } finally {
       setDeleting(false);
     }
@@ -113,10 +114,7 @@ export default function CouponsPage() {
       const res = await fetch(`/api/admin/coupons/${coupon.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...coupon,
-          isActive: !coupon.isActive,
-        }),
+        body: JSON.stringify({ ...coupon, isActive: !coupon.isActive }),
       });
 
       if (!res.ok) {
@@ -124,30 +122,27 @@ export default function CouponsPage() {
         throw new Error(error.error || "เกิดข้อผิดพลาด");
       }
 
-      message.success(
-        coupon.isActive ? "ปิดใช้งานคูปองสำเร็จ" : "เปิดใช้งานคูปองสำเร็จ"
-      );
+      toast({ title: coupon.isActive ? "ปิดใช้งานคูปองสำเร็จ" : "เปิดใช้งานคูปองสำเร็จ" });
       fetchCoupons();
     } catch (error) {
       console.error("Toggle error:", error);
-      message.error(error.message || "เกิดข้อผิดพลาดในการเปลี่ยนสถานะ");
+      toast({ variant: "destructive", title: error.message || "เกิดข้อผิดพลาดในการเปลี่ยนสถานะ" });
     }
   };
 
   return (
     <AdminPageHeader
-      icon={<TagsOutlined />}
+      icon={<Tags className="h-6 w-6" />}
       title="จัดการคูปอง"
       subtitle="สร้างและจัดการคูปองส่วนลดสำหรับลูกค้า"
       actions={
         <Button
-          type="primary"
-          icon={<PlusOutlined />}
           onClick={() => {
             setEditing(null);
             setModalOpen(true);
           }}
         >
+          <Plus className="mr-2 h-4 w-4" />
           เพิ่มคูปองใหม่
         </Button>
       }
@@ -160,7 +155,7 @@ export default function CouponsPage() {
         onFilterChange={handleFilterChange}
         onReset={resetFilters}
         loading={loading}
-        totalCount={pagination.total}
+        totalCount={pagination.totalCount}
         currentCount={coupons.length}
       />
 
@@ -169,7 +164,7 @@ export default function CouponsPage() {
         coupons={coupons}
         loading={loading}
         pagination={pagination}
-        onTableChange={handleTableChange}
+        onPageChange={handlePageChange}
         onEdit={handleEdit}
         onDelete={handleDelete}
         onToggleStatus={handleToggleStatus}

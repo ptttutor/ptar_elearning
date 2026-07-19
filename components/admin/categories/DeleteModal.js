@@ -1,99 +1,61 @@
 "use client";
-import React from "react";
-import { Modal, Typography, Space, Button } from "antd";
+import { AlertTriangle, Layers, Loader2 } from "lucide-react";
 import {
-  DeleteOutlined,
-  ExclamationCircleOutlined,
-  AppstoreOutlined,
-} from "@ant-design/icons";
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
-const { Text } = Typography;
-
-export default function DeleteModal({
-  open,
-  category,
-  loading,
-  onConfirm,
-  onCancel,
-}) {
+export default function DeleteModal({ open, category, loading, onConfirm, onCancel }) {
   if (!category) return null;
 
   return (
-    <Modal
-      title={
-        <Space>
-          <ExclamationCircleOutlined style={{ color: "#faad14" }} />
-          <Text strong>ยืนยันการลบหมวดหมู่</Text>
-        </Space>
-      }
-      open={open}
-      onCancel={onCancel}
-      footer={[
-        <Button key="cancel" onClick={onCancel} disabled={loading}>
-          ยกเลิก
-        </Button>,
-        <Button
-          key="delete"
-          type="primary"
-          danger
-          loading={loading}
-          onClick={onConfirm}
-          icon={<DeleteOutlined />}
-        >
-          ลบหมวดหมู่
-        </Button>,
-      ]}
-      width={500}
-    >
-      <div style={{ padding: "16px 0" }}>
-        <Space direction="vertical" size={16} style={{ width: "100%" }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              padding: "12px",
-              backgroundColor: "#fff2e8",
-              border: "1px solid #ffbb96",
-              borderRadius: "6px",
-            }}
-          >
-            <Space size={12}>
-              <AppstoreOutlined
-                style={{ fontSize: "20px", color: "#fa8c16" }}
-              />
-              <div>
-                <Text strong style={{ fontSize: "16px" }}>
-                  {category.name}
-                </Text>
-                {category.description && (
-                  <div>
-                    <Text type="secondary" style={{ fontSize: "14px" }}>
-                      {category.description}
-                    </Text>
-                  </div>
-                )}
-              </div>
-            </Space>
+    <AlertDialog open={open} onOpenChange={(next) => !next && onCancel()}>
+      <AlertDialogContent className="sm:max-w-[500px]">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2 text-amber-600">
+            <AlertTriangle className="h-5 w-5" />
+            ยืนยันการลบหมวดหมู่
+          </AlertDialogTitle>
+        </AlertDialogHeader>
+
+        <div className="space-y-4 py-2">
+          <div className="flex items-center gap-3 rounded-md border border-orange-200 bg-orange-50 p-3">
+            <Layers className="h-5 w-5 shrink-0 text-orange-500" />
+            <div>
+              <div className="font-semibold text-gray-900">{category.name}</div>
+              {category.description && <div className="text-sm text-gray-500">{category.description}</div>}
+            </div>
           </div>
 
-          <div>
-            <Text strong style={{ color: "#ff4d4f" }}>
-              คำเตือน:
-            </Text>
-            <Text style={{ marginLeft: "8px" }}>
-              การลบหมวดหมู่นี้ไม่สามารถยกเลิกได้ กรุณาตรวจสอบให้แน่ใจก่อนดำเนินการ
-            </Text>
-          </div>
+          <p className="text-sm text-gray-700">
+            <span className="font-semibold text-red-600">คำเตือน:</span> การลบหมวดหมู่นี้ไม่สามารถยกเลิกได้
+            กรุณาตรวจสอบให้แน่ใจก่อนดำเนินการ
+          </p>
 
-          <div>
-            <Text>คุณต้องการลบหมวดหมู่ &quot;</Text>
-            <Text strong style={{ color: "#ff4d4f" }}>
-              {category.name}
-            </Text>
-            <Text>&quot; ใช่หรือไม่?</Text>
-          </div>
-        </Space>
-      </div>
-    </Modal>
+          <p className="text-sm text-gray-700">
+            คุณต้องการลบหมวดหมู่ &quot;<span className="font-semibold text-red-600">{category.name}</span>&quot; ใช่หรือไม่?
+          </p>
+        </div>
+
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={loading}>ยกเลิก</AlertDialogCancel>
+          <Button variant="destructive" onClick={onConfirm} disabled={loading}>
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                กำลังลบ...
+              </>
+            ) : (
+              "ลบหมวดหมู่"
+            )}
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

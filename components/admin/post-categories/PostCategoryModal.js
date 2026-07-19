@@ -1,121 +1,122 @@
 "use client";
-import React, { useEffect } from "react";
+import { useState, useEffect } from "react";
+import { Tag, Loader2 } from "lucide-react";
 import {
-  Modal,
-  Form,
-  Input,
-  Space,
-  Typography,
-  Checkbox,
-} from "antd";
-import {
-  PlusOutlined,
-  EditOutlined,
-  TagOutlined,
-} from "@ant-design/icons";
-import { MODAL_WIDTH } from "@/components/admin/shared/adminUiConstants";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 
-const { Text } = Typography;
-const { TextArea } = Input;
+const EMPTY_FORM = { name: "", description: "", isActive: true };
 
-export default function PostCategoryModal({
-  open,
-  editing,
-  onCancel,
-  onSubmit,
-  loading,
-}) {
-  const [form] = Form.useForm();
+export default function PostCategoryModal({ open, editing, onCancel, onSubmit, loading }) {
+  const [values, setValues] = useState(EMPTY_FORM);
+  const [errors, setErrors] = useState({});
 
-  // Handle form submit
-  const handleSubmit = async () => {
-    try {
-      const values = await form.validateFields();
-      await onSubmit(values);
-    } catch (e) {
-      console.error("Form validation error:", e);
-    }
-  };
-
-  // Handle modal close
-  const handleCancel = () => {
-    form.resetFields();
-    onCancel();
-  };
-
-  // Set form data when editing
   useEffect(() => {
-    if (open && editing) {
-      const formData = {
-        name: editing.name,
-        description: editing.description,
-        isActive: editing.isActive,
-      };
-
-      setTimeout(() => {
-        form.setFieldsValue(formData);
-      }, 100);
-    } else if (open && !editing) {
-      form.resetFields();
+    if (open) {
+      setValues(
+        editing
+          ? { name: editing.name || "", description: editing.description || "", isActive: editing.isActive ?? true }
+          : EMPTY_FORM
+      );
+      setErrors({});
     }
-  }, [open, editing, form]);
+  }, [open, editing]);
+
+  const validate = () => {
+    const next = {};
+    if (!values.name.trim()) next.name = "กรุณากรอกชื่อหมวดหมู่";
+    else if (values.name.trim().length < 2) next.name = "ชื่อหมวดหมู่ต้องมีอย่างน้อย 2 ตัวอักษร";
+    else if (values.name.trim().length > 100) next.name = "ชื่อหมวดหมู่ต้องไม่เกิน 100 ตัวอักษร";
+    if (values.description && values.description.length > 500) next.description = "รายละเอียดต้องไม่เกิน 500 ตัวอักษร";
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+    await onSubmit({ name: values.name.trim(), description: values.description.trim(), isActive: values.isActive });
+  };
 
   return (
-    <Modal
-      title={
-        <Space>
-          {editing ? <EditOutlined /> : <PlusOutlined />}
-          <Text strong>
-            {editing ? "แก้ไขหมวดหมู่โพสต์" : "สร้างหมวดหมู่โพสต์ใหม่"}
-          </Text>
-        </Space>
-      }
-      open={open}
-      onCancel={handleCancel}
-      onOk={handleSubmit}
-      confirmLoading={loading}
-      okText={editing ? "อัพเดท" : "สร้าง"}
-      cancelText="ยกเลิก"
-      width={MODAL_WIDTH.sm}
-      style={{ top: 20 }}
-    >
-      <Form form={form} layout="vertical">
-        <Form.Item
-          name="name"
-          label="ชื่อหมวดหมู่"
-          rules={[
-            { required: true, message: "กรุณากรอกชื่อหมวดหมู่" },
-            { min: 2, message: "ชื่อหมวดหมู่ต้องมีอย่างน้อย 2 ตัวอักษร" },
-            { max: 100, message: "ชื่อหมวดหมู่ต้องไม่เกิน 100 ตัวอักษร" },
-          ]}
-        >
-          <Input 
-            placeholder="ใส่ชื่อหมวดหมู่" 
-            prefix={<TagOutlined style={{ color: "#8c8c8c" }} />}
-            disabled={loading}
-          />
-        </Form.Item>
+    <Dialog open={open} onOpenChange={(next) => !next && onCancel()}>
+      <DialogContent className="sm:max-w-[480px]">
+        <DialogHeader>
+          <DialogTitle>{editing ? "แก้ไขหมวดหมู่โพสต์" : "สร้างหมวดหมู่โพสต์ใหม่"}</DialogTitle>
+        </DialogHeader>
 
-        <Form.Item 
-          name="description" 
-          label="รายละเอียด"
-          rules={[
-            { max: 500, message: "รายละเอียดต้องไม่เกิน 500 ตัวอักษร" },
-          ]}
-        >
-          <TextArea 
-            rows={4} 
-            placeholder="รายละเอียดหมวดหมู่โพสต์ (ไม่บังคับ)"
-            showCount
-            maxLength={500}
-            disabled={loading}
-          />
-        </Form.Item>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="name">ชื่อหมวดหมู่</Label>
+            <div className="relative">
+              <Tag className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <Input
+                id="name"
+                placeholder="ใส่ชื่อหมวดหมู่"
+                value={values.name}
+                disabled={loading}
+                onChange={(e) => setValues((p) => ({ ...p, name: e.target.value }))}
+                className="pl-9"
+              />
+            </div>
+            {errors.name && <p className="text-xs text-red-600">{errors.name}</p>}
+          </div>
 
-        <Form.Item name="isActive" valuePropName="checked" initialValue={true}>
-          <Checkbox disabled={loading}>เปิดใช้งาน</Checkbox>
-        </Form.Item>
-      </Form>
-    </Modal>
+          <div className="space-y-1.5">
+            <Label htmlFor="description">รายละเอียด</Label>
+            <Textarea
+              id="description"
+              rows={4}
+              placeholder="รายละเอียดหมวดหมู่โพสต์ (ไม่บังคับ)"
+              value={values.description}
+              disabled={loading}
+              maxLength={500}
+              onChange={(e) => setValues((p) => ({ ...p, description: e.target.value }))}
+            />
+            <div className="text-right text-xs text-gray-400">{values.description.length}/500</div>
+            {errors.description && <p className="text-xs text-red-600">{errors.description}</p>}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="isActive"
+              checked={values.isActive}
+              disabled={loading}
+              onCheckedChange={(checked) => setValues((p) => ({ ...p, isActive: !!checked }))}
+            />
+            <Label htmlFor="isActive" className="cursor-pointer font-normal">
+              เปิดใช้งาน
+            </Label>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onCancel}>
+              ยกเลิก
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  กำลังบันทึก...
+                </>
+              ) : editing ? (
+                "อัพเดท"
+              ) : (
+                "สร้าง"
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -1,193 +1,116 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { Plus, Upload, Trash2, Image as ImageIcon, Loader2 } from "lucide-react";
 import {
-  Modal,
-  Form,
-  Input,
-  Button,
-  Upload,
-  Space,
-  Typography,
-  Card,
-  Row,
-  Col,
-  Divider,
-  message,
-  Progress,
-  Image,
-  Popconfirm,
-} from "antd";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
-  PlusOutlined,
-  UploadOutlined,
-  DeleteOutlined,
-  PictureOutlined,
-  FileImageOutlined,
-} from "@ant-design/icons";
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/components/ui/use-toast";
 
-const { Title, Text } = Typography;
-const { TextArea } = Input;
-
-export default function PostContentModal({
-  visible,
-  onCancel,
-  onSubmit,
-  postId,
-  post, // เพิ่ม post object
-  loading = false,
-}) {
-  const [contentItems, setContentItems] = useState([
-    { id: Date.now(), urlImg: "", name: "", description: "", uploading: false },
-  ]);
+export default function PostContentModal({ visible, onCancel, onSubmit, postId, post, loading = false }) {
+  const { toast } = useToast();
+  const [contentItems, setContentItems] = useState([{ id: Date.now(), urlImg: "", name: "", description: "", uploading: false }]);
   const [uploadProgress, setUploadProgress] = useState({});
   const [existingContents, setExistingContents] = useState([]);
   const [fetchingContents, setFetchingContents] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
-  // Fetch existing content when modal opens
   const fetchExistingContents = useCallback(async () => {
     if (!postId) return;
-    
     try {
       setFetchingContents(true);
       const response = await fetch(`/api/admin/posts/${postId}/content`);
       const result = await response.json();
-      
-      if (result.success) {
-        setExistingContents(result.data || []);
-      } else {
-        console.error('Error fetching existing contents:', result.error);
-      }
+      if (result.success) setExistingContents(result.data || []);
+      else console.error("Error fetching existing contents:", result.error);
     } catch (error) {
-      console.error('Error fetching existing contents:', error);
+      console.error("Error fetching existing contents:", error);
     } finally {
       setFetchingContents(false);
     }
   }, [postId]);
 
-  // Reset form when modal opens/closes
   useEffect(() => {
     if (visible) {
-      setContentItems([
-        {
-          id: Date.now(),
-          urlImg: "",
-          name: "",
-          description: "",
-          uploading: false,
-        },
-      ]);
+      setContentItems([{ id: Date.now(), urlImg: "", name: "", description: "", uploading: false }]);
       setUploadProgress({});
       setExistingContents([]);
-      
-      // Fetch existing contents
-      if (postId) {
-        fetchExistingContents();
-      }
+      if (postId) fetchExistingContents();
     }
   }, [visible, postId, fetchExistingContents]);
 
-  // Handle image upload
   const handleImageUpload = async (file, itemId) => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("type", "post-content");
 
     try {
-      setContentItems((prev) =>
-        prev.map((item) =>
-          item.id === itemId ? { ...item, uploading: true } : item
-        )
-      );
-
+      setContentItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, uploading: true } : item)));
       setUploadProgress((prev) => ({ ...prev, [itemId]: 0 }));
 
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
+      const response = await fetch("/api/upload", { method: "POST", body: formData });
       const result = await response.json();
 
       if (result.success) {
-        setContentItems((prev) =>
-          prev.map((item) =>
-            item.id === itemId
-              ? { ...item, urlImg: result.url, uploading: false }
-              : item
-          )
-        );
+        setContentItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, urlImg: result.url, uploading: false } : item)));
         setUploadProgress((prev) => ({ ...prev, [itemId]: 100 }));
-        message.success("อัปโหลดรูปภาพสำเร็จ");
+        toast({ title: "อัปโหลดรูปภาพสำเร็จ" });
       } else {
         throw new Error(result.error);
       }
     } catch (error) {
       console.error("Upload error:", error);
-      message.error(`เกิดข้อผิดพลาดในการอัปโหลด: ${error.message}`);
-      setContentItems((prev) =>
-        prev.map((item) =>
-          item.id === itemId ? { ...item, uploading: false } : item
-        )
-      );
+      toast({ variant: "destructive", title: `เกิดข้อผิดพลาดในการอัปโหลด: ${error.message}` });
+      setContentItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, uploading: false } : item)));
     }
-
-    return false; // Prevent default upload behavior
   };
 
-  // Add new content item
   const addContentItem = () => {
-    const newItem = {
-      id: Date.now(),
-      urlImg: "",
-      name: "",
-      description: "",
-      uploading: false,
-    };
-    setContentItems((prev) => [...prev, newItem]);
+    setContentItems((prev) => [...prev, { id: Date.now(), urlImg: "", name: "", description: "", uploading: false }]);
   };
 
-  // Remove content item
   const removeContentItem = (itemId) => {
-    if (contentItems.length > 1) {
-      setContentItems((prev) => prev.filter((item) => item.id !== itemId));
-      setUploadProgress((prev) => {
-        const newProgress = { ...prev };
-        delete newProgress[itemId];
-        return newProgress;
-      });
-    }
+    if (contentItems.length <= 1) return;
+    setContentItems((prev) => prev.filter((item) => item.id !== itemId));
+    setUploadProgress((prev) => {
+      const next = { ...prev };
+      delete next[itemId];
+      return next;
+    });
   };
 
-  // Update content item field
   const updateContentItem = (itemId, field, value) => {
-    setContentItems((prev) =>
-      prev.map((item) =>
-        item.id === itemId ? { ...item, [field]: value } : item
-      )
-    );
+    setContentItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)));
   };
 
-  // Handle form submission
   const handleSubmit = async () => {
     try {
-      // Validate that at least one item has content
-      const validItems = contentItems.filter(
-        (item) => item.urlImg || item.name || item.description
-      );
-
+      const validItems = contentItems.filter((item) => item.urlImg || item.name || item.description);
       if (validItems.length === 0) {
-        message.error("กรุณาเพิ่มเนื้อหาอย่างน้อย 1 รายการ");
+        toast({ variant: "destructive", title: "กรุณาเพิ่มเนื้อหาอย่างน้อย 1 รายการ" });
+        return;
+      }
+      if (contentItems.some((item) => item.uploading)) {
+        toast({ variant: "destructive", title: "กรุณารอให้การอัปโหลดเสร็จสิ้น" });
         return;
       }
 
-      // Check for any uploading items
-      const uploadingItems = contentItems.filter((item) => item.uploading);
-      if (uploadingItems.length > 0) {
-        message.error("กรุณารอให้การอัปโหลดเสร็จสิ้น");
-        return;
-      }
-
-      // Prepare data for submission
       const submitData = validItems.map((item) => ({
         urlImg: item.urlImg || null,
         name: item.name || null,
@@ -195,460 +118,247 @@ export default function PostContentModal({
       }));
 
       await onSubmit(submitData);
-      
-      // Refresh existing contents after successful submission
-      if (postId) {
-        fetchExistingContents();
-      }
+      if (postId) fetchExistingContents();
     } catch (error) {
       console.error("Submit error:", error);
-      message.error("เกิดข้อผิดพลาดในการบันทึก");
+      toast({ variant: "destructive", title: "เกิดข้อผิดพลาดในการบันทึก" });
     }
   };
 
-  // Delete existing content
   const deleteExistingContent = async (contentId) => {
     try {
-      const response = await fetch(`/api/admin/posts/${postId}/content?contentId=${contentId}`, {
-        method: 'DELETE',
-      });
-      
+      const response = await fetch(`/api/admin/posts/${postId}/content?contentId=${contentId}`, { method: "DELETE" });
       const result = await response.json();
-      
       if (result.success) {
-        message.success('ลบเนื้อหาสำเร็จ');
-        fetchExistingContents(); // Refresh the list
+        toast({ title: "ลบเนื้อหาสำเร็จ" });
+        fetchExistingContents();
       } else {
-        message.error(result.error || 'เกิดข้อผิดพลาดในการลบ');
+        toast({ variant: "destructive", title: result.error || "เกิดข้อผิดพลาดในการลบ" });
       }
     } catch (error) {
-      console.error('Delete error:', error);
-      message.error('เกิดข้อผิดพลาดในการลบ');
+      console.error("Delete error:", error);
+      toast({ variant: "destructive", title: "เกิดข้อผิดพลาดในการลบ" });
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
+  const newValidCount = contentItems.filter((item) => item.urlImg || item.name || item.description).length;
+
   return (
-    <Modal
-      title={
-        <Space>
-          <PictureOutlined style={{ color: "#1890ff" }} />
-          <div>
-            <Text strong>จัดการเนื้อหารูปภาพ</Text>
-            {post?.title && (
+    <>
+      <Dialog open={visible} onOpenChange={(next) => !next && onCancel()}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[900px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ImageIcon className="h-5 w-5 text-blue-600" />
+              จัดการเนื้อหารูปภาพ
+            </DialogTitle>
+            {post?.title && <p className="text-sm text-gray-500">โพสต์: {post.title}</p>}
+          </DialogHeader>
+
+          <div className="space-y-6">
+            <p className="text-sm text-gray-500">เพิ่มรูปภาพและข้อมูลสำหรับโพสต์ สามารถเพิ่มได้หลายรายการ</p>
+
+            {existingContents.length > 0 && (
               <div>
-                <Text type="secondary" style={{ fontSize: "12px" }}>
-                  โพสต์: {post.title}
-                </Text>
+                <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-emerald-700">
+                  <ImageIcon className="h-4 w-4" />
+                  เนื้อหาที่มีอยู่ ({existingContents.length} รายการ)
+                </div>
+                <div className="space-y-3">
+                  {existingContents.map((content, index) => (
+                    <div key={content.id} className="rounded-lg border-2 border-emerald-200 p-3">
+                      <div className="mb-2 flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-semibold">เนื้อหาที่ {index + 1}</span>
+                        <span className="text-xs text-gray-400">(สร้างเมื่อ: {new Date(content.createdAt).toLocaleString("th-TH")})</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="ml-auto text-red-600"
+                          onClick={() => setDeleteTarget({ type: "existing", id: content.id })}
+                        >
+                          <Trash2 className="mr-1 h-3.5 w-3.5" /> ลบ
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <div className="text-center">
+                          <div className="mb-2 text-xs font-medium text-gray-500">รูปภาพ</div>
+                          {content.urlImg ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={content.urlImg} alt={content.name || "รูปภาพ"} className="mx-auto h-[120px] w-full rounded-md object-cover" />
+                          ) : (
+                            <div className="flex h-[120px] items-center justify-center rounded-md border border-dashed border-gray-300 bg-gray-50 text-xs text-gray-400">
+                              ไม่มีรูปภาพ
+                            </div>
+                          )}
+                        </div>
+                        <div className="space-y-2 sm:col-span-2">
+                          <div>
+                            <div className="text-xs font-medium text-gray-500">ชื่อ / Caption</div>
+                            <div className="text-sm">{content.name || "ไม่ระบุ"}</div>
+                          </div>
+                          <div>
+                            <div className="text-xs font-medium text-gray-500">คำอธิบาย</div>
+                            <div className="text-sm">{content.description || "ไม่ระบุ"}</div>
+                          </div>
+                          <div>
+                            <div className="text-xs font-medium text-gray-500">ผู้สร้าง</div>
+                            <div className="text-sm text-gray-500">{content.author?.name || content.author?.email || "ไม่ระบุ"}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
-          </div>
-        </Space>
-      }
-      open={visible}
-      onCancel={onCancel}
-      width={900}
-      style={{ top: 20 }}
-      footer={[
-        <Button key="cancel" onClick={onCancel}>
-          ยกเลิก
-        </Button>,
-        <Button
-          key="submit"
-          type="primary"
-          onClick={handleSubmit}
-          loading={loading}
-          icon={<PlusOutlined />}
-        >
-          บันทึกทั้งหมด
-        </Button>,
-      ]}
-      styles={{
-        body: {
-          maxHeight: "70vh",
-          overflowY: "auto",
-        },
-      }}
-    >
-      <div style={{ marginBottom: "16px" }}>
-        <Text type="secondary">
-          เพิ่มรูปภาพและข้อมูลสำหรับโพสต์ สามารถเพิ่มได้หลายรายการ
-        </Text>
-      </div>
 
-      <Space direction="vertical" style={{ width: "100%" }} size="large">
-        {/* Existing Contents Section */}
-        {existingContents.length > 0 && (
-          <div>
-            <Divider orientation="left">
-              <Space>
-                <FileImageOutlined style={{ color: "#52c41a" }} />
-                <Text strong style={{ color: "#52c41a" }}>
-                  เนื้อหาที่มีอยู่ ({existingContents.length} รายการ)
-                </Text>
-              </Space>
-            </Divider>
-            
-            {existingContents.map((content, index) => (
-              <Card
-                key={content.id}
-                size="small"
-                title={
-                  <Space>
-                    <FileImageOutlined style={{ color: "#52c41a" }} />
-                    <Text strong>เนื้อหาที่ {index + 1}</Text>
-                    <Text type="secondary" style={{ fontSize: "12px" }}>
-                      (สร้างเมื่อ: {new Date(content.createdAt).toLocaleString('th-TH')})
-                    </Text>
-                    <Popconfirm
-                      title="ต้องการลบเนื้อหานี้?"
-                      onConfirm={() => deleteExistingContent(content.id)}
-                      okText="ลบ"
-                      cancelText="ยกเลิก"
-                    >
-                      <Button
-                        type="text"
-                        danger
-                        size="small"
-                        icon={<DeleteOutlined />}
-                        style={{ marginLeft: "auto" }}
-                      >
-                        ลบ
-                      </Button>
-                    </Popconfirm>
-                  </Space>
-                }
-                style={{
-                  border: "2px solid #52c41a",
-                  marginBottom: "12px",
-                }}
-              >
-                <Row gutter={16}>
-                  {/* Image Section */}
-                  <Col span={8}>
-                    <div style={{ textAlign: "center" }}>
-                      <Text strong style={{ display: "block", marginBottom: "8px" }}>
-                        รูปภาพ
-                      </Text>
-                      {content.urlImg ? (
-                        <Image
-                          src={content.urlImg}
-                          alt={content.name || "รูปภาพ"}
-                          style={{
-                            width: "100%",
-                            maxHeight: "120px",
-                            objectFit: "cover",
-                            borderRadius: "6px",
-                          }}
-                        />
-                      ) : (
-                        <div
-                          style={{
-                            height: "120px",
-                            border: "1px dashed #d9d9d9",
-                            borderRadius: "6px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            backgroundColor: "#fafafa",
-                          }}
-                        >
-                          <Text type="secondary">ไม่มีรูปภาพ</Text>
-                        </div>
+            {fetchingContents && (
+              <div className="rounded-lg border p-5 text-center text-sm text-gray-500">กำลังโหลดเนื้อหาที่มีอยู่...</div>
+            )}
+
+            <div>
+              <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-blue-600">
+                <Plus className="h-4 w-4" />
+                เพิ่มเนื้อหาใหม่
+              </div>
+              <div className="space-y-3">
+                {contentItems.map((item, index) => (
+                  <div key={item.id} className={`rounded-lg border-2 p-3 ${item.urlImg ? "border-emerald-200" : "border-gray-200"}`}>
+                    <div className="mb-2 flex items-center gap-2">
+                      <span className="text-sm font-semibold">รายการที่ {index + 1}</span>
+                      {contentItems.length > 1 && (
+                        <Button type="button" variant="ghost" size="sm" className="ml-auto text-red-600" onClick={() => removeContentItem(item.id)}>
+                          <Trash2 className="mr-1 h-3.5 w-3.5" /> ลบ
+                        </Button>
                       )}
                     </div>
-                  </Col>
-
-                  {/* Content Information Section */}
-                  <Col span={16}>
-                    <Space direction="vertical" style={{ width: "100%" }}>
-                      <div>
-                        <Text strong style={{ display: "block", marginBottom: "4px" }}>
-                          ชื่อ / Caption
-                        </Text>
-                        <Text>{content.name || "ไม่ระบุ"}</Text>
-                      </div>
-
-                      <div>
-                        <Text strong style={{ display: "block", marginBottom: "4px" }}>
-                          คำอธิบาย
-                        </Text>
-                        <Text>{content.description || "ไม่ระบุ"}</Text>
-                      </div>
-
-                      <div>
-                        <Text strong style={{ display: "block", marginBottom: "4px" }}>
-                          ผู้สร้าง
-                        </Text>
-                        <Text type="secondary">
-                          {content.author?.name || content.author?.email || "ไม่ระบุ"}
-                        </Text>
-                      </div>
-                    </Space>
-                  </Col>
-                </Row>
-              </Card>
-            ))}
-          </div>
-        )}
-
-        {/* Loading State for Existing Contents */}
-        {fetchingContents && (
-          <Card style={{ textAlign: "center", padding: "20px" }}>
-            <Text type="secondary">กำลังโหลดเนื้อหาที่มีอยู่...</Text>
-          </Card>
-        )}
-
-        {/* New Content Section */}
-        <Divider orientation="left">
-          <Space>
-            <PlusOutlined style={{ color: "#1890ff" }} />
-            <Text strong style={{ color: "#1890ff" }}>
-              เพิ่มเนื้อหาใหม่
-            </Text>
-          </Space>
-        </Divider>
-        {contentItems.map((item, index) => (
-          <Card
-            key={item.id}
-            size="small"
-            title={
-              <Space>
-                <FileImageOutlined style={{ color: "#52c41a" }} />
-                <Text strong>รายการที่ {index + 1}</Text>
-                {contentItems.length > 1 && (
-                  <Popconfirm
-                    title="ต้องการลบรายการนี้?"
-                    onConfirm={() => removeContentItem(item.id)}
-                    okText="ลบ"
-                    cancelText="ยกเลิก"
-                  >
-                    <Button
-                      type="text"
-                      danger
-                      size="small"
-                      icon={<DeleteOutlined />}
-                      style={{ marginLeft: "auto" }}
-                    >
-                      ลบ
-                    </Button>
-                  </Popconfirm>
-                )}
-              </Space>
-            }
-            style={{
-              border: item.urlImg ? "2px solid #52c41a" : "1px solid #d9d9d9",
-            }}
-          >
-            <Row gutter={16}>
-              {/* Image Upload Section */}
-              <Col span={8}>
-                <div style={{ textAlign: "center" }}>
-                  <Text
-                    strong
-                    style={{ display: "block", marginBottom: "8px" }}
-                  >
-                    รูปภาพ
-                  </Text>
-
-                  {item.urlImg ? (
-                    <div>
-                      <Image
-                        src={item.urlImg}
-                        alt="รูปภาพ"
-                        style={{
-                          width: "100%",
-                          maxHeight: "120px",
-                          objectFit: "cover",
-                          borderRadius: "6px",
-                          marginBottom: "8px",
-                        }}
-                      />
-                      <div>
-                        <Upload
-                          accept="image/*"
-                          showUploadList={false}
-                          beforeUpload={(file) =>
-                            handleImageUpload(file, item.id)
-                          }
-                          disabled={item.uploading}
-                        >
-                          <Button
-                            size="small"
-                            icon={<UploadOutlined />}
-                            loading={item.uploading}
-                          >
-                            เปลี่ยนรูป
-                          </Button>
-                        </Upload>
-                      </div>
-                    </div>
-                  ) : (
-                    <Upload
-                      accept="image/*"
-                      showUploadList={false}
-                      beforeUpload={(file) => handleImageUpload(file, item.id)}
-                      disabled={item.uploading}
-                    >
-                      <div
-                        style={{
-                          border: "2px dashed #d9d9d9",
-                          borderRadius: "6px",
-                          padding: "20px",
-                          textAlign: "center",
-                          cursor: "pointer",
-                          backgroundColor: item.uploading
-                            ? "#f5f5f5"
-                            : "#fafafa",
-                        }}
-                      >
-                        {item.uploading ? (
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                      <div className="text-center">
+                        <div className="mb-2 text-xs font-medium text-gray-500">รูปภาพ</div>
+                        {item.urlImg ? (
                           <div>
-                            <Progress
-                              percent={uploadProgress[item.id] || 0}
-                              size="small"
-                              style={{ marginBottom: "8px" }}
-                            />
-                            <Text type="secondary">กำลังอัปโหลด...</Text>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={item.urlImg} alt="รูปภาพ" className="mx-auto mb-2 h-[120px] w-full rounded-md object-cover" />
+                            <label className="inline-block cursor-pointer">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                disabled={item.uploading}
+                                onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], item.id)}
+                              />
+                              <span className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 px-2.5 py-1 text-xs font-medium hover:bg-gray-50">
+                                {item.uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                                เปลี่ยนรูป
+                              </span>
+                            </label>
                           </div>
                         ) : (
-                          <div>
-                            <PlusOutlined
-                              style={{ fontSize: "24px", color: "#bfbfbf" }}
+                          <label className="block cursor-pointer">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              disabled={item.uploading}
+                              onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], item.id)}
                             />
-                            <div style={{ marginTop: "8px" }}>
-                              <Text type="secondary">คลิกเพื่ือเลือกรูป</Text>
+                            <div className={`flex h-[120px] flex-col items-center justify-center rounded-md border-2 border-dashed ${item.uploading ? "bg-gray-100" : "bg-gray-50"} border-gray-300`}>
+                              {item.uploading ? (
+                                <div className="w-full px-4">
+                                  <Progress value={uploadProgress[item.id] || 0} className="mb-2 h-2" />
+                                  <span className="text-xs text-gray-500">กำลังอัปโหลด...</span>
+                                </div>
+                              ) : (
+                                <>
+                                  <Plus className="h-6 w-6 text-gray-300" />
+                                  <span className="mt-1 text-xs text-gray-500">คลิกเพื่อเลือกรูป</span>
+                                </>
+                              )}
                             </div>
-                          </div>
+                          </label>
                         )}
                       </div>
-                    </Upload>
-                  )}
-                </div>
-              </Col>
-
-              {/* Content Information Section */}
-              <Col span={16}>
-                <Space direction="vertical" style={{ width: "100%" }}>
-                  <div>
-                    <Text
-                      strong
-                      style={{ display: "block", marginBottom: "4px" }}
-                    >
-                      ชื่อ / Caption
-                    </Text>
-                    <Input
-                      placeholder="ชื่อรูปหรือ caption (ไม่บังคับ)"
-                      value={item.name}
-                      onChange={(e) =>
-                        updateContentItem(item.id, "name", e.target.value)
-                      }
-                      maxLength={100}
-                    />
+                      <div className="space-y-2 sm:col-span-2">
+                        <div>
+                          <div className="mb-1 text-xs font-medium text-gray-500">ชื่อ / Caption</div>
+                          <Input
+                            placeholder="ชื่อรูปหรือ caption (ไม่บังคับ)"
+                            value={item.name}
+                            maxLength={100}
+                            onChange={(e) => updateContentItem(item.id, "name", e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <div className="mb-1 text-xs font-medium text-gray-500">คำอธิบาย</div>
+                          <Textarea
+                            placeholder="คำอธิบายรูปภาพ (ไม่บังคับ)"
+                            value={item.description}
+                            rows={3}
+                            maxLength={500}
+                            onChange={(e) => updateContentItem(item.id, "description", e.target.value)}
+                          />
+                        </div>
+                        <div className="flex flex-wrap gap-3 text-xs text-emerald-600">
+                          {item.urlImg && <span>✓ มีรูปภาพ</span>}
+                          {item.name && <span>✓ มีชื่อ</span>}
+                          {item.description && <span>✓ มีคำอธิบาย</span>}
+                        </div>
+                      </div>
+                    </div>
                   </div>
+                ))}
+              </div>
 
-                  <div>
-                    <Text
-                      strong
-                      style={{ display: "block", marginBottom: "4px" }}
-                    >
-                      คำอธิบาย
-                    </Text>
-                    <TextArea
-                      placeholder="คำอธิบายรูปภาพ (ไม่บังคับ)"
-                      value={item.description}
-                      onChange={(e) =>
-                        updateContentItem(
-                          item.id,
-                          "description",
-                          e.target.value
-                        )
-                      }
-                      rows={3}
-                      maxLength={500}
-                    />
-                  </div>
-
-                  {/* Status indicators */}
-                  <div style={{ marginTop: "8px" }}>
-                    <Space>
-                      {item.urlImg && (
-                        <Text type="success" style={{ fontSize: "12px" }}>
-                          ✓ มีรูปภาพ
-                        </Text>
-                      )}
-                      {item.name && (
-                        <Text type="success" style={{ fontSize: "12px" }}>
-                          ✓ มีชื่อ
-                        </Text>
-                      )}
-                      {item.description && (
-                        <Text type="success" style={{ fontSize: "12px" }}>
-                          ✓ มีคำอธิบาย
-                        </Text>
-                      )}
-                    </Space>
-                  </div>
-                </Space>
-              </Col>
-            </Row>
-          </Card>
-        ))}
-
-        {/* Add New Item Button */}
-        <Card
-          style={{
-            border: "2px dashed #1890ff",
-            textAlign: "center",
-            cursor: "pointer",
-            padding: "20px",
-          }}
-          onClick={addContentItem}
-        >
-          <Space direction="vertical">
-            <PlusOutlined style={{ fontSize: "24px", color: "#1890ff" }} />
-            <Text style={{ color: "#1890ff", fontWeight: "500" }}>
-              เพิ่มรายการใหม่
-            </Text>
-          </Space>
-        </Card>
-
-        {/* Summary */}
-        <Divider />
-        <div
-          style={{
-            textAlign: "center",
-            padding: "16px",
-            backgroundColor: "#f6ffed",
-            borderRadius: "6px",
-          }}
-        >
-          <Space direction="vertical" size="small">
-            <Text strong style={{ color: "#52c41a" }}>
-              <FileImageOutlined /> สรุปเนื้อหา
-            </Text>
-            <div>
-              <Text style={{ fontSize: "14px" }}>
-                เนื้อหาที่มีอยู่: <Text strong>{existingContents.length}</Text> รายการ
-              </Text>
-              <br />
-              <Text style={{ fontSize: "14px" }}>
-                เนื้อหาใหม่ที่จะเพิ่ม: <Text strong>
-                {
-                  contentItems.filter(
-                    (item) => item.urlImg || item.name || item.description
-                  ).length
-                }
-                </Text> รายการ
-              </Text>
+              <button
+                type="button"
+                onClick={addContentItem}
+                className="mt-3 w-full rounded-lg border-2 border-dashed border-blue-300 py-5 text-center text-sm font-medium text-blue-600 hover:bg-blue-50"
+              >
+                <Plus className="mx-auto mb-1 h-6 w-6" />
+                เพิ่มรายการใหม่
+              </button>
             </div>
-            <Text type="secondary" style={{ fontSize: "12px" }}>
-              รวมทั้งหมด: {existingContents.length + contentItems.filter(
-                (item) => item.urlImg || item.name || item.description
-              ).length} รายการ
-            </Text>
-          </Space>
-        </div>
-      </Space>
-    </Modal>
+
+            <div className="rounded-lg bg-emerald-50 p-4 text-center text-sm">
+              <div className="mb-1 flex items-center justify-center gap-1.5 font-semibold text-emerald-700">
+                <ImageIcon className="h-4 w-4" /> สรุปเนื้อหา
+              </div>
+              <div>
+                เนื้อหาที่มีอยู่: <strong>{existingContents.length}</strong> รายการ
+              </div>
+              <div>
+                เนื้อหาใหม่ที่จะเพิ่ม: <strong>{newValidCount}</strong> รายการ
+              </div>
+              <div className="mt-1 text-xs text-gray-500">รวมทั้งหมด: {existingContents.length + newValidCount} รายการ</div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onCancel}>
+              ยกเลิก
+            </Button>
+            <Button type="button" onClick={handleSubmit} disabled={loading}>
+              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+              บันทึกทั้งหมด
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(next) => !next && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>ต้องการลบเนื้อหานี้?</AlertDialogTitle>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteTarget && deleteExistingContent(deleteTarget.id)}>ลบ</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

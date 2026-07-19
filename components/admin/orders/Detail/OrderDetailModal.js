@@ -1,6 +1,13 @@
 "use client";
-import { Modal, Space, Typography, Button } from "antd";
-import { EyeOutlined, CheckOutlined, CloseOutlined } from "@ant-design/icons";
+import { Eye, Check, X, Loader2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import CustomerInfoCard from "./CustomerInfoCard";
 import ProductInfoCard from "./ProductInfoCard";
 import CourseInfoCard from "./CourseInfoCard";
@@ -9,127 +16,86 @@ import CouponInfoCard from "./CouponInfoCard";
 import OrderSummaryCard from "./OrderSummaryCard";
 import ShippingInfoCard from "./ShippingInfoCard";
 
-const { Text } = Typography;
-
 export default function OrderDetailModal({
   visible,
   loading,
   selectedOrder,
-  slipAnalysis,
-  analyzingSlip,
   onCancel,
   onConfirmPayment,
   onRejectPayment,
-  onAnalyzeSlip,
   formatPrice,
   formatDate,
   getPaymentStatusColor,
   getPaymentStatusText,
 }) {
   return (
-    <Modal
-      title={
-        <Space>
-          <EyeOutlined />
-          <Text strong>
+    <Dialog open={visible} onOpenChange={(next) => !next && onCancel()}>
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[1000px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Eye className="h-5 w-5" />
             รายละเอียดคำสั่งซื้อ #{selectedOrder?.id?.slice(-8) || "..."}
-          </Text>
-        </Space>
-      }
-      open={visible}
-      onCancel={onCancel}
-      footer={
-        selectedOrder?.payment?.status === "PENDING_VERIFICATION" ? (
-          <Space>
-            <Button
-              type="primary"
-              icon={<CheckOutlined />}
-              style={{
-                backgroundColor: "#52c41a",
-                borderColor: "#52c41a",
-              }}
-              onClick={() => {
-                onCancel();
-                onConfirmPayment(selectedOrder);
-              }}
-            >
-              ยืนยันการชำระเงิน
-            </Button>
-            <Button
-              danger
-              icon={<CloseOutlined />}
-              onClick={() => {
-                const reason = prompt("เหตุผลการปฏิเสธ:");
-                if (reason) {
-                  onCancel();
-                  onRejectPayment(selectedOrder);
-                }
-              }}
-            >
-              ปฏิเสธการชำระเงิน
-            </Button>
-            <Button onClick={onCancel}>ปิด</Button>
-          </Space>
-        ) : (
-          <Button onClick={onCancel}>ปิด</Button>
-        )
-      }
-      width={1000}
-      styles={{
-        body: {
-          maxHeight: "70vh",
-          overflowY: "auto",
-        },
-      }}
-      loading={loading}
-    >
-      {selectedOrder ? (
-        <div>
-          <CustomerInfoCard selectedOrder={selectedOrder} />
-          
-          <ProductInfoCard 
-            selectedOrder={selectedOrder} 
-            formatPrice={formatPrice} 
-          />
-          
-          {/* Course Specific Information */}
-          {selectedOrder.orderType === "COURSE" && selectedOrder.course && (
-            <CourseInfoCard
+          </DialogTitle>
+        </DialogHeader>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+          </div>
+        ) : selectedOrder ? (
+          <div>
+            <CustomerInfoCard selectedOrder={selectedOrder} />
+            <ProductInfoCard selectedOrder={selectedOrder} formatPrice={formatPrice} />
+            {selectedOrder.orderType === "COURSE" && selectedOrder.course && (
+              <CourseInfoCard selectedOrder={selectedOrder} formatPrice={formatPrice} />
+            )}
+            <PaymentInfoCard
               selectedOrder={selectedOrder}
               formatPrice={formatPrice}
+              formatDate={formatDate}
+              getPaymentStatusColor={getPaymentStatusColor}
+              getPaymentStatusText={getPaymentStatusText}
             />
+            <CouponInfoCard selectedOrder={selectedOrder} formatPrice={formatPrice} />
+            <OrderSummaryCard selectedOrder={selectedOrder} formatPrice={formatPrice} />
+            <ShippingInfoCard selectedOrder={selectedOrder} />
+          </div>
+        ) : (
+          <div className="py-10 text-center text-sm text-gray-400">ไม่สามารถโหลดข้อมูลได้</div>
+        )}
+
+        <DialogFooter>
+          {selectedOrder?.payment?.status === "PENDING_VERIFICATION" ? (
+            <>
+              <Button
+                className="bg-emerald-600 hover:bg-emerald-700"
+                onClick={() => {
+                  onCancel();
+                  onConfirmPayment(selectedOrder);
+                }}
+              >
+                <Check className="mr-1.5 h-4 w-4" /> ยืนยันการชำระเงิน
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  onCancel();
+                  onRejectPayment(selectedOrder);
+                }}
+              >
+                <X className="mr-1.5 h-4 w-4" /> ปฏิเสธการชำระเงิน
+              </Button>
+              <Button variant="outline" onClick={onCancel}>
+                ปิด
+              </Button>
+            </>
+          ) : (
+            <Button variant="outline" onClick={onCancel}>
+              ปิด
+            </Button>
           )}
-          
-          <PaymentInfoCard
-            selectedOrder={selectedOrder}
-            slipAnalysis={slipAnalysis}
-            analyzingSlip={analyzingSlip}
-            onAnalyzeSlip={onAnalyzeSlip}
-            formatPrice={formatPrice}
-            formatDate={formatDate}
-            getPaymentStatusColor={getPaymentStatusColor}
-            getPaymentStatusText={getPaymentStatusText}
-          />
-          
-          <CouponInfoCard 
-            selectedOrder={selectedOrder} 
-            formatPrice={formatPrice} 
-          />
-          
-          <OrderSummaryCard 
-            selectedOrder={selectedOrder} 
-            formatPrice={formatPrice} 
-          />
-          
-          <ShippingInfoCard selectedOrder={selectedOrder} />
-        </div>
-      ) : (
-        <div style={{ textAlign: "center", padding: "40px" }}>
-          <Space direction="vertical" size={16}>
-            <Text type="secondary">ไม่สามารถโหลดข้อมูลได้</Text>
-          </Space>
-        </div>
-      )}
-    </Modal>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -1,244 +1,158 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
-import {
-  Button,
-  Space,
-  Tag,
-  App,
-} from "antd";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { ShoppingCart, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 import OrderTable from "./OrderTable";
 import ConfirmActionModal from "./ConfirmActionModal";
 import OrderFilters from "./OrderFilters";
-import {
-  ShoppingCartOutlined,
-} from "@ant-design/icons";
 import OrderDetailModal from "./Detail/OrderDetailModal";
 import AdminPageHeader from "@/components/admin/shared/AdminPageHeader";
 
-// Global error handler for unhandled fetch errors
-if (typeof window !== 'undefined') {
-  window.addEventListener('unhandledrejection', (event) => {
-    if (event.reason?.message?.includes('Unexpected token')) {
-      console.error('Caught unhandled JSON parsing error:', event.reason);
-      event.preventDefault(); // Prevent console error
-    }
-  });
-}
-
 export default function OrdersManagement() {
-  return (
-    <App>
-      <OrdersManagementContent />
-    </App>
-  );
-}
-
-function OrdersManagementContent() {
-  const { message } = App.useApp();
+  const { toast } = useToast();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 });
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [slipAnalysis, setSlipAnalysis] = useState(null);
-  const [analyzingSlip, setAnalyzingSlip] = useState(false);
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const [actionType, setActionType] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [filters, setFilters] = useState({
-    status: '',
-    paymentStatus: '',
-    orderType: '',
-    search: '',
-    dateFrom: '',
-    dateTo: ''
+    status: "",
+    paymentStatus: "",
+    orderType: "",
+    search: "",
+    dateFrom: "",
+    dateTo: "",
   });
+
+  const filtersRef = useRef(filters);
+  filtersRef.current = filters;
 
   const fetchOrders = useCallback(async (page = pagination.page, pageSize = pagination.pageSize) => {
     setLoading(true);
     try {
+      const currentFilters = filtersRef.current;
       const params = new URLSearchParams();
-      if (filters.status) params.append('status', filters.status);
-      if (filters.paymentStatus) params.append('paymentStatus', filters.paymentStatus);
-      if (filters.orderType) params.append('orderType', filters.orderType);
-      if (filters.search) params.append('search', filters.search);
-      if (filters.dateFrom) params.append('dateFrom', filters.dateFrom);
-      if (filters.dateTo) params.append('dateTo', filters.dateTo);
-      params.append('page', page);
-      params.append('limit', pageSize);
-      
+      if (currentFilters.status) params.append("status", currentFilters.status);
+      if (currentFilters.paymentStatus) params.append("paymentStatus", currentFilters.paymentStatus);
+      if (currentFilters.orderType) params.append("orderType", currentFilters.orderType);
+      if (currentFilters.search) params.append("search", currentFilters.search);
+      if (currentFilters.dateFrom) params.append("dateFrom", currentFilters.dateFrom);
+      if (currentFilters.dateTo) params.append("dateTo", currentFilters.dateTo);
+      params.append("page", page);
+      params.append("limit", pageSize);
+
       const response = await fetch(`/api/admin/orders?${params.toString()}`);
-      
-      // Check if response is JSON
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
+
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
         throw new Error(`Expected JSON response but got ${contentType}. Response status: ${response.status}`);
       }
-      
+
       const result = await response.json();
 
       if (result.success) {
         setOrders(result.data);
-        setPagination(prev => ({
+        setPagination((prev) => ({
           ...prev,
           page,
           pageSize,
-          total: result.pagination?.total ?? prev.total
+          total: result.pagination?.total ?? prev.total,
         }));
       } else {
-        message.error(result.error);
+        toast({ variant: "destructive", title: result.error || "เกิดข้อผิดพลาดในการโหลดข้อมูล" });
       }
     } catch (error) {
       console.error("Error fetching orders:", error);
-      message.error(`เกิดข้อผิดพลาดในการโหลดข้อมูล: ${error.message}`);
+      toast({ variant: "destructive", title: `เกิดข้อผิดพลาดในการโหลดข้อมูล: ${error.message}` });
     } finally {
       setLoading(false);
     }
-  }, [filters, message]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toast]);
 
   useEffect(() => {
-    // Add small delay to ensure API routes are ready
     const timer = setTimeout(() => {
-      fetchOrders();
+      fetchOrders(1, pagination.pageSize);
     }, 100);
-    
     return () => clearTimeout(timer);
-  }, [fetchOrders]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleFilterChange = (key, value) => {
-    setLoading(true);
-    setPagination(prev => ({ ...prev, page: 1 }));
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
+  // Debounce search / non-search filter changes into a refetch
+  const isFirstRun = useRef(true);
+  useEffect(() => {
+    if (isFirstRun.current) {
+      isFirstRun.current = false;
+      return;
+    }
+    const timer = setTimeout(() => {
+      fetchOrders(1, pagination.pageSize);
+    }, 400);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters]);
+
   const handleDateChange = (dateFrom, dateTo) => {
-    setLoading(true);
-    setPagination(prev => ({ ...prev, page: 1 }));
-    setFilters(prev => ({ ...prev, dateFrom, dateTo }));
+    setFilters((prev) => ({ ...prev, dateFrom, dateTo }));
   };
 
   const resetFilters = () => {
-    setLoading(true);
-    setPagination(prev => ({ ...prev, page: 1 }));
     setFilters({
-      status: '',
-      paymentStatus: '',
-      orderType: '',
-      search: '',
-      dateFrom: '',
-      dateTo: ''
+      status: "",
+      paymentStatus: "",
+      orderType: "",
+      search: "",
+      dateFrom: "",
+      dateTo: "",
     });
   };
 
-  const handleTableChange = (page, pageSize) => {
-    fetchOrders(page, pageSize);
+  const handlePageChange = (page) => {
+    fetchOrders(page, pagination.pageSize);
   };
 
-  const handleViewDetail= async (order) => {
+  const handleViewDetail = async (order) => {
     setDetailModalVisible(true);
     setDetailLoading(true);
     setSelectedOrder(null);
-    setSlipAnalysis(null);
 
     try {
       const response = await fetch(`/api/admin/orders/${order.id}`);
-      
-      // Check if response is JSON
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
+
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
         throw new Error(`Expected JSON response but got ${contentType}. Response status: ${response.status}`);
       }
-      
+
       const result = await response.json();
 
       if (result.success) {
         setSelectedOrder(result.data);
-        
-        // Load slip analysis if payment exists
-        if (result.data.payment?.id) {
-          loadSlipAnalysis(result.data.payment.id);
-        }
       } else {
-        message.error(result.error || "เกิดข้อผิดพลาดในการโหลดรายละเอียด");
+        toast({ variant: "destructive", title: result.error || "เกิดข้อผิดพลาดในการโหลดรายละเอียด" });
         setDetailModalVisible(false);
       }
     } catch (error) {
       console.error("Error fetching order detail:", error);
-      message.error(`เกิดข้อผิดพลาดในการโหลดรายละเอียด: ${error.message}`);
+      toast({ variant: "destructive", title: `เกิดข้อผิดพลาดในการโหลดรายละเอียด: ${error.message}` });
       setDetailModalVisible(false);
     } finally {
       setDetailLoading(false);
     }
   };
 
-  const loadSlipAnalysis = async (paymentId) => {
-    try {
-      const response = await fetch(`/api/admin/payments/analyze-slip?paymentId=${paymentId}`);
-      
-      // Check if response is JSON
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        console.warn(`Slip analysis API returned ${contentType} instead of JSON`);
-        return; // Skip analysis if not JSON
-      }
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        setSlipAnalysis(result.data);
-      }
-    } catch (error) {
-      console.error("Error loading slip analysis:", error);
-      // Don't show user error for optional slip analysis
-    }
-  };
-
-  const handleAnalyzeSlip = async () => {
-    if (!selectedOrder?.payment?.id) {
-      message.error('ไม่พบข้อมูลการชำระเงิน');
-      return;
-    }
-
-    setAnalyzingSlip(true);
-    try {
-      const response = await fetch('/api/admin/payments/analyze-slip', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          paymentId: selectedOrder.payment.id
-        }),
-      });
-
-      // Check if response is JSON
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error(`Expected JSON response but got ${contentType}. Response status: ${response.status}`);
-      }
-
-      const result = await response.json();
-
-      if (result.success) {
-        message.success('วิเคราะห์สลิปเสร็จสิ้น');
-        setSlipAnalysis(result.data);
-      } else {
-        message.error(result.error || 'เกิดข้อผิดพลาดในการวิเคราะห์สลิป');
-      }
-    } catch (error) {
-      console.error('Error analyzing slip:', error);
-      message.error(`เกิดข้อผิดพลาดในการวิเคราะห์สลิป: ${error.message}`);
-    } finally {
-      setAnalyzingSlip(false);
-    }
-  };
-
   const handleConfirmPayment = (order) => {
-    console.log("handleConfirmPayment called with:", order);
     if (!order || !order.id) {
-      console.error("Invalid order object:", order);
-      message.error("ไม่พบข้อมูลคำสั่งซื้อ");
+      toast({ variant: "destructive", title: "ไม่พบข้อมูลคำสั่งซื้อ" });
       return;
     }
     setSelectedOrder(order);
@@ -247,10 +161,8 @@ function OrdersManagementContent() {
   };
 
   const handleRejectPayment = (order) => {
-    console.log("handleRejectPayment called with:", order);
     if (!order || !order.id) {
-      console.error("Invalid order object:", order);
-      message.error("ไม่พบข้อมูลคำสั่งซื้อ");
+      toast({ variant: "destructive", title: "ไม่พบข้อมูลคำสั่งซื้อ" });
       return;
     }
     setSelectedOrder(order);
@@ -259,142 +171,89 @@ function OrdersManagementContent() {
   };
 
   const executeAction = async () => {
-    console.log("executeAction called with selectedOrder:", selectedOrder);
     if (!selectedOrder || !selectedOrder.id) {
-      console.error("No selectedOrder or selectedOrder.id:", selectedOrder);
-      message.error("ไม่พบข้อมูลคำสั่งซื้อที่เลือก");
+      toast({ variant: "destructive", title: "ไม่พบข้อมูลคำสั่งซื้อที่เลือก" });
       setConfirmModalVisible(false);
       return;
     }
 
-    setActionLoading(true); // เพิ่ม loading เมื่อทำการอัปเดต order
+    setActionLoading(true);
     try {
       const response = await fetch(`/api/admin/orders/${selectedOrder.id}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: actionType,
           notes: actionType === "reject" ? "ตรวจสอบแล้วพบว่าหลักฐานการโอนเงินไม่ถูกต้อง" : "ตรวจสอบแล้วถูกต้อง",
-          rejectionReason: actionType === "reject" ? "หลักฐานการโอนเงินไม่ถูกต้องหรือไม่ชัดเจน" : null
+          rejectionReason: actionType === "reject" ? "หลักฐานการโอนเงินไม่ถูกต้องหรือไม่ชัดเจน" : null,
         }),
       });
 
-      // Check if response is JSON
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
         throw new Error(`Expected JSON response but got ${contentType}. Response status: ${response.status}`);
       }
 
       const result = await response.json();
 
       if (result.success) {
-        message.success(result.message);
-        
-        // Show additional info for course enrollment
+        toast({ title: result.message });
+
         if (actionType === "confirm" && result.enrollment) {
-          message.info("ลูกค้าสามารถเข้าเรียนคอร์สได้แล้ว", 3);
+          toast({ title: "ลูกค้าสามารถเข้าเรียนคอร์สได้แล้ว" });
         }
-        
-        fetchOrders();
+
+        fetchOrders(pagination.page, pagination.pageSize);
         setConfirmModalVisible(false);
-        
-        // Close detail modal if open
-        if (detailModalVisible) {
-          setDetailModalVisible(false);
-        }
+
+        if (detailModalVisible) setDetailModalVisible(false);
       } else {
-        message.error(result.error);
+        toast({ variant: "destructive", title: result.error });
       }
     } catch (error) {
       console.error("Error updating order:", error);
-      message.error(`เกิดข้อผิดพลาดในการอัพเดทคำสั่งซื้อ: ${error.message}`);
+      toast({ variant: "destructive", title: `เกิดข้อผิดพลาดในการอัพเดทคำสั่งซื้อ: ${error.message}` });
     } finally {
-      setActionLoading(false); // ปิด loading เมื่อเสร็จสิ้น
+      setActionLoading(false);
     }
   };
 
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat("th-TH", {
-      style: "currency",
-      currency: "THB",
-    }).format(price);
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString("th-TH");
-  };
-
-  const getOrderStatusColor = (status) => {
-    switch (status) {
-      case "COMPLETED":
-        return "success";
-      case "PENDING":
-        return "warning";
-      case "PENDING_VERIFICATION":
-        return "processing";
-      case "CANCELLED":
-        return "error";
-      default:
-        return "default";
-    }
-  };
-
-  const getOrderStatusText = (status) => {
-    switch (status) {
-      case "COMPLETED":
-        return "สำเร็จ";
-      case "PENDING":
-        return "รอชำระเงิน";
-      case "PENDING_VERIFICATION":
-        return "รอตรวจสอบ";
-      case "CANCELLED":
-        return "ยกเลิก";
-      default:
-        return status;
-    }
-  };
+  const formatPrice = (price) => new Intl.NumberFormat("th-TH", { style: "currency", currency: "THB" }).format(price);
+  const formatDate = (dateString) => new Date(dateString).toLocaleString("th-TH");
 
   const getPaymentStatusColor = (status) => {
     switch (status) {
-      case "COMPLETED":
-        return "success";
-      case "PENDING":
-        return "warning";
-      case "PENDING_VERIFICATION":
-        return "processing";
-      case "REJECTED":
-        return "error";
-      case "FREE":
-        return "cyan";
-      default:
-        return "default";
+      case "COMPLETED": return "success";
+      case "PENDING": return "warning";
+      case "PENDING_VERIFICATION": return "processing";
+      case "REJECTED": return "error";
+      case "FREE": return "cyan";
+      default: return "default";
     }
   };
 
   const getPaymentStatusText = (status) => {
     switch (status) {
-      case "COMPLETED":
-        return "ชำระแล้ว";
-      case "PENDING":
-        return "รอชำระ";
-      case "PENDING_VERIFICATION":
-        return "รอตรวจสอบ";
-      case "REJECTED":
-        return "ปฏิเสธ";
-      case "FREE":
-        return "ฟรี";
-      default:
-        return status;
+      case "COMPLETED": return "ชำระแล้ว";
+      case "PENDING": return "รอชำระ";
+      case "PENDING_VERIFICATION": return "รอตรวจสอบ";
+      case "REJECTED": return "ปฏิเสธ";
+      case "FREE": return "ฟรี";
+      default: return status;
     }
   };
 
   return (
     <AdminPageHeader
-      icon={<ShoppingCartOutlined />}
+      icon={<ShoppingCart className="h-6 w-6" />}
       title="จัดการคำสั่งซื้อ"
       subtitle="ตรวจสอบและอนุมัติการชำระเงิน"
+      actions={
+        <Button variant="outline" onClick={() => fetchOrders(pagination.page, pagination.pageSize)} disabled={loading}>
+          <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+          รีเฟรช
+        </Button>
+      }
     >
       {/* Filters */}
       <OrderFilters
@@ -402,7 +261,6 @@ function OrdersManagementContent() {
         onFilterChange={handleFilterChange}
         onDateChange={handleDateChange}
         onResetFilters={resetFilters}
-        onRefresh={fetchOrders}
         loading={loading}
         totalCount={pagination.total}
         currentCount={orders.length}
@@ -413,7 +271,7 @@ function OrdersManagementContent() {
         loading={loading}
         actionLoading={actionLoading}
         pagination={pagination}
-        onTableChange={handleTableChange}
+        onPageChange={handlePageChange}
         onViewDetail={handleViewDetail}
         onConfirmPayment={handleConfirmPayment}
         onRejectPayment={handleRejectPayment}
@@ -424,15 +282,12 @@ function OrdersManagementContent() {
         visible={detailModalVisible}
         loading={detailLoading}
         selectedOrder={selectedOrder}
-        slipAnalysis={slipAnalysis}
-        analyzingSlip={analyzingSlip}
         onCancel={() => {
           setDetailModalVisible(false);
           setSelectedOrder(null);
         }}
         onConfirmPayment={handleConfirmPayment}
         onRejectPayment={handleRejectPayment}
-        onAnalyzeSlip={handleAnalyzeSlip}
         formatPrice={formatPrice}
         formatDate={formatDate}
         getPaymentStatusColor={getPaymentStatusColor}

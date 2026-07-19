@@ -1,347 +1,192 @@
 "use client";
+import { Eye, Check, X, User, BookOpen, Book, DollarSign, Calendar, FileCheck } from "lucide-react";
 import {
   Table,
-  Card,
-  Button,
-  Space,
-  Tag,
-  Image,
-  Avatar,
-  Typography,
-  Tooltip,
-} from "antd";
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
-  EyeOutlined,
-  CheckOutlined,
-  CloseOutlined,
-  UserOutlined,
-  BookOutlined,
-  ReadOutlined,
-  DollarOutlined,
-  CalendarOutlined,
-  FileDoneOutlined,
-} from "@ant-design/icons";
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import AdminPagination from "@/components/admin/shared/AdminPagination";
 
-const { Text } = Typography;
+const ORDER_STATUS_META = {
+  COMPLETED: { label: "สำเร็จ", className: "border-green-200 bg-green-50 text-green-700" },
+  PENDING: { label: "รอชำระเงิน", className: "border-amber-200 bg-amber-50 text-amber-700" },
+  PENDING_VERIFICATION: { label: "รอตรวจสอบ", className: "border-blue-200 bg-blue-50 text-blue-700" },
+  CANCELLED: { label: "ยกเลิก", className: "border-red-200 bg-red-50 text-red-700" },
+};
 
-export default function OrderTable({
-  orders,
-  loading,
-  actionLoading = false,
-  pagination,
-  onTableChange,
-  onViewDetail,
-  onConfirmPayment,
-  onRejectPayment,
-}) {
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat("th-TH", {
-      style: "currency",
-      currency: "THB",
-    }).format(price);
-  };
+const PAYMENT_STATUS_META = {
+  COMPLETED: { label: "ชำระแล้ว", className: "border-green-200 bg-green-50 text-green-700" },
+  PENDING: { label: "รอชำระ", className: "border-amber-200 bg-amber-50 text-amber-700" },
+  PENDING_VERIFICATION: { label: "รอตรวจสอบ", className: "border-blue-200 bg-blue-50 text-blue-700" },
+  REJECTED: { label: "ปฏิเสธ", className: "border-red-200 bg-red-50 text-red-700" },
+  FREE: { label: "ฟรี", className: "border-cyan-200 bg-cyan-50 text-cyan-700" },
+};
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString("th-TH");
-  };
-
-  const getOrderStatusColor = (status) => {
-    switch (status) {
-      case "COMPLETED":
-        return "success";
-      case "PENDING":
-        return "warning";
-      case "PENDING_VERIFICATION":
-        return "processing";
-      case "CANCELLED":
-        return "error";
-      default:
-        return "default";
-    }
-  };
-
-  const getOrderStatusText = (status) => {
-    switch (status) {
-      case "COMPLETED":
-        return "สำเร็จ";
-      case "PENDING":
-        return "รอชำระเงิน";
-      case "PENDING_VERIFICATION":
-        return "รอตรวจสอบ";
-      case "CANCELLED":
-        return "ยกเลิก";
-      default:
-        return status;
-    }
-  };
-
-  const getPaymentStatusColor = (status) => {
-    switch (status) {
-      case "COMPLETED":
-        return "success";
-      case "PENDING":
-        return "warning";
-      case "PENDING_VERIFICATION":
-        return "processing";
-      case "REJECTED":
-        return "error";
-      case "FREE":
-        return "cyan";
-      default:
-        return "default";
-    }
-  };
-
-  const getPaymentStatusText = (status) => {
-    switch (status) {
-      case "COMPLETED":
-        return "ชำระแล้ว";
-      case "PENDING":
-        return "รอชำระ";
-      case "PENDING_VERIFICATION":
-        return "รอตรวจสอบ";
-      case "REJECTED":
-        return "ปฏิเสธ";
-      case "FREE":
-        return "ฟรี";
-      default:
-        return status;
-    }
-  };
-
-  const columns = [
-    {
-      title: "รหัสคำสั่งซื้อ",
-      dataIndex: "id",
-      key: "id",
-      render: (id) => `#${id.slice(-8)}`,
-      width: "10%",
-      ellipsis: true,
-    },
-    {
-      title: "ลูกค้า",
-      dataIndex: "user",
-      key: "customer",
-      render: (user) => (
-        <Space size={8}>
-          <Avatar icon={<UserOutlined />} size="small" />
-          <div style={{ minWidth: 0 }}>
-            <div>
-              <Text strong style={{ fontSize: "13px" }} ellipsis>
-                {user.name}
-              </Text>
-            </div>
-            <div>
-              <Text type="secondary" style={{ fontSize: "11px" }} ellipsis>
-                {user.email}
-              </Text>
-            </div>
-          </div>
-        </Space>
-      ),
-      width: "20%",
-      ellipsis: true,
-    },
-    {
-      title: "สินค้า",
-      key: "product",
-      render: (_, record) => {
-        // Display items from OrderItem array if available, otherwise fallback to course/ebook
-        const items = record.items && record.items.length > 0 ? record.items : [
-          {
-            title: record.ebook?.title || record.course?.title,
-            itemType: record.orderType,
-            quantity: 1,
-            unitPrice: record.total
-          }
-        ];
-
-        return (
-          <div style={{ minWidth: 0 }}>
-            {items.map((item, index) => (
-              <div key={index} style={{ marginBottom: index < items.length - 1 ? "4px" : 0 }}>
-                <Space size={6}>
-                  <Avatar
-                    icon={
-                      item.itemType === "EBOOK" ? (
-                        <ReadOutlined />
-                      ) : (
-                        <BookOutlined />
-                      )
-                    }
-                    size={24}
-                    style={{ backgroundColor: item.itemType === "EBOOK" ? "#722ed1" : "#1890ff" }}
-                  />
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div>
-                      <Text strong style={{ fontSize: "12px" }} ellipsis title={item.title}>
-                        {item.title}
-                      </Text>
-                      {item.quantity > 1 && (
-                        <Text type="secondary" style={{ fontSize: "11px", marginLeft: "4px" }}>
-                          x{item.quantity}
-                        </Text>
-                      )}
-                    </div>
-                    <div>
-                      <Text type="secondary" style={{ fontSize: "10px" }}>
-                        {item.itemType === "EBOOK" ? "หนังสือ" : "คอร์ส"}
-                        {item.unitPrice && (
-                          <span style={{ marginLeft: "4px" }}>
-                            {formatPrice(item.unitPrice)}
-                          </span>
-                        )}
-                      </Text>
-                    </div>
-                  </div>
-                </Space>
-              </div>
-            ))}
-            {items.length > 1 && (
-              <div style={{ marginTop: "4px", paddingTop: "4px", borderTop: "1px solid #f0f0f0" }}>
-                <Text type="secondary" style={{ fontSize: "10px" }}>
-                  รวม {items.length} รายการ
-                </Text>
-              </div>
-            )}
-          </div>
-        );
-      },
-      width: "25%",
-      ellipsis: true,
-    },
-    {
-      title: "ยอดรวม",
-      dataIndex: "total",
-      key: "total",
-      render: (total) => (
-        <div>
-          <DollarOutlined style={{ color: "#52c41a", fontSize: "14px", marginRight: "4px" }} />
-          <Text strong style={{ color: "#52c41a", fontSize: "13px" }}>
-            {formatPrice(total)}
-          </Text>
-        </div>
-      ),
-      width: "12%",
-    },
-    {
-      title: "สถานะ",
-      dataIndex: "status",
-      key: "orderStatus",
-      render: (status) => (
-        <Tag color={getOrderStatusColor(status)} style={{ fontSize: "11px" }}>
-          {getOrderStatusText(status)}
-        </Tag>
-      ),
-      width: "10%",
-    },
-    {
-      title: "การชำระ",
-      dataIndex: "payment",
-      key: "paymentStatus",
-      render: (payment) => (
-        <div>
-          <Tag color={getPaymentStatusColor(payment?.status)} style={{ fontSize: "11px" }}>
-            {getPaymentStatusText(payment?.status)}
-          </Tag>
-          {payment?.slipUrl && (
-            <div style={{ marginTop: "2px" }}>
-              <Tag color="blue" size="small" style={{ fontSize: "10px" }}>
-                <FileDoneOutlined style={{ fontSize: "10px" }}/> สลิป
-              </Tag>
-            </div>
-          )}
-        </div>
-      ),
-      width: "10%",
-    },
-    {
-      title: "วันที่",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      render: (date) => (
-        <div>
-          <CalendarOutlined style={{ color: "#8c8c8c", fontSize: "12px", marginRight: "4px" }} />
-          <Text style={{ fontSize: "12px" }}>{formatDate(date)}</Text>
-        </div>
-      ),
-      width: "13%",
-      ellipsis: true,
-    },
-    {
-      title: "การดำเนินการ",
-      key: "actions",
-      render: (_, record) => (
-        <Space size={4} wrap>
-          <Tooltip title="ดู">
-            <Button
-              type="text"
-              icon={<EyeOutlined />}
-              size="small"
-              disabled={actionLoading}
-              onClick={() => onViewDetail(record)}
-            />
-          </Tooltip>
-
-          {record.payment?.status === "PENDING_VERIFICATION" && (
-            <>
-              <Tooltip title="ยืนยัน">
-                <Button
-                  type="text"
-                  icon={<CheckOutlined />}
-                  size="small"
-                  disabled={actionLoading}
-                  style={{ color: "#52c41a" }}
-                  onClick={() => onConfirmPayment(record)}
-                />
-              </Tooltip>
-              <Tooltip title="ปฏิเสธ">
-                <Button
-                  type="text"
-                  danger
-                  icon={<CloseOutlined />}
-                  size="small"
-                  disabled={actionLoading}
-                  onClick={() => onRejectPayment(record)}
-                />
-              </Tooltip>
-            </>
-          )}
-        </Space>
-      ),
-      width: "20%",
-    },
-  ];
+export default function OrderTable({ orders, loading, actionLoading = false, pagination, onPageChange, onViewDetail, onConfirmPayment, onRejectPayment }) {
+  const formatPrice = (price) => new Intl.NumberFormat("th-TH", { style: "currency", currency: "THB" }).format(price);
+  const formatDate = (dateString) => new Date(dateString).toLocaleString("th-TH");
+  const totalPages = Math.max(1, Math.ceil((pagination?.total || 0) / (pagination?.pageSize || 20)));
 
   return (
-    <Card
-      title={
-        <Space>
-          รายการคำสั่งซื้อ
-          <Tag color="blue">{pagination?.total ?? 0} รายการ</Tag>
-        </Space>
-      }
-    >
-      <Table
-        columns={columns}
-        dataSource={orders}
-        loading={loading}
-        rowKey="id"
-        pagination={{
-          current: pagination?.page ?? 1,
-          pageSize: pagination?.pageSize ?? 20,
-          total: pagination?.total ?? 0,
-          showSizeChanger: true,
-          pageSizeOptions: ['10', '20', '50', '100'],
-          showQuickJumper: true,
-          showTotal: (total, range) =>
-            `${range[0]}-${range[1]} จาก ${total} รายการ`,
-          onChange: onTableChange,
-          onShowSizeChange: onTableChange,
-        }}
-        size="middle"
-        tableLayout="fixed"
-      />
-    </Card>
+    <TooltipProvider delayDuration={200}>
+      <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+        <div className="mb-4 flex items-center gap-2">
+          <h3 className="font-semibold text-gray-900">รายการคำสั่งซื้อ</h3>
+          <Badge variant="secondary">{pagination?.total || 0} รายการ</Badge>
+        </div>
+
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>รหัสคำสั่งซื้อ</TableHead>
+                <TableHead>ลูกค้า</TableHead>
+                <TableHead className="min-w-[220px]">สินค้า</TableHead>
+                <TableHead>ยอดรวม</TableHead>
+                <TableHead>สถานะ</TableHead>
+                <TableHead>การชำระ</TableHead>
+                <TableHead>วันที่</TableHead>
+                <TableHead className="sticky right-0 z-10 border-l border-gray-100 bg-white text-right">การดำเนินการ</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell colSpan={8}>
+                      <Skeleton className="h-10 w-full" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (orders || []).length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center text-gray-400">
+                    ไม่พบคำสั่งซื้อ
+                  </TableCell>
+                </TableRow>
+              ) : (
+                orders.map((record) => {
+                  const items = record.items && record.items.length > 0
+                    ? record.items
+                    : [{ title: record.ebook?.title || record.course?.title, itemType: record.orderType, quantity: 1, unitPrice: record.total }];
+                  const orderStatusMeta = ORDER_STATUS_META[record.status] || { label: record.status, className: "" };
+                  const paymentStatusMeta = PAYMENT_STATUS_META[record.payment?.status] || { label: record.payment?.status || "-", className: "" };
+
+                  return (
+                    <TableRow key={record.id} className="group">
+                      <TableCell className="font-mono text-sm">#{record.id.slice(-8)}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500">
+                            <User className="h-3.5 w-3.5" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-semibold text-gray-900">{record.user?.name}</div>
+                            <div className="truncate text-xs text-gray-400">{record.user?.email}</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1.5">
+                          {items.map((item, index) => (
+                            <div key={index} className="flex items-center gap-1.5">
+                              <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-white ${item.itemType === "EBOOK" ? "bg-purple-500" : "bg-blue-500"}`}>
+                                {item.itemType === "EBOOK" ? <Book className="h-3 w-3" /> : <BookOpen className="h-3 w-3" />}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="truncate text-xs font-semibold text-gray-900" title={item.title}>
+                                  {item.title}
+                                  {item.quantity > 1 && <span className="ml-1 text-gray-400">x{item.quantity}</span>}
+                                </div>
+                                <div className="text-[10px] text-gray-400">
+                                  {item.itemType === "EBOOK" ? "หนังสือ" : "คอร์ส"}
+                                  {item.unitPrice && <span className="ml-1">{formatPrice(item.unitPrice)}</span>}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                          {items.length > 1 && <div className="border-t border-gray-100 pt-1 text-[10px] text-gray-400">รวม {items.length} รายการ</div>}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-sm font-semibold text-emerald-600">
+                          <DollarSign className="h-3.5 w-3.5" />
+                          {formatPrice(record.total)}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={orderStatusMeta.className}>{orderStatusMeta.label}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={paymentStatusMeta.className}>{paymentStatusMeta.label}</Badge>
+                        {record.payment?.slipUrl && (
+                          <div className="mt-1">
+                            <Badge variant="outline" className="gap-1 border-blue-200 bg-blue-50 text-[10px] text-blue-700">
+                              <FileCheck className="h-2.5 w-2.5" /> สลิป
+                            </Badge>
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                          <Calendar className="h-3.5 w-3.5 text-gray-400" />
+                          {formatDate(record.createdAt)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="sticky right-0 z-10 border-l border-gray-100 bg-white group-hover:bg-muted/50">
+                        <div className="flex items-center justify-end gap-1">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" disabled={actionLoading} onClick={() => onViewDetail(record)}>
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>ดู</TooltipContent>
+                          </Tooltip>
+                          {record.payment?.status === "PENDING_VERIFICATION" && (
+                            <>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="text-emerald-600" disabled={actionLoading} onClick={() => onConfirmPayment(record)}>
+                                    <Check className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>ยืนยัน</TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="text-red-600" disabled={actionLoading} onClick={() => onRejectPayment(record)}>
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>ปฏิเสธ</TooltipContent>
+                              </Tooltip>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        <AdminPagination current={pagination?.page || 1} total={totalPages} onPageChange={onPageChange} className="mt-4" />
+      </div>
+    </TooltipProvider>
   );
 }

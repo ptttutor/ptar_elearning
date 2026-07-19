@@ -1,92 +1,76 @@
-import { Modal, Typography, Space, Tag } from 'antd';
-import { ExclamationCircleOutlined } from '@ant-design/icons';
+"use client";
+import { AlertTriangle, Loader2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
-const { Text, Title } = Typography;
-
-export default function DeleteModal({
-  open,
-  onCancel,
-  onConfirm,
-  coupon,
-  loading
-}) {
+export default function DeleteModal({ open, onCancel, onConfirm, coupon, loading }) {
   if (!coupon) return null;
 
   const hasUsage = coupon.usageCount > 0;
 
   return (
-    <Modal
-      title={
-        <Space>
-          <ExclamationCircleOutlined style={{ color: '#faad14' }} />
-          ยืนยันการลบคูปอง
-        </Space>
-      }
-      open={open}
-      onCancel={onCancel}
-      onOk={onConfirm}
-      okText="ลบ"
-      cancelText="ยกเลิก"
-      okButtonProps={{ 
-        danger: true, 
-        loading,
-        disabled: hasUsage
-      }}
-      width={500}
-    >
-      <div style={{ padding: '16px 0' }}>
-        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-          <div>
-            <Text>คุณต้องการลบคูปองนี้หรือไม่?</Text>
-          </div>
+    <AlertDialog open={open} onOpenChange={(next) => !next && onCancel()}>
+      <AlertDialogContent className="sm:max-w-[500px]">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2 text-amber-600">
+            <AlertTriangle className="h-5 w-5" />
+            ยืนยันการลบคูปอง
+          </AlertDialogTitle>
+        </AlertDialogHeader>
 
-          <div style={{ 
-            padding: 16, 
-            background: '#f5f5f5', 
-            borderRadius: 8,
-            border: '1px solid #d9d9d9'
-          }}>
-            <Space direction="vertical" size="small" style={{ width: '100%' }}>
-              <div>
-                <Text strong>รหัสคูปอง: </Text>
-                <Tag color="blue">{coupon.code}</Tag>
-              </div>
-              <div>
-                <Text strong>ชื่อ: </Text>
-                <Text>{coupon.name}</Text>
-              </div>
-              <div>
-                <Text strong>จำนวนการใช้งาน: </Text>
-                <Text>{coupon.usageCount || 0} ครั้ง</Text>
-              </div>
-            </Space>
+        <div className="space-y-4 py-2">
+          <p className="text-sm text-gray-600">คุณต้องการลบคูปองนี้หรือไม่?</p>
+
+          <div className="space-y-1.5 rounded-md border border-gray-200 bg-gray-50 p-3 text-sm">
+            <div>
+              <span className="font-medium text-gray-700">รหัสคูปอง: </span>
+              <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">{coupon.code}</Badge>
+            </div>
+            <div>
+              <span className="font-medium text-gray-700">ชื่อ: </span>
+              {coupon.name}
+            </div>
+            <div>
+              <span className="font-medium text-gray-700">จำนวนการใช้งาน: </span>
+              {coupon.usageCount || 0} ครั้ง
+            </div>
           </div>
 
           {hasUsage ? (
-            <div style={{ 
-              padding: 12, 
-              background: '#fff2e8', 
-              border: '1px solid #ffbb96',
-              borderRadius: 6 
-            }}>
-              <Text type="warning">
-                <ExclamationCircleOutlined /> ไม่สามารถลบคูปองที่มีการใช้งานแล้วได้
-              </Text>
+            <div className="flex items-start gap-1.5 rounded-md border border-orange-200 bg-orange-50 p-3 text-sm text-orange-700">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>ไม่สามารถลบคูปองที่มีการใช้งานแล้วได้</span>
             </div>
           ) : (
-            <div style={{ 
-              padding: 12, 
-              background: '#fff1f0', 
-              border: '1px solid #ffccc7',
-              borderRadius: 6 
-            }}>
-              <Text type="danger">
-                <ExclamationCircleOutlined /> การลบจะไม่สามารถกู้คืนได้ กรุณายืนยันอีกครั้ง
-              </Text>
+            <div className="flex items-start gap-1.5 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>การลบจะไม่สามารถกู้คืนได้ กรุณายืนยันอีกครั้ง</span>
             </div>
           )}
-        </Space>
-      </div>
-    </Modal>
+        </div>
+
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={loading}>ยกเลิก</AlertDialogCancel>
+          <Button variant="destructive" onClick={onConfirm} disabled={loading || hasUsage}>
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                กำลังลบ...
+              </>
+            ) : (
+              "ลบคูปอง"
+            )}
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
