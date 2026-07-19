@@ -1,6 +1,5 @@
 "use client";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import AdminFilterBar from "@/components/admin/shared/AdminFilterBar";
 
 const STATUS_OPTIONS = [
@@ -56,15 +55,10 @@ export default function ShippingFilters({
           key: "dateRange",
           label: "ช่วงวันที่",
           render: () => (
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1">
-                <Label className="text-xs font-normal text-gray-500">วันที่เริ่ม</Label>
-                <Input type="date" value={filters.startDate} onChange={(e) => onFilterChange("startDate", e.target.value)} />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs font-normal text-gray-500">วันที่สิ้นสุด</Label>
-                <Input type="date" value={filters.endDate} onChange={(e) => onFilterChange("endDate", e.target.value)} />
-              </div>
+            <div className="flex items-center gap-2">
+              <Input type="date" value={filters.startDate} onChange={(e) => onFilterChange("startDate", e.target.value)} className="flex-1" />
+              <span className="shrink-0 text-sm text-gray-400">ถึง</span>
+              <Input type="date" value={filters.endDate} onChange={(e) => onFilterChange("endDate", e.target.value)} className="flex-1" />
             </div>
           ),
         },

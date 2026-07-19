@@ -102,6 +102,27 @@ export default function AdminFilterBar({
           </div>
         ))}
 
+        {/* Sort and Reset are grid items too, same sizing/balance as the
+            fields above — DOM order keeps Sort before Reset, and Reset
+            (rendered last) always lands in the final cell. */}
+        {sortOptions && (
+          <div className="space-y-2">
+            <Label>{sortLabel}</Label>
+            <Select value={sortValue} onValueChange={onSortChange}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={sortLabel} />
+              </SelectTrigger>
+              <SelectContent>
+                {sortOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         <div className="flex items-end">
           <Button variant="outline" onClick={onReset} disabled={loading} className="w-full">
             <RotateCcw className="mr-2 h-4 w-4" />
@@ -109,24 +130,6 @@ export default function AdminFilterBar({
           </Button>
         </div>
       </div>
-
-      {sortOptions && (
-        <div className="mt-4 max-w-xs space-y-2">
-          <Label>{sortLabel}</Label>
-          <Select value={sortValue} onValueChange={onSortChange}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder={sortLabel} />
-            </SelectTrigger>
-            <SelectContent>
-              {sortOptions.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
 
       <div className="mt-4 flex flex-wrap items-center gap-x-2 border-t border-gray-100 pt-4">
         <ResultsCount current={currentCount} total={totalCount} />
