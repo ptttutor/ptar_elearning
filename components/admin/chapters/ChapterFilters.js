@@ -1,28 +1,14 @@
-"use client";
-import {
-  Input,
-  Select,
-  InputNumber,
-  Button,
-  Typography,
-  Space,
-  Badge,
-  Pagination,
-  Card,
-} from "antd";
-import {
-  SearchOutlined,
-  FilterOutlined,
-  ClearOutlined,
-  BookOutlined,
-  BarChartOutlined,
-  SortAscendingOutlined,
-} from "@ant-design/icons";
-import ResultsCount from "@/components/admin/shared/ResultsCount";
-import { RESET_FILTERS_LABEL } from "@/components/admin/shared/adminUiConstants";
+import AdminFilterBar from "@/components/admin/shared/AdminFilterBar";
+import AdminPagination from "@/components/admin/shared/AdminPagination";
 
-const { Option } = Select;
-const { Text } = Typography;
+const SORT_OPTIONS = [
+  { value: "order_asc", label: "ลำดับ (น้อย → มาก)" },
+  { value: "order_desc", label: "ลำดับ (มาก → น้อย)" },
+  { value: "title_asc", label: "ชื่อ (A → Z)" },
+  { value: "title_desc", label: "ชื่อ (Z → A)" },
+  { value: "created_desc", label: "สร้างล่าสุด" },
+  { value: "created_asc", label: "สร้างเก่าสุด" },
+];
 
 export default function ChapterFilters({
   filters,
@@ -32,146 +18,36 @@ export default function ChapterFilters({
   onReset,
   pagination,
   onPageChange,
-  onPageSizeChange,
   totalCount,
   currentCount,
 }) {
-  // นับจำนวน active filters
-  const activeFiltersCount = [
-    searchInput,
-    filters.minOrder,
-    filters.sortBy !== "order_asc" ? filters.sortBy : null,
-  ].filter(Boolean).length;
   return (
-    <Card style={{ marginBottom: "16px" }}>
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "12px",
-          alignItems: "end",
-          marginBottom: "16px",
-        }}
-      >
-        {/* Search */}
-        <div style={{ minWidth: "250px", flex: 1 }}>
-          <Text strong>
-            <SearchOutlined style={{ marginRight: "4px" }} />
-            ค้นหา Chapter:
-          </Text>
-          <Input
-            placeholder="ค้นหาชื่อ Chapter..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            allowClear
-            onClear={() => setSearchInput("")}
-            style={{ marginTop: "4px" }}
-            prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
-          />
-        </div>
-
-        {/* Sort By */}
-        <div style={{ minWidth: "150px" }}>
-          <Text strong>
-            <FilterOutlined style={{ marginRight: "4px" }} />
-            เรียงตาม:
-          </Text>
-          <Select
-            value={filters.sortBy}
-            onChange={(value) => onFilterChange("sortBy", value)}
-            style={{ width: "100%", marginTop: "4px" }}
-            placeholder="เลือกการเรียง"
-          >
-            <Option value="order_asc">ลำดับ (น้อย → มาก)</Option>
-            <Option value="order_desc">ลำดับ (มาก → น้อย)</Option>
-            <Option value="title_asc">ชื่อ (A → Z)</Option>
-            <Option value="title_desc">ชื่อ (Z → A)</Option>
-            <Option value="created_desc">สร้างล่าสุด</Option>
-            <Option value="created_asc">สร้างเก่าสุด</Option>
-          </Select>
-        </div>
-
-        {/* Clear Filters */}
-        <div>
-          <Badge count={activeFiltersCount} size="small">
-            <Button
-              onClick={onReset}
-              style={{ borderRadius: "6px" }}
-              icon={<ClearOutlined />}
-              disabled={activeFiltersCount === 0}
-            >
-              {RESET_FILTERS_LABEL}
-            </Button>
-          </Badge>
-        </div>
-      </div>
-
-      {/* Filter Summary */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: "8px 12px",
-          backgroundColor: "#f8f9fa",
-          borderRadius: "6px",
-          border: "1px solid #e9ecef",
-        }}
-      >
-        <div>
-          <Space size="small">
-            <BookOutlined style={{ color: "#1890ff" }} />
-            {searchInput && (
-              <Text type="secondary">
-                <SearchOutlined /> ค้นหา: &quot;<strong>{searchInput}</strong>&quot;
-              </Text>
-            )}
-            {filters.minOrder && (
-              <Text type="secondary"><BarChartOutlined /> ลำดับต่ำสุด: {filters.minOrder}</Text>
-            )}
-            {filters.sortBy && filters.sortBy !== "order_asc" && (
-              <Text type="secondary">
-                <SortAscendingOutlined /> เรียงตาม: {getSortLabel(filters.sortBy)}
-              </Text>
-            )}
-            {activeFiltersCount === 0 && (
-              <Text type="secondary">ไม่มีตัวกรอง</Text>
-            )}
-          </Space>
-        </div>
-
-        <ResultsCount current={currentCount} total={totalCount} itemLabel="Chapter" />
-
-        {pagination.totalPages > 1 && (
-          <Pagination
-            current={pagination.page}
-            total={pagination.totalCount}
-            pageSize={pagination.pageSize}
-            onChange={onPageChange}
-            showSizeChanger
-            showQuickJumper
-            showTotal={(total, range) =>
-              `${range[0]}-${range[1]} จาก ${total} รายการ`
-            }
-            pageSizeOptions={["10", "20", "50", "100"]}
-            onShowSizeChange={onPageSizeChange}
-            style={{ marginTop: 16 }}
-          />
-        )}
-      </div>
-    </Card>
+    <>
+      <AdminFilterBar
+        searchLabel="ค้นหา Chapter"
+        searchValue={searchInput}
+        onSearchChange={setSearchInput}
+        searchPlaceholder="ค้นหาชื่อ Chapter..."
+        selects={[
+          { key: "sortBy", value: filters.sortBy, onChange: (v) => onFilterChange("sortBy", v), placeholder: "เรียงตาม", options: SORT_OPTIONS },
+        ]}
+        onReset={onReset}
+        totalCount={totalCount}
+        currentCount={currentCount}
+        activeSummary={[
+          searchInput && `ค้นหา: "${searchInput}"`,
+          filters.minOrder && `ลำดับต่ำสุด: ${filters.minOrder}`,
+          filters.sortBy !== "order_asc" && `เรียงตาม: ${SORT_OPTIONS.find((o) => o.value === filters.sortBy)?.label || filters.sortBy}`,
+        ]}
+      />
+      {pagination.totalPages > 1 && (
+        <AdminPagination
+          current={pagination.page}
+          total={pagination.totalPages}
+          onPageChange={onPageChange}
+          className="-mt-3 mb-6"
+        />
+      )}
+    </>
   );
-}
-
-// Helper function สำหรับแสดงชื่อการเรียง
-function getSortLabel(sortBy) {
-  const labels = {
-    order_asc: "ลำดับ ↑",
-    order_desc: "ลำดับ ↓",
-    title_asc: "ชื่อ A-Z",
-    title_desc: "ชื่อ Z-A",
-    created_desc: "ใหม่ล่าสุด",
-    created_asc: "เก่าสุด",
-  };
-  return labels[sortBy] || sortBy;
 }

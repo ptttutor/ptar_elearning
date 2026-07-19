@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useMessage } from "./useAntdApp";
+import { useToast } from "@/components/ui/use-toast";
 import {
   KeyboardSensor,
   PointerSensor,
@@ -13,7 +13,7 @@ import {
 import { arrayMove } from "@dnd-kit/sortable";
 
 export const useChapters = (courseId) => {
-  const message = useMessage();
+  const { toast } = useToast();
   const [chapters, setChapters] = useState([]);
   const [allChapters, setAllChapters] = useState([]); // สำหรับ drag & drop
   const [initialOrder, setInitialOrder] = useState([]);
@@ -109,11 +109,11 @@ export const useChapters = (courseId) => {
           hasPrev: false,
         });
       } else {
-        message.error(data.error || "เกิดข้อผิดพลาดในการโหลด chapters");
+        toast({ variant: "destructive", title: data.error || "เกิดข้อผิดพลาดในการโหลด chapters" });
       }
     } catch (e) {
       console.error("Fetch chapters error:", e);
-      message.error("เกิดข้อผิดพลาดในการโหลด chapters");
+      toast({ variant: "destructive", title: "เกิดข้อผิดพลาดในการโหลด chapters" });
     }
     setLoading(false);
   }, [courseId]);
@@ -210,10 +210,10 @@ export const useChapters = (courseId) => {
       // Refresh data และอัปเดต UI ทันที
       await Promise.all([fetchChapters(), fetchAllChapters()]);
 
-      message.success("บันทึกการเปลี่ยนแปลงลำดับสำเร็จ");
+      toast({ title: "บันทึกการเปลี่ยนแปลงลำดับสำเร็จ" });
     } catch (error) {
       console.error("Error saving order changes:", error);
-      message.error("เกิดข้อผิดพลาดในการบันทึกลำดับ");
+      toast({ variant: "destructive", title: "เกิดข้อผิดพลาดในการบันทึกลำดับ" });
     }
     setSavingOrder(false);
   };
@@ -240,7 +240,7 @@ export const useChapters = (courseId) => {
 
     setAllChapters(resetChapters);
     setHasUnsavedChanges(false);
-    message.info("ยกเลิกการเปลี่ยนแปลงลำดับ");
+    toast({ title: "ยกเลิกการเปลี่ยนแปลงลำดับ" });
   };
 
   // Reset order กลับไปเป็นค่าเริ่มต้น
@@ -279,10 +279,10 @@ export const useChapters = (courseId) => {
       await fetchChapters();
       await fetchAllChapters();
       
-      message.success("รีเซ็ตลำดับกลับไปเป็นค่าเริ่มต้นสำเร็จ");
+      toast({ title: "รีเซ็ตลำดับกลับไปเป็นค่าเริ่มต้นสำเร็จ" });
     } catch (error) {
       console.error("Error resetting order:", error);
-      message.error("เกิดข้อผิดพลาดในการรีเซ็ตลำดับ");
+      toast({ variant: "destructive", title: "เกิดข้อผิดพลาดในการรีเซ็ตลำดับ" });
     }
   };
 

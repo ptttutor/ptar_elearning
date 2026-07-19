@@ -1,167 +1,131 @@
 "use client";
-import React from "react";
-import {
-  Table,
-  Card,
-  Button,
-  Space,
-  Tag,
-  Typography,
-  Tooltip,
-} from "antd";
-import {
-  BookOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  FileTextOutlined,
-  OrderedListOutlined,
-  HolderOutlined,
-} from "@ant-design/icons";
+import { BookOpen, Edit, Trash2, FileText, ListOrdered, GripVertical } from "lucide-react";
 import {
   DndContext,
   closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
   DragOverlay,
   defaultDropAnimationSideEffects,
 } from "@dnd-kit/core";
 import {
   SortableContext,
-  sortableKeyboardCoordinates,
   verticalListSortingStrategy,
+  useSortable,
 } from "@dnd-kit/sortable";
-import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
-const { Text } = Typography;
-
-// Draggable Handle Component
-const DragHandle = ({ ...props }) => (
-  <div
-    {...props}
-    style={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: "8px",
-      borderRadius: "6px",
-      backgroundColor: "#e6f7ff",
-      border: "2px solid #1890ff",
-      cursor: "grab",
-      transition: "all 0.2s",
-      minHeight: "32px",
-      minWidth: "32px",
-      touchAction: "none",
-      userSelect: "none",
-      ...props.style,
-    }}
-    onMouseEnter={(e) => {
-      e.currentTarget.style.backgroundColor = "#1890ff";
-      e.currentTarget.style.borderColor = "#1890ff";
-      e.currentTarget.style.transform = "scale(1.1)";
-      e.currentTarget.style.boxShadow = "0 2px 8px rgba(24, 144, 255, 0.3)";
-      e.currentTarget.style.cursor = "grabbing";
-    }}
-    onMouseLeave={(e) => {
-      e.currentTarget.style.backgroundColor = "#e6f7ff";
-      e.currentTarget.style.borderColor = "#1890ff";
-      e.currentTarget.style.transform = "scale(1)";
-      e.currentTarget.style.boxShadow = "none";
-      e.currentTarget.style.cursor = "grab";
-    }}
-    title="คลิกและลากเพื่อเรียงลำดับ"
-  >
+// Draggable handle — same interaction surface as before (native pointer
+// events via {...listeners}), just restyled.
+function DragHandle(props) {
+  return (
     <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        textAlign: "center",
-      }}
+      {...props}
+      title="คลิกและลากเพื่อเรียงลำดับ"
+      className="flex min-h-8 min-w-8 cursor-grab select-none items-center justify-center rounded-md border-2 border-blue-500 bg-blue-50 p-2 transition-all hover:scale-110 hover:bg-blue-500 hover:shadow-md active:cursor-grabbing [&:hover_svg]:text-white"
+      style={{ touchAction: "none" }}
     >
-      <HolderOutlined
-        style={{
-          fontSize: "18px",
-          color: "#1890ff",
-          marginBottom: "2px",
-        }}
-      />
-      <div
-        style={{
-          fontSize: "10px",
-          color: "#666",
-          fontWeight: "normal",
-        }}
-      >
-        ลาก
+      <GripVertical className="h-4 w-4 text-blue-600" />
+    </div>
+  );
+}
+
+function DragOverlayRow({ item }) {
+  if (!item) return null;
+  return (
+    <div className="flex min-w-[300px] items-center rounded-md border border-gray-200 bg-white p-3 shadow-lg">
+      <div className="mr-3 flex h-8 w-8 items-center justify-center rounded-md border-2 border-blue-500 bg-blue-500">
+        <GripVertical className="h-4 w-4 text-white" />
+      </div>
+      <div>
+        <div className="font-semibold text-gray-900">{item.title}</div>
+        <Badge variant="outline" className="mt-1 border-blue-200 bg-blue-50 text-blue-700">
+          Chapter {item.order}
+        </Badge>
       </div>
     </div>
-  </div>
-);
+  );
+}
 
-// Sortable Row Component
-const SortableRow = ({ children, ...props }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id: props["data-row-key"],
+function SortableChapterRow({ chapter, onEdit, onDelete, onManageContent, disabled }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: chapter.id,
   });
 
   const style = {
-    ...props.style,
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-    backgroundColor: isDragging ? "#f0f0f0" : "transparent",
+    backgroundColor: isDragging ? "#f9fafb" : undefined,
     position: "relative",
     zIndex: isDragging ? 999 : "auto",
   };
 
   return (
-    <tr {...props} ref={setNodeRef} style={style} {...attributes}>
-      {React.Children.map(children, (child, index) => {
-        if (child.key === "sort") {
-          return React.cloneElement(child, {
-            children: <DragHandle {...listeners} />,
-          });
-        }
-        return child;
-      })}
-    </tr>
+    <TableRow ref={setNodeRef} style={style}>
+      <TableCell className="w-16 text-center">
+        <DragHandle {...listeners} {...attributes} />
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center gap-2 font-semibold text-gray-900">
+          <BookOpen className="h-4 w-4 text-blue-600" />
+          {chapter.title}
+        </div>
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center gap-1.5">
+          <ListOrdered className="h-3.5 w-3.5 text-gray-400" />
+          <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
+            {chapter.order}
+          </Badge>
+        </div>
+      </TableCell>
+      <TableCell className="text-right">
+        <div className="flex items-center justify-end gap-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="text-blue-600" onClick={() => onEdit(chapter)} disabled={disabled}>
+                <Edit className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>แก้ไข</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="text-red-600" onClick={() => onDelete(chapter)} disabled={disabled}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>ลบ</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={() => onManageContent(chapter)} disabled={disabled}>
+                <FileText className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>จัดการเนื้อหา</TooltipContent>
+          </Tooltip>
+        </div>
+      </TableCell>
+    </TableRow>
   );
-};
-
-// Row Item for Drag Overlay
-const DragOverlayRow = ({ item }) => (
-  <div
-    style={{
-      display: "flex",
-      alignItems: "center",
-      padding: "12px",
-      backgroundColor: "#fff",
-      borderRadius: "6px",
-      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-      border: "1px solid #d9d9d9",
-      minWidth: "300px",
-    }}
-  >
-    <DragHandle style={{ marginRight: "12px" }} />
-    <div>
-      <Text strong>{item.title}</Text>
-      <div>
-        <Tag color="blue">Chapter {item.order}</Tag>
-      </div>
-    </div>
-  </div>
-);
+}
 
 export default function ChapterTable({
   chapters,
@@ -177,140 +141,80 @@ export default function ChapterTable({
   onDragCancel,
   disabled = false,
 }) {
-  const columns = [
-    {
-      title: "",
-      key: "sort",
-      render: () => null,
-      width: 80,
-      align: "center",
-    },
-    {
-      title: "ชื่อ Chapter",
-      dataIndex: "title",
-      key: "title",
-      render: (title) => (
-        <Space>
-          <BookOutlined style={{ color: "#1890ff" }} />
-          <Text strong>{title}</Text>
-        </Space>
-      ),
-      width: 300,
-    },
-    {
-      title: "ลำดับ",
-      dataIndex: "order",
-      key: "order",
-      render: (order) => (
-        <Space>
-          <OrderedListOutlined style={{ color: "#8c8c8c" }} />
-          <Tag color="blue">{order}</Tag>
-        </Space>
-      ),
-      width: 120,
-    },
-    {
-      title: "การจัดการ",
-      key: "actions",
-      render: (_, record) => (
-        <Space size={8} wrap>
-          <Tooltip title="แก้ไข">
-            <Button
-              type="text"
-              icon={<EditOutlined />}
-              onClick={() => onEdit(record)}
-              disabled={disabled}
-            />
-          </Tooltip>
-          <Tooltip title="ลบ">
-            <Button
-              type="text"
-              danger
-              icon={<DeleteOutlined />}
-              onClick={() => onDelete(record)}
-              disabled={disabled}
-            />
-          </Tooltip>
-          <Tooltip title="จัดการเนื้อหา">
-            <Button
-              type="text"
-              icon={<FileTextOutlined />}
-              onClick={() => onManageContent(record)}
-              disabled={disabled}
-            />
-          </Tooltip>
-        </Space>
-      ),
-      width: 280,
-      fixed: "right",
-    },
-  ];
-
-  const activeItem = (allChapters || chapters).find((item) => item.id === activeId);
+  const items = allChapters || chapters;
+  const activeItem = items.find((item) => item.id === activeId);
 
   return (
-    <Card
-      title={
-        <Space>
-          รายการ Chapter
-          <Tag color="blue" style={{ marginLeft: "8px" }}>
-            {(allChapters || chapters).length} รายการ
-          </Tag>
-        </Space>
-      }
-    >
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={onDragStart}
-        onDragEnd={onDragEnd}
-        onDragCancel={onDragCancel}
-      >
-        <SortableContext
-          items={(allChapters || chapters).map((item) => item.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          <Table
-            columns={columns}
-            dataSource={allChapters || chapters}
-            rowKey="id"
-            loading={loading}
-            scroll={{ x: 800 }}
-            pagination={allChapters ? false : {
-              pageSize: 10,
-              showSizeChanger: true,
-              showQuickJumper: true,
-              showTotal: (total, range) =>
-                `${range[0]}-${range[1]} จาก ${total} รายการ`,
-            }}
-            size="middle"
-            components={{
-              body: {
-                row: SortableRow,
-              },
-            }}
-            locale={{
-              emptyText: allChapters && allChapters.length > 0 && chapters.length === 0
-                ? "ไม่พบ Chapter ที่ตรงกับเงื่อนไขการค้นหา"
-                : "ยังไม่มี Chapter ในคอร์สนี้",
-            }}
-          />
-        </SortableContext>
+    <TooltipProvider delayDuration={200}>
+      <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+        <div className="mb-4 flex items-center gap-2">
+          <h3 className="font-semibold text-gray-900">รายการ Chapter</h3>
+          <Badge variant="secondary">{items.length} รายการ</Badge>
+        </div>
 
-        <DragOverlay
-          dropAnimation={{
-            sideEffects: defaultDropAnimationSideEffects({
-              styles: {
-                active: {
-                  opacity: "0.5",
-                },
-              },
-            }),
-          }}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={onDragStart}
+          onDragEnd={onDragEnd}
+          onDragCancel={onDragCancel}
         >
-          {activeId ? <DragOverlayRow item={activeItem} /> : null}
-        </DragOverlay>
-      </DndContext>
-    </Card>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-16"></TableHead>
+                  <TableHead>ชื่อ Chapter</TableHead>
+                  <TableHead>ลำดับ</TableHead>
+                  <TableHead className="text-right">การจัดการ</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell colSpan={4}>
+                        <Skeleton className="h-10 w-full" />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : items.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-gray-400">
+                      {allChapters && allChapters.length > 0 && chapters.length === 0
+                        ? "ไม่พบ Chapter ที่ตรงกับเงื่อนไขการค้นหา"
+                        : "ยังไม่มี Chapter ในคอร์สนี้"}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  <SortableContext items={items.map((item) => item.id)} strategy={verticalListSortingStrategy}>
+                    {items.map((chapter) => (
+                      <SortableChapterRow
+                        key={chapter.id}
+                        chapter={chapter}
+                        onEdit={onEdit}
+                        onDelete={onDelete}
+                        onManageContent={onManageContent}
+                        disabled={disabled}
+                      />
+                    ))}
+                  </SortableContext>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          <DragOverlay
+            dropAnimation={{
+              sideEffects: defaultDropAnimationSideEffects({
+                styles: { active: { opacity: "0.5" } },
+              }),
+            }}
+          >
+            {activeId ? <DragOverlayRow item={activeItem} /> : null}
+          </DragOverlay>
+        </DndContext>
+      </div>
+    </TooltipProvider>
   );
 }

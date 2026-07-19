@@ -1,89 +1,103 @@
 "use client";
-import React from "react";
+import { useState, useEffect } from "react";
+import { BookOpen, Loader2 } from "lucide-react";
 import {
-  Modal,
-  Form,
-  Input,
-  InputNumber,
-  Space,
-  Typography,
-} from "antd";
-import {
-  PlusOutlined,
-  EditOutlined,
-  BookOutlined,
-} from "@ant-design/icons";
-import { MODAL_WIDTH } from "@/components/admin/shared/adminUiConstants";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
-const { Text } = Typography;
+const EMPTY_FORM = { title: "", order: 1 };
 
-export default function ChapterModal({
-  open,
-  editing,
-  form,
-  onCancel,
-  onSubmit,
-  submitting = false,
-}) {
-  const handleSubmit = async () => {
-    try {
-      const values = await form.validateFields();
-      onSubmit(values);
-    } catch (e) {
-      // validation error
+export default function ChapterModal({ open, editing, nextOrder, onCancel, onSubmit, submitting = false }) {
+  const [values, setValues] = useState(EMPTY_FORM);
+  const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (open) {
+      if (editing) {
+        setValues({ title: editing.title || "", order: editing.order ?? 1 });
+      } else {
+        setValues({ title: "", order: nextOrder ?? 1 });
+      }
+      setErrors({});
     }
+  }, [open, editing, nextOrder]);
+
+  const validate = () => {
+    const next = {};
+    if (!values.title.trim()) next.title = "กรุณากรอกชื่อ Chapter";
+    if (!values.order || Number(values.order) < 1) next.order = "ลำดับต้องมากกว่า 0";
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+    onSubmit({ title: values.title.trim(), order: Number(values.order) });
   };
 
   return (
-    <Modal
-      title={
-        <Space>
-          {editing ? <EditOutlined /> : <PlusOutlined />}
-          <Text strong>
-            {editing ? "แก้ไข Chapter" : "สร้าง Chapter ใหม่"}
-          </Text>
-        </Space>
-      }
-      open={open}
-      onCancel={onCancel}
-      onOk={handleSubmit}
-      okText={editing ? "อัพเดท" : "สร้าง"}
-      cancelText="ยกเลิก"
-      confirmLoading={submitting}
-      width={MODAL_WIDTH.sm}
-      style={{ top: 20 }}
-    >
-      <Form
-        form={form}
-        layout="vertical"
-        preserve={false}
-      >
-        <Form.Item
-          name="title"
-          label="ชื่อ Chapter"
-          rules={[{ required: true, message: "กรุณากรอกชื่อ Chapter" }]}
-        >
-          <Input 
-            placeholder="ใส่ชื่อ Chapter" 
-            prefix={<BookOutlined style={{ color: "#1890ff" }} />}
-          />
-        </Form.Item>
+    <Dialog open={open} onOpenChange={(next) => !next && onCancel()}>
+      <DialogContent className="sm:max-w-[480px]">
+        <DialogHeader>
+          <DialogTitle>{editing ? "แก้ไข Chapter" : "สร้าง Chapter ใหม่"}</DialogTitle>
+        </DialogHeader>
 
-        <Form.Item
-          name="order"
-          label="ลำดับ"
-          rules={[
-            { required: true, message: "กรุณากรอกลำดับ" },
-            { type: "number", min: 1, message: "ลำดับต้องมากกว่า 0" },
-          ]}
-        >
-          <InputNumber
-            min={1}
-            style={{ width: "100%" }}
-            placeholder="ลำดับของ Chapter"
-          />
-        </Form.Item>
-      </Form>
-    </Modal>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="title">ชื่อ Chapter</Label>
+            <div className="relative">
+              <BookOpen className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <Input
+                id="title"
+                placeholder="ใส่ชื่อ Chapter"
+                value={values.title}
+                onChange={(e) => setValues((p) => ({ ...p, title: e.target.value }))}
+                className="pl-9"
+              />
+            </div>
+            {errors.title && <p className="text-xs text-red-600">{errors.title}</p>}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="order">ลำดับ</Label>
+            <Input
+              id="order"
+              type="number"
+              min={1}
+              placeholder="ลำดับของ Chapter"
+              value={values.order}
+              onChange={(e) => setValues((p) => ({ ...p, order: e.target.value }))}
+            />
+            {errors.order && <p className="text-xs text-red-600">{errors.order}</p>}
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onCancel}>
+              ยกเลิก
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  กำลังบันทึก...
+                </>
+              ) : editing ? (
+                "อัพเดท"
+              ) : (
+                "สร้าง"
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

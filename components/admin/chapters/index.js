@@ -1,17 +1,9 @@
 "use client";
 import React, { useState } from "react";
-import {
-  Button,
-  Space,
-  Form,
-  Card,
-  Typography,
-} from "antd";
-import {
-  BookOutlined,
-  PlusOutlined,
-} from "@ant-design/icons";
+import { BookOpen, Plus } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 import AdminPageHeader from "@/components/admin/shared/AdminPageHeader";
 
 // Components
@@ -23,23 +15,21 @@ import ChapterFilters from "./ChapterFilters";
 
 // Hooks
 import { useChapters } from "@/hooks/admin/useChapters";
-import { useMessage } from "@/hooks/admin/useAntdApp";
-
-const { Title, Text } = Typography;
 
 export default function ChaptersManagement() {
   const { courseId } = useParams();
   const router = useRouter();
-  const message = useMessage();
+  const { toast } = useToast();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [chapterToDelete, setChapterToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [form] = Form.useForm();
 
-  // Use custom hook for chapters data
+  // Use custom hook for chapters data — drag-and-drop wiring (sensors,
+  // activeId, handleDragStart/End/Cancel, arrayMove, hasUnsavedChanges,
+  // saveOrderChanges/cancelOrderChanges/resetOrder) is untouched here.
   const {
     chapters,
     allChapters,
@@ -62,7 +52,6 @@ export default function ChaptersManagement() {
     handleDragCancel,
     handleFilterChange,
     handlePageChange,
-    handlePageSizeChange,
     resetFilters,
     updateChapterInList,
     addChapterToList,
@@ -89,26 +78,21 @@ export default function ChaptersManagement() {
       }
       const data = await res.json();
       if (data.success) {
-        message.success(
-          editing ? "แก้ไข chapter สำเร็จ" : "สร้าง chapter สำเร็จ"
-        );
+        toast({ title: editing ? "แก้ไข chapter สำเร็จ" : "สร้าง chapter สำเร็จ" });
         setModalOpen(false);
         setEditing(null);
-        form.resetFields();
-        
+
         // Optimistic update without full page refresh
         if (editing) {
-          // Update existing chapter in the list
           updateChapterInList(editing.id, data.data);
         } else {
-          // Add new chapter to the list
           addChapterToList(data.data);
         }
       } else {
-        message.error(data.error || "เกิดข้อผิดพลาด");
+        toast({ variant: "destructive", title: data.error || "เกิดข้อผิดพลาด" });
       }
     } catch (e) {
-      message.error("เกิดข้อผิดพลาด");
+      toast({ variant: "destructive", title: "เกิดข้อผิดพลาด" });
       // On error, refresh the data to ensure consistency
       fetchChapters();
     } finally {
@@ -125,7 +109,7 @@ export default function ChaptersManagement() {
   // Confirm delete
   const confirmDelete = async () => {
     if (!chapterToDelete?.id) {
-      message.error("ไม่พบ ID ของ chapter");
+      toast({ variant: "destructive", title: "ไม่พบ ID ของ chapter" });
       return;
     }
 
@@ -143,18 +127,18 @@ export default function ChaptersManagement() {
       const data = await response.json();
 
       if (data.success) {
-        message.success("ลบ chapter สำเร็จ");
+        toast({ title: "ลบ chapter สำเร็จ" });
         setDeleteModalOpen(false);
         setChapterToDelete(null);
-        
+
         // Optimistic update - remove from list without full refresh
         removeChapterFromList(chapterToDelete.id);
       } else {
-        message.error(data.error || "เกิดข้อผิดพลาดในการลบ chapter");
+        toast({ variant: "destructive", title: data.error || "เกิดข้อผิดพลาดในการลบ chapter" });
       }
     } catch (error) {
       console.error("Delete chapter error:", error);
-      message.error(`เกิดข้อผิดพลาด: ${error.message}`);
+      toast({ variant: "destructive", title: `เกิดข้อผิดพลาด: ${error.message}` });
       // On error, refresh the data to ensure consistency
       fetchChapters();
     } finally {
@@ -172,22 +156,12 @@ export default function ChaptersManagement() {
   const openModal = (record) => {
     setEditing(record || null);
     setModalOpen(true);
-    if (record) {
-      form.setFieldsValue(record);
-    } else {
-      form.resetFields();
-      // ตั้งค่า order เป็นลำดับถัดไป (ใช้ allChapters)
-      const nextOrder =
-        allChapters.length > 0 ? Math.max(...allChapters.map((c) => c.order)) + 1 : 1;
-      form.setFieldsValue({ order: nextOrder });
-    }
   };
 
   // Close modal
   const closeModal = () => {
     setModalOpen(false);
     setEditing(null);
-    form.resetFields();
   };
 
   // Handle manage content
@@ -195,19 +169,17 @@ export default function ChaptersManagement() {
     router.push(`/admin/courses/content/${record.id}`);
   };
 
+  const nextOrder = allChapters.length > 0 ? Math.max(...allChapters.map((c) => c.order)) + 1 : 1;
+
   return (
     <AdminPageHeader
-      icon={<BookOutlined />}
+      icon={<BookOpen className="h-6 w-6" />}
       title="จัดการ Chapter"
       subtitle="สร้างและจัดการ Chapter ของคอร์สเรียน"
       onBack={() => router.back()}
       actions={
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => openModal(null)}
-          disabled={submitting || deleting || savingOrder}
-        >
+        <Button onClick={() => openModal(null)} disabled={submitting || deleting || savingOrder}>
+          <Plus className="mr-2 h-4 w-4" />
           สร้าง Chapter ใหม่
         </Button>
       }
@@ -221,21 +193,18 @@ export default function ChaptersManagement() {
         onReset={resetFilters}
         pagination={pagination}
         onPageChange={handlePageChange}
-        onPageSizeChange={handlePageSizeChange}
         totalCount={pagination.totalCount}
         currentCount={chapters.length}
       />
 
-      <Card style={{ marginBottom: "16px" }}>
-        <OrderActions
-          hasUnsavedChanges={hasUnsavedChanges}
-          savingOrder={savingOrder}
-          initialOrderLength={initialOrder.length}
-          onSaveOrder={saveOrderChanges}
-          onCancelOrder={cancelOrderChanges}
-          onResetOrder={resetOrder}
-        />
-      </Card>
+      <OrderActions
+        hasUnsavedChanges={hasUnsavedChanges}
+        savingOrder={savingOrder}
+        initialOrderLength={initialOrder.length}
+        onSaveOrder={saveOrderChanges}
+        onCancelOrder={cancelOrderChanges}
+        onResetOrder={resetOrder}
+      />
 
       <ChapterTable
         chapters={chapters}
@@ -256,7 +225,7 @@ export default function ChaptersManagement() {
       <ChapterModal
         open={modalOpen}
         editing={editing}
-        form={form}
+        nextOrder={nextOrder}
         onCancel={closeModal}
         onSubmit={handleSubmitChapter}
         submitting={submitting}
