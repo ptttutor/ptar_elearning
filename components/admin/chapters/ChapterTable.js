@@ -29,6 +29,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import AdminPagination from "@/components/admin/shared/AdminPagination";
 
 // Draggable handle — same interaction surface as before (native pointer
 // events via {...listeners}), just restyled.
@@ -140,6 +141,8 @@ export default function ChapterTable({
   onDragEnd,
   onDragCancel,
   disabled = false,
+  pagination,
+  onPageChange,
 }) {
   const items = allChapters || chapters;
   const activeItem = items.find((item) => item.id === activeId);
@@ -214,6 +217,15 @@ export default function ChapterTable({
             {activeId ? <DragOverlayRow item={activeItem} /> : null}
           </DragOverlay>
         </DndContext>
+
+        {pagination && pagination.totalPages > 1 && (
+          <AdminPagination
+            current={pagination.page}
+            total={pagination.totalPages}
+            onPageChange={onPageChange}
+            className="mt-4"
+          />
+        )}
       </div>
     </TooltipProvider>
   );

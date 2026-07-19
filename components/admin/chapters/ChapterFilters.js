@@ -1,5 +1,4 @@
 import AdminFilterBar from "@/components/admin/shared/AdminFilterBar";
-import AdminPagination from "@/components/admin/shared/AdminPagination";
 
 const SORT_OPTIONS = [
   { value: "order_asc", label: "ลำดับ (น้อย → มาก)" },
@@ -16,38 +15,26 @@ export default function ChapterFilters({
   setSearchInput,
   onFilterChange,
   onReset,
-  pagination,
-  onPageChange,
   totalCount,
   currentCount,
 }) {
   return (
-    <>
-      <AdminFilterBar
-        searchLabel="ค้นหา Chapter"
-        searchValue={searchInput}
-        onSearchChange={setSearchInput}
-        searchPlaceholder="ค้นหาชื่อ Chapter..."
-        selects={[
-          { key: "sortBy", value: filters.sortBy, onChange: (v) => onFilterChange("sortBy", v), placeholder: "เรียงตาม", options: SORT_OPTIONS },
-        ]}
-        onReset={onReset}
-        totalCount={totalCount}
-        currentCount={currentCount}
-        activeSummary={[
-          searchInput && `ค้นหา: "${searchInput}"`,
-          filters.minOrder && `ลำดับต่ำสุด: ${filters.minOrder}`,
-          filters.sortBy !== "order_asc" && `เรียงตาม: ${SORT_OPTIONS.find((o) => o.value === filters.sortBy)?.label || filters.sortBy}`,
-        ]}
-      />
-      {pagination.totalPages > 1 && (
-        <AdminPagination
-          current={pagination.page}
-          total={pagination.totalPages}
-          onPageChange={onPageChange}
-          className="-mt-3 mb-6"
-        />
-      )}
-    </>
+    <AdminFilterBar
+      searchLabel="ค้นหา Chapter"
+      searchValue={searchInput}
+      onSearchChange={setSearchInput}
+      searchPlaceholder="ค้นหาชื่อ Chapter..."
+      selects={[
+        { key: "sortBy", value: filters.sortBy, onChange: (v) => onFilterChange("sortBy", v), placeholder: "เรียงตาม", options: SORT_OPTIONS },
+      ]}
+      onReset={onReset}
+      totalCount={totalCount}
+      currentCount={currentCount}
+      activeSummary={[
+        searchInput && `ค้นหา: "${searchInput}"`,
+        filters.minOrder && `ลำดับต่ำสุด: ${filters.minOrder}`,
+        filters.sortBy !== "order_asc" && `เรียงตาม: ${SORT_OPTIONS.find((o) => o.value === filters.sortBy)?.label || filters.sortBy}`,
+      ]}
+    />
   );
 }

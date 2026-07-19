@@ -191,8 +191,6 @@ export default function ChaptersManagement() {
         setSearchInput={setSearchInput}
         onFilterChange={handleFilterChange}
         onReset={resetFilters}
-        pagination={pagination}
-        onPageChange={handlePageChange}
         totalCount={pagination.totalCount}
         currentCount={chapters.length}
       />
@@ -219,6 +217,8 @@ export default function ChaptersManagement() {
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
         disabled={submitting || deleting || savingOrder}
+        pagination={pagination}
+        onPageChange={handlePageChange}
       />
 
       {/* Create/Edit Modal */}

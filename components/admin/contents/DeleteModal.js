@@ -1,118 +1,71 @@
 "use client";
-import React from "react";
-import { Modal, Typography, Space, Button } from "antd";
+import { AlertTriangle, FileText, Loader2 } from "lucide-react";
 import {
-  DeleteOutlined,
-  ExclamationCircleOutlined,
-  FileTextOutlined,
-} from "@ant-design/icons";
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
-const { Text, Title } = Typography;
-
-export default function DeleteModal({
-  open,
-  content,
-  loading,
-  onConfirm,
-  onCancel,
-}) {
+export default function DeleteModal({ open, content, loading, onConfirm, onCancel }) {
   if (!content) return null;
 
   return (
-    <Modal
-      title={
-        <Space>
-          <ExclamationCircleOutlined style={{ color: "#faad14" }} />
-          <Text strong>ยืนยันการลบเนื้อหา</Text>
-        </Space>
-      }
-      open={open}
-      onCancel={onCancel}
-      footer={[
-        <Button key="cancel" onClick={onCancel} disabled={loading}>
-          ยกเลิก
-        </Button>,
-        <Button
-          key="delete"
-          type="primary"
-          danger
-          loading={loading}
-          onClick={onConfirm}
-          icon={<DeleteOutlined />}
-        >
-          ลบเนื้อหา
-        </Button>,
-      ]}
-      width={500}
-    >
-      <div style={{ padding: "16px 0" }}>
-        <Space direction="vertical" size={16} style={{ width: "100%" }}>
-          <div
-            style={{
-              padding: "16px",
-              backgroundColor: "#fff7e6",
-              border: "1px solid #ffd591",
-              borderRadius: "6px",
-            }}
-          >
-            <Space>
-              <ExclamationCircleOutlined style={{ color: "#fa8c16" }} />
-              <Text strong style={{ color: "#d46b08" }}>
-                คำเตือน: การดำเนินการนี้ไม่สามารถยกเลิกได้
-              </Text>
-            </Space>
+    <AlertDialog open={open} onOpenChange={(next) => !next && onCancel()}>
+      <AlertDialogContent className="sm:max-w-[500px]">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2 text-amber-600">
+            <AlertTriangle className="h-5 w-5" />
+            ยืนยันการลบเนื้อหา
+          </AlertDialogTitle>
+        </AlertDialogHeader>
+
+        <div className="space-y-4 py-2">
+          <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-700">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            คำเตือน: การดำเนินการนี้ไม่สามารถยกเลิกได้
           </div>
 
-          <div>
-            <Text>คุณต้องการลบเนื้อหาต่อไปนี้:</Text>
-          </div>
+          <p className="text-sm text-gray-700">คุณต้องการลบเนื้อหาต่อไปนี้:</p>
 
-          <div
-            style={{
-              padding: "16px",
-              backgroundColor: "#f5f5f5",
-              borderRadius: "6px",
-              border: "1px solid #d9d9d9",
-            }}
-          >
-            <Space direction="vertical" size={8} style={{ width: "100%" }}>
-              <div>
-                <Text type="secondary">ชื่อเนื้อหา:</Text>
-                <br />
-                <Space>
-                  <FileTextOutlined style={{ color: "#1890ff" }} />
-                  <Text strong>{content.title}</Text>
-                </Space>
+          <div className="space-y-2 rounded-md border border-gray-200 bg-gray-50 p-3 text-sm">
+            <div>
+              <div className="text-gray-500">ชื่อเนื้อหา:</div>
+              <div className="mt-0.5 flex items-center gap-1.5 font-semibold text-gray-900">
+                <FileText className="h-4 w-4 text-blue-600" />
+                {content.title}
               </div>
-              
-              <div>
-                <Text type="secondary">ประเภท:</Text>
-                <br />
-                <Text>{content.contentType}</Text>
-              </div>
-
-              <div>
-                <Text type="secondary">URL/ไฟล์:</Text>
-                <br />
-                <Text 
-                  style={{
-                    wordBreak: "break-all",
-                    fontSize: "12px"
-                  }}
-                >
-                  {content.contentUrl}
-                </Text>
-              </div>
-            </Space>
+            </div>
+            <div>
+              <div className="text-gray-500">ประเภท:</div>
+              <div>{content.contentType}</div>
+            </div>
+            <div>
+              <div className="text-gray-500">URL/ไฟล์:</div>
+              <div className="break-all text-xs">{content.contentUrl}</div>
+            </div>
           </div>
 
-          <div>
-            <Text type="secondary">
-              เนื้อหานี้จะถูกลบอย่างถาวร และไม่สามารถกู้คืนได้
-            </Text>
-          </div>
-        </Space>
-      </div>
-    </Modal>
+          <p className="text-xs text-gray-400">เนื้อหานี้จะถูกลบอย่างถาวร และไม่สามารถกู้คืนได้</p>
+        </div>
+
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={loading}>ยกเลิก</AlertDialogCancel>
+          <Button variant="destructive" onClick={onConfirm} disabled={loading}>
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                กำลังลบ...
+              </>
+            ) : (
+              "ลบเนื้อหา"
+            )}
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

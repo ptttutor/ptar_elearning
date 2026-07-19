@@ -1,17 +1,9 @@
 "use client";
 import React, { useState } from "react";
-import {
-  Button,
-  Space,
-  Form,
-  Card,
-  Typography,
-} from "antd";
-import {
-  FileTextOutlined,
-  PlusOutlined,
-} from "@ant-design/icons";
+import { FileText, Plus } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 import AdminPageHeader from "@/components/admin/shared/AdminPageHeader";
 
 // Components
@@ -23,23 +15,19 @@ import ContentFilters from "./ContentFilters";
 
 // Hooks
 import { useContents } from "@/hooks/admin/useContents";
-import { useMessage } from "@/hooks/admin/useAntdApp";
-
-const { Title, Text } = Typography;
 
 export default function ContentsManagement() {
   const { chapterId } = useParams();
   const router = useRouter();
-  const message = useMessage();
+  const { toast } = useToast();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [contentToDelete, setContentToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [form] = Form.useForm();
 
-  // Use custom hook for contents data
+  // Use custom hook for contents data — drag-and-drop wiring is untouched.
   const {
     contents,
     allContents,
@@ -62,7 +50,6 @@ export default function ContentsManagement() {
     handleDragCancel,
     handleFilterChange,
     handlePageChange,
-    handlePageSizeChange,
     resetFilters,
     updateContentInList,
     addContentToList,
@@ -89,25 +76,21 @@ export default function ContentsManagement() {
       }
       const data = await res.json();
       if (data.success) {
-        message.success(editing ? "แก้ไขเนื้อหาสำเร็จ" : "สร้างเนื้อหาสำเร็จ");
+        toast({ title: editing ? "แก้ไขเนื้อหาสำเร็จ" : "สร้างเนื้อหาสำเร็จ" });
         setModalOpen(false);
         setEditing(null);
-        form.resetFields();
-        
+
         // Optimistic update without full page refresh
         if (editing) {
-          // Update existing content in the list
           updateContentInList(editing.id, data.data);
         } else {
-          // Add new content to the list
           addContentToList(data.data);
         }
       } else {
-        message.error(data.error || "เกิดข้อผิดพลาด");
+        toast({ variant: "destructive", title: data.error || "เกิดข้อผิดพลาด" });
       }
     } catch (e) {
-      message.error("เกิดข้อผิดพลาด");
-      // On error, refresh the data to ensure consistency
+      toast({ variant: "destructive", title: "เกิดข้อผิดพลาด" });
       fetchContents();
     } finally {
       setSubmitting(false);
@@ -123,7 +106,7 @@ export default function ContentsManagement() {
   // Confirm delete
   const confirmDelete = async () => {
     if (!contentToDelete?.id) {
-      message.error("ไม่พบ ID ของเนื้อหา");
+      toast({ variant: "destructive", title: "ไม่พบ ID ของเนื้อหา" });
       return;
     }
 
@@ -141,19 +124,16 @@ export default function ContentsManagement() {
       const data = await response.json();
 
       if (data.success) {
-        message.success("ลบเนื้อหาสำเร็จ");
+        toast({ title: "ลบเนื้อหาสำเร็จ" });
         setDeleteModalOpen(false);
         setContentToDelete(null);
-        
-        // Optimistic update - remove from list without full refresh
         removeContentFromList(contentToDelete.id);
       } else {
-        message.error(data.error || "เกิดข้อผิดพลาดในการลบเนื้อหา");
+        toast({ variant: "destructive", title: data.error || "เกิดข้อผิดพลาดในการลบเนื้อหา" });
       }
     } catch (error) {
       console.error("Delete content error:", error);
-      message.error(`เกิดข้อผิดพลาด: ${error.message}`);
-      // On error, refresh the data to ensure consistency
+      toast({ variant: "destructive", title: `เกิดข้อผิดพลาด: ${error.message}` });
       fetchContents();
     } finally {
       setDeleting(false);
@@ -170,37 +150,25 @@ export default function ContentsManagement() {
   const openModal = (record) => {
     setEditing(record || null);
     setModalOpen(true);
-    if (record) {
-      form.setFieldsValue(record);
-    } else {
-      form.resetFields();
-      // ตั้งค่า order เป็นลำดับถัดไป
-      const nextOrder =
-        contents.length > 0 ? Math.max(...contents.map((c) => c.order)) + 1 : 1;
-      form.setFieldsValue({ order: nextOrder });
-    }
   };
 
   // Close modal
   const closeModal = () => {
     setModalOpen(false);
     setEditing(null);
-    form.resetFields();
   };
+
+  const nextOrder = contents.length > 0 ? Math.max(...contents.map((c) => c.order)) + 1 : 1;
 
   return (
     <AdminPageHeader
-      icon={<FileTextOutlined />}
+      icon={<FileText className="h-6 w-6" />}
       title="จัดการเนื้อหา"
       subtitle="สร้างและจัดการเนื้อหาใน Chapter"
       onBack={() => router.back()}
       actions={
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => openModal(null)}
-          disabled={submitting || deleting || savingOrder}
-        >
+        <Button onClick={() => openModal(null)} disabled={submitting || deleting || savingOrder}>
+          <Plus className="mr-2 h-4 w-4" />
           สร้างเนื้อหาใหม่
         </Button>
       }
@@ -212,23 +180,18 @@ export default function ContentsManagement() {
         setSearchInput={setSearchInput}
         onFilterChange={handleFilterChange}
         onReset={resetFilters}
-        pagination={pagination}
-        onPageChange={handlePageChange}
-        onPageSizeChange={handlePageSizeChange}
         totalCount={pagination.totalCount}
         currentCount={contents.length}
       />
 
-      <Card style={{ marginBottom: "16px" }}>
-        <OrderActions
-          hasUnsavedChanges={hasUnsavedChanges}
-          savingOrder={savingOrder}
-          initialOrderLength={initialOrder.length}
-          onSaveOrder={saveOrderChanges}
-          onCancelOrder={cancelOrderChanges}
-          onResetOrder={resetOrder}
-        />
-      </Card>
+      <OrderActions
+        hasUnsavedChanges={hasUnsavedChanges}
+        savingOrder={savingOrder}
+        initialOrderLength={initialOrder.length}
+        onSaveOrder={saveOrderChanges}
+        onCancelOrder={cancelOrderChanges}
+        onResetOrder={resetOrder}
+      />
 
       <ContentTable
         contents={contents}
@@ -242,13 +205,15 @@ export default function ContentsManagement() {
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
         disabled={submitting || deleting || savingOrder}
+        pagination={pagination}
+        onPageChange={handlePageChange}
       />
 
       {/* Create/Edit Modal */}
       <ContentModal
         open={modalOpen}
         editing={editing}
-        form={form}
+        nextOrder={nextOrder}
         onCancel={closeModal}
         onSubmit={handleSubmitContent}
         submitting={submitting}

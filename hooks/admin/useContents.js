@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { useMessage } from "./useAntdApp";
+import { useToast } from "@/components/ui/use-toast";
 import {
   KeyboardSensor,
   PointerSensor,
@@ -13,7 +13,7 @@ import {
 import { arrayMove } from "@dnd-kit/sortable";
 
 export const useContents = (chapterId) => {
-  const message = useMessage();
+  const { toast } = useToast();
   const [contents, setContents] = useState([]); // filtered contents สำหรับแสดงผล
   const [allContents, setAllContents] = useState([]); // contents ทั้งหมดสำหรับ drag & drop
   const [initialOrder, setInitialOrder] = useState([]);
@@ -107,10 +107,10 @@ export const useContents = (chapterId) => {
           ...data.pagination
         }));
       } else {
-        message.error("โหลดข้อมูลเนื้อหาไม่สำเร็จ");
+        toast({ variant: "destructive", title: "โหลดข้อมูลเนื้อหาไม่สำเร็จ" });
       }
     } catch (e) {
-      message.error("โหลดข้อมูลเนื้อหาไม่สำเร็จ");
+      toast({ variant: "destructive", title: "โหลดข้อมูลเนื้อหาไม่สำเร็จ" });
     }
     setLoading(false);
   }, [chapterId, searchInput, filters, pagination.page, pagination.pageSize]);
@@ -136,7 +136,7 @@ export const useContents = (chapterId) => {
         setHasUnsavedChanges(false);
       }
     } catch (e) {
-      message.error("โหลดข้อมูลเนื้อหาไม่สำเร็จ");
+      toast({ variant: "destructive", title: "โหลดข้อมูลเนื้อหาไม่สำเร็จ" });
     }
   }, [chapterId]);
 
@@ -191,12 +191,12 @@ export const useContents = (chapterId) => {
       setInitialOrder(newInitOrder);
       setHasUnsavedChanges(false);
 
-      message.success("บันทึกการเปลี่ยนแปลงลำดับสำเร็จ");
-      
+      toast({ title: "บันทึกการเปลี่ยนแปลงลำดับสำเร็จ" });
+
       // Refresh ข้อมูลทั้งหมดและอัปเดต UI ทันที
       await Promise.all([fetchContents(), fetchAllContents()]);
     } catch (error) {
-      message.error("เกิดข้อผิดพลาดในการบันทึกลำดับ");
+      toast({ variant: "destructive", title: "เกิดข้อผิดพลาดในการบันทึกลำดับ" });
     }
     setSavingOrder(false);
   };
@@ -223,7 +223,7 @@ export const useContents = (chapterId) => {
 
     setAllContents(resetContents);
     setHasUnsavedChanges(false);
-    message.info("ยกเลิกการเปลี่ยนแปลงลำดับ");
+    toast({ title: "ยกเลิกการเปลี่ยนแปลงลำดับ" });
     
     // Refresh filtered contents
     fetchContents();
@@ -262,12 +262,12 @@ export const useContents = (chapterId) => {
 
       await Promise.all(updatePromises);
       setHasUnsavedChanges(false);
-      message.success("รีเซ็ตลำดับกลับไปเป็นค่าเริ่มต้นสำเร็จ");
-      
+      toast({ title: "รีเซ็ตลำดับกลับไปเป็นค่าเริ่มต้นสำเร็จ" });
+
       // Refresh filtered contents
       fetchContents();
     } catch (error) {
-      message.error("เกิดข้อผิดพลาดในการรีเซ็ตลำดับ");
+      toast({ variant: "destructive", title: "เกิดข้อผิดพลาดในการรีเซ็ตลำดับ" });
       fetchAllContents(); // Reload data on error
     }
   };

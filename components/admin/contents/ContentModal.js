@@ -1,137 +1,162 @@
 "use client";
-import React from "react";
+import { useState, useEffect } from "react";
+import { FileText, Link as LinkIcon, Loader2 } from "lucide-react";
 import {
-  Modal,
-  Form,
-  Input,
-  InputNumber,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
   Select,
-  Space,
-  Typography,
-} from "antd";
-import {
-  PlusOutlined,
-  EditOutlined,
-  PlayCircleOutlined,
-  FilePdfOutlined,
-  LinkOutlined,
-  QuestionCircleOutlined,
-  FileOutlined,
-} from "@ant-design/icons";
-import { MODAL_WIDTH } from "@/components/admin/shared/adminUiConstants";
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-const { Option } = Select;
-const { Text } = Typography;
+const CONTENT_TYPE_OPTIONS = [
+  { value: "VIDEO", label: "วิดีโอ" },
+  { value: "PDF", label: "PDF" },
+  { value: "LINK", label: "ลิงก์" },
+  { value: "QUIZ", label: "Quiz" },
+  { value: "ASSIGNMENT", label: "Assignment" },
+];
 
-export default function ContentModal({
-  open,
-  editing,
-  form,
-  onCancel,
-  onSubmit,
-  submitting = false,
-}) {
-  const handleSubmit = async () => {
-    try {
-      const values = await form.validateFields();
-      onSubmit(values);
-    } catch (e) {
-      // validation error
+const EMPTY_FORM = { title: "", contentType: "VIDEO", contentUrl: "", order: 1 };
+
+export default function ContentModal({ open, editing, nextOrder, onCancel, onSubmit, submitting = false }) {
+  const [values, setValues] = useState(EMPTY_FORM);
+  const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (open) {
+      if (editing) {
+        setValues({
+          title: editing.title || "",
+          contentType: editing.contentType || "VIDEO",
+          contentUrl: editing.contentUrl || "",
+          order: editing.order ?? 1,
+        });
+      } else {
+        setValues({ ...EMPTY_FORM, order: nextOrder ?? 1 });
+      }
+      setErrors({});
     }
+  }, [open, editing, nextOrder]);
+
+  const validate = () => {
+    const next = {};
+    if (!values.title.trim()) next.title = "กรุณากรอกชื่อเนื้อหา";
+    if (!values.contentType) next.contentType = "กรุณาเลือกประเภทเนื้อหา";
+    if (!values.contentUrl.trim()) next.contentUrl = "กรุณากรอก URL หรือไฟล์";
+    if (!values.order || Number(values.order) < 1) next.order = "ลำดับต้องมากกว่า 0";
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+    onSubmit({
+      title: values.title.trim(),
+      contentType: values.contentType,
+      contentUrl: values.contentUrl.trim(),
+      order: Number(values.order),
+    });
   };
 
   return (
-    <Modal
-      title={
-        <Space>
-          {editing ? <EditOutlined /> : <PlusOutlined />}
-          <Text strong>{editing ? "แก้ไขเนื้อหา" : "สร้างเนื้อหาใหม่"}</Text>
-        </Space>
-      }
-      open={open}
-      onCancel={onCancel}
-      onOk={handleSubmit}
-      okText={editing ? "อัพเดท" : "สร้าง"}
-      cancelText="ยกเลิก"
-      confirmLoading={submitting}
-      width={MODAL_WIDTH.sm}
-      style={{ top: 20 }}
-    >
-      <Form
-        form={form}
-        layout="vertical"
-        preserve={false}
-      >
-        <Form.Item
-          name="title"
-          label="ชื่อเนื้อหา"
-          rules={[{ required: true, message: "กรุณากรอกชื่อเนื้อหา" }]}
-        >
-          <Input placeholder="ใส่ชื่อเนื้อหา" />
-        </Form.Item>
+    <Dialog open={open} onOpenChange={(next) => !next && onCancel()}>
+      <DialogContent className="sm:max-w-[480px]">
+        <DialogHeader>
+          <DialogTitle>{editing ? "แก้ไขเนื้อหา" : "สร้างเนื้อหาใหม่"}</DialogTitle>
+        </DialogHeader>
 
-        <Form.Item
-          name="contentType"
-          label="ประเภท"
-          rules={[{ required: true, message: "กรุณาเลือกประเภทเนื้อหา" }]}
-        >
-          <Select placeholder="เลือกประเภทเนื้อหา">
-            <Option value="VIDEO">
-              <Space>
-                <PlayCircleOutlined style={{ color: "#ff4d4f" }} />
-                วิดีโอ
-              </Space>
-            </Option>
-            <Option value="PDF">
-              <Space>
-                <FilePdfOutlined style={{ color: "#fa541c" }} />
-                PDF
-              </Space>
-            </Option>
-            <Option value="LINK">
-              <Space>
-                <LinkOutlined style={{ color: "#1890ff" }} />
-                ลิงก์
-              </Space>
-            </Option>
-            <Option value="QUIZ">
-              <Space>
-                <QuestionCircleOutlined style={{ color: "#52c41a" }} />
-                Quiz
-              </Space>
-            </Option>
-            <Option value="ASSIGNMENT">
-              <Space>
-                <FileOutlined style={{ color: "#722ed1" }} />
-                Assignment
-              </Space>
-            </Option>
-          </Select>
-        </Form.Item>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="title">ชื่อเนื้อหา</Label>
+            <div className="relative">
+              <FileText className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <Input
+                id="title"
+                placeholder="ใส่ชื่อเนื้อหา"
+                value={values.title}
+                onChange={(e) => setValues((p) => ({ ...p, title: e.target.value }))}
+                className="pl-9"
+              />
+            </div>
+            {errors.title && <p className="text-xs text-red-600">{errors.title}</p>}
+          </div>
 
-        <Form.Item
-          name="contentUrl"
-          label="URL/ไฟล์"
-          rules={[{ required: true, message: "กรุณากรอก URL หรือไฟล์" }]}
-        >
-          <Input placeholder="ใส่ URL หรือ path ของไฟล์" />
-        </Form.Item>
+          <div className="space-y-1.5">
+            <Label>ประเภท</Label>
+            <Select value={values.contentType} onValueChange={(v) => setValues((p) => ({ ...p, contentType: v }))}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="เลือกประเภทเนื้อหา" />
+              </SelectTrigger>
+              <SelectContent>
+                {CONTENT_TYPE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.contentType && <p className="text-xs text-red-600">{errors.contentType}</p>}
+          </div>
 
-        <Form.Item
-          name="order"
-          label="ลำดับ"
-          rules={[
-            { required: true, message: "กรุณากรอกลำดับ" },
-            { type: "number", min: 1, message: "ลำดับต้องมากกว่า 0" },
-          ]}
-        >
-          <InputNumber
-            min={1}
-            style={{ width: "100%" }}
-            placeholder="ลำดับของเนื้อหา"
-          />
-        </Form.Item>
-      </Form>
-    </Modal>
+          <div className="space-y-1.5">
+            <Label htmlFor="contentUrl">URL/ไฟล์</Label>
+            <div className="relative">
+              <LinkIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <Input
+                id="contentUrl"
+                placeholder="ใส่ URL หรือ path ของไฟล์"
+                value={values.contentUrl}
+                onChange={(e) => setValues((p) => ({ ...p, contentUrl: e.target.value }))}
+                className="pl-9"
+              />
+            </div>
+            {errors.contentUrl && <p className="text-xs text-red-600">{errors.contentUrl}</p>}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="order">ลำดับ</Label>
+            <Input
+              id="order"
+              type="number"
+              min={1}
+              placeholder="ลำดับของเนื้อหา"
+              value={values.order}
+              onChange={(e) => setValues((p) => ({ ...p, order: e.target.value }))}
+            />
+            {errors.order && <p className="text-xs text-red-600">{errors.order}</p>}
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onCancel}>
+              ยกเลิก
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  กำลังบันทึก...
+                </>
+              ) : editing ? (
+                "อัพเดท"
+              ) : (
+                "สร้าง"
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

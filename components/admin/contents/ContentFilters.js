@@ -1,28 +1,25 @@
-"use client";
-import React from "react";
-import {
-  Input,
-  Select,
-  Button,
-  Space,
-  Card,
-  Badge,
-  Typography,
-  Pagination,
-} from "antd";
-import {
-  SearchOutlined,
-  FilterOutlined,
-  ClearOutlined,
-  FileTextOutlined,
-  SortAscendingOutlined,
-  FolderOutlined,
-} from "@ant-design/icons";
-import ResultsCount from "@/components/admin/shared/ResultsCount";
-import { RESET_FILTERS_LABEL } from "@/components/admin/shared/adminUiConstants";
+import AdminFilterBar from "@/components/admin/shared/AdminFilterBar";
 
-const { Option } = Select;
-const { Text } = Typography;
+const CONTENT_TYPE_OPTIONS = [
+  { value: "all", label: "ทั้งหมด" },
+  { value: "VIDEO", label: "วิดีโอ" },
+  { value: "PDF", label: "PDF" },
+  { value: "AUDIO", label: "เสียง" },
+  { value: "TEXT", label: "ข้อความ" },
+  { value: "QUIZ", label: "แบบทดสอบ" },
+  { value: "EXAM", label: "ข้อสอบ" },
+];
+
+const SORT_OPTIONS = [
+  { value: "order_asc", label: "ลำดับ (น้อย → มาก)" },
+  { value: "order_desc", label: "ลำดับ (มาก → น้อย)" },
+  { value: "title_asc", label: "ชื่อ (A → Z)" },
+  { value: "title_desc", label: "ชื่อ (Z → A)" },
+  { value: "type_asc", label: "ประเภท (A → Z)" },
+  { value: "type_desc", label: "ประเภท (Z → A)" },
+  { value: "created_desc", label: "สร้างล่าสุด" },
+  { value: "created_asc", label: "เก่าสุด" },
+];
 
 export default function ContentFilters({
   filters,
@@ -30,184 +27,33 @@ export default function ContentFilters({
   setSearchInput,
   onFilterChange,
   onReset,
-  pagination,
-  onPageChange,
-  onPageSizeChange,
   totalCount,
   currentCount,
 }) {
-  // นับจำนวน active filters
-  const activeFiltersCount = [
-    searchInput,
-    filters.contentType,
-    filters.sortBy !== "order_asc" ? filters.sortBy : null,
-  ].filter(Boolean).length;
-
   return (
-    <Card style={{ marginBottom: "16px" }}>
-      <div
-        style={{
-          display: "flex",
-          gap: "16px",
-          flexWrap: "wrap",
-          marginBottom: "16px",
-        }}
-      >
-        {/* Search */}
-        <div style={{ minWidth: "250px", flex: 1 }}>
-          <Text strong>
-            <SearchOutlined style={{ marginRight: "4px" }} />
-            ค้นหาชื่อเนื้อหา:
-          </Text>
-          <Input
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="พิมพ์ชื่อเนื้อหาที่ต้องการค้นหา..."
-            style={{ marginTop: "4px" }}
-            allowClear
-          />
-        </div>
-
-        {/* Content Type Filter */}
-        <div style={{ minWidth: "180px" }}>
-          <Text strong>ประเภทเนื้อหา:</Text>
-          <Select
-            value={filters.contentType}
-            onChange={(value) => onFilterChange("contentType", value)}
-            style={{ width: "100%", marginTop: "4px" }}
-            placeholder="เลือกประเภท"
-            allowClear
-          >
-            <Option value="VIDEO">วิดีโอ</Option>
-            <Option value="PDF">PDF</Option>
-            <Option value="AUDIO">เสียง</Option>
-            <Option value="TEXT">ข้อความ</Option>
-            <Option value="QUIZ">แบบทดสอบ</Option>
-            <Option value="EXAM">ข้อสอบ</Option>
-          </Select>
-        </div>
-
-        {/* Sort By */}
-        <div style={{ minWidth: "150px" }}>
-          <Text strong>
-            <FilterOutlined style={{ marginRight: "4px" }} />
-            เรียงตาม:
-          </Text>
-          <Select
-            value={filters.sortBy}
-            onChange={(value) => onFilterChange("sortBy", value)}
-            style={{ width: "100%", marginTop: "4px" }}
-            placeholder="เลือกการเรียง"
-          >
-            <Option value="order_asc">ลำดับ (น้อย → มาก)</Option>
-            <Option value="order_desc">ลำดับ (มาก → น้อย)</Option>
-            <Option value="title_asc">ชื่อ (A → Z)</Option>
-            <Option value="title_desc">ชื่อ (Z → A)</Option>
-            <Option value="type_asc">ประเภท (A → Z)</Option>
-            <Option value="type_desc">ประเภท (Z → A)</Option>
-            <Option value="created_desc">สร้างล่าสุด</Option>
-            <Option value="created_asc">เก่าสุด</Option>
-          </Select>
-        </div>
-
-        {/* Clear Filters Button */}
-        <div style={{ display: "flex", alignItems: "end" }}>
-          <Badge count={activeFiltersCount} size="small">
-            <Button
-              icon={<ClearOutlined />}
-              onClick={onReset}
-              disabled={activeFiltersCount === 0}
-              style={{ borderRadius: "6px" }}
-            >
-              {RESET_FILTERS_LABEL}
-            </Button>
-          </Badge>
-        </div>
-      </div>
-
-      {/* Summary and Status */}
-      <div 
-        style={{ 
-          display: "flex", 
-          justifyContent: "space-between", 
-          alignItems: "center",
-          padding: "8px 12px",
-          backgroundColor: "#f8f9fa",
-          borderRadius: "6px",
-          border: "1px solid #e9ecef"
-        }}
-      >
-        <div>
-          <Space size="small">
-            <FileTextOutlined style={{ color: "#1890ff" }} />
-            {searchInput && (
-              <Text type="secondary">
-                                <SearchOutlined /> ค้นหา: &quot;<strong>{searchInput}</strong>&quot;
-              </Text>
-            )}
-            {filters.contentType && (
-              <Text type="secondary">
-                <FolderOutlined /> ประเภท: <strong>{getContentTypeLabel(filters.contentType)}</strong>
-              </Text>
-            )}
-            {filters.sortBy && filters.sortBy !== "order_asc" && (
-              <Text type="secondary">
-                <SortAscendingOutlined /> เรียงตาม: {getSortLabel(filters.sortBy)}
-              </Text>
-            )}
-            {activeFiltersCount === 0 && (
-              <Text type="secondary">ไม่มีตัวกรอง</Text>
-            )}
-          </Space>
-        </div>
-        
-        <ResultsCount current={currentCount} total={totalCount} itemLabel="เนื้อหา" />
-
-        {pagination.totalPages > 1 && (
-          <Pagination
-            current={pagination.page}
-            total={pagination.totalCount}
-            pageSize={pagination.pageSize}
-            onChange={onPageChange}
-            showSizeChanger
-            showQuickJumper
-            showTotal={(total, range) => 
-              `${range[0]}-${range[1]} จาก ${total} รายการ`
-            }
-            pageSizeOptions={['10', '20', '50', '100']}
-            onShowSizeChange={onPageSizeChange}
-            style={{ marginTop: 16 }}
-          />
-        )}
-      </div>
-    </Card>
+    <AdminFilterBar
+      searchLabel="ค้นหาชื่อเนื้อหา"
+      searchValue={searchInput}
+      onSearchChange={setSearchInput}
+      searchPlaceholder="พิมพ์ชื่อเนื้อหาที่ต้องการค้นหา..."
+      selects={[
+        {
+          key: "contentType",
+          value: filters.contentType || "all",
+          onChange: (v) => onFilterChange("contentType", v === "all" ? "" : v),
+          placeholder: "ประเภทเนื้อหา",
+          options: CONTENT_TYPE_OPTIONS,
+        },
+        { key: "sortBy", value: filters.sortBy, onChange: (v) => onFilterChange("sortBy", v), placeholder: "เรียงตาม", options: SORT_OPTIONS },
+      ]}
+      onReset={onReset}
+      totalCount={totalCount}
+      currentCount={currentCount}
+      activeSummary={[
+        searchInput && `ค้นหา: "${searchInput}"`,
+        filters.contentType && `ประเภท: ${CONTENT_TYPE_OPTIONS.find((o) => o.value === filters.contentType)?.label || filters.contentType}`,
+        filters.sortBy !== "order_asc" && `เรียงตาม: ${SORT_OPTIONS.find((o) => o.value === filters.sortBy)?.label || filters.sortBy}`,
+      ]}
+    />
   );
-}
-
-// Helper function สำหรับแสดงชื่อประเภทเนื้อหา
-function getContentTypeLabel(contentType) {
-  const labels = {
-    VIDEO: "วิดีโอ",
-    PDF: "PDF", 
-    AUDIO: "เสียง",
-    TEXT: "ข้อความ",
-    QUIZ: "แบบทดสอบ",
-    EXAM: "ข้อสอบ"
-  };
-  return labels[contentType] || contentType;
-}
-
-// Helper function สำหรับแสดงชื่อการเรียง
-function getSortLabel(sortBy) {
-  const labels = {
-    order_asc: "ลำดับ ↑",
-    order_desc: "ลำดับ ↓", 
-    title_asc: "ชื่อ A-Z",
-    title_desc: "ชื่อ Z-A",
-    type_asc: "ประเภท A-Z", 
-    type_desc: "ประเภท Z-A",
-    created_desc: "ใหม่ล่าสุด",
-    created_asc: "เก่าสุด"
-  };
-  return labels[sortBy] || sortBy;
 }
