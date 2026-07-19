@@ -4,9 +4,7 @@ import { useAdminAuth as useAuth } from "../_lib/AdminAuthContext";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-import LoginContainer from "../../../components/admin/login/LoginContainer";
-import LoginLeftSection from "../../../components/admin/login/LoginLeftSection";
-import LoginRightSection from "../../../components/admin/login/LoginRightSection";
+import LoginForm from "../../../components/admin/login/LoginForm";
 
 function LoginPageContent() {
   const [loading, setLoading] = useState(false);
@@ -56,7 +54,6 @@ function LoginPageContent() {
       }
       setError(errorMessage);
 
-
       // Log error for debugging
       console.error('Login error from URL:', { urlError, errorDetails });
     }
@@ -94,15 +91,15 @@ function LoginPageContent() {
       // Redirect ทันทีหลัง login สำเร็จ
       const userRole = result.user?.role?.toUpperCase();
       console.log('Redirecting user with role:', userRole);
-      
+
       // ให้ state update และ re-render ก่อน redirect
       await new Promise(resolve => setTimeout(resolve, 300));
-      
+
       console.log('About to redirect...');
-      
+
       if (userRole === 'ADMIN') {
-        const destination = (redirectUrl && redirectUrl.includes('/admin')) 
-          ? redirectUrl 
+        const destination = (redirectUrl && redirectUrl.includes('/admin'))
+          ? redirectUrl
           : '/admin/dashboard';
         console.log('Redirecting to:', destination);
         window.location.href = destination; // ใช้ window.location แทน router.push
@@ -119,25 +116,21 @@ function LoginPageContent() {
   };
 
   return (
-    <LoginContainer>
-      {({ isMobile, isSmallMobile, isTablet }) => (
-        <>
-          <LoginLeftSection
-            isMobile={isMobile}
-            isSmallMobile={isSmallMobile}
-          />
-          <LoginRightSection
-            error={error}
-            setError={setError}
-            loading={loading}
-            onSubmit={handleSubmit}
-            isSmallMobile={isSmallMobile}
-            isMobile={isMobile}
-            isTablet={isTablet}
-          />
-        </>
-      )}
-    </LoginContainer>
+    <div
+      className="min-h-screen flex items-center justify-center bg-gray-50 p-6"
+      style={{
+        backgroundImage:
+          "radial-gradient(circle at 1px 1px, rgb(0 0 0 / 0.04) 1px, transparent 0)",
+        backgroundSize: "24px 24px",
+      }}
+    >
+      <LoginForm
+        error={error}
+        setError={setError}
+        loading={loading}
+        onSubmit={handleSubmit}
+      />
+    </div>
   );
 }
 
