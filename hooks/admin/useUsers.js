@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useMessage } from "./useAntdApp";
+import { useToast } from "@/components/ui/use-toast";
 
 export const useUsers = () => {
-  const message = useMessage();
+  const { toast } = useToast();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchInput, setSearchInput] = useState("");
@@ -69,22 +69,14 @@ export const useUsers = () => {
         setPagination(prev => ({
           ...prev,
           total: data.data.total,
-          current: data.data.page,
+          current: data.data.pagination?.page ?? prev.current,
         }));
       } else {
-        try {
-          message.error(`${data.error || "เกิดข้อผิดพลาดในการโหลดข้อมูล"}`);
-        } catch (msgError) {
-          console.error("Message display error:", msgError);
-        }
+        toast({ variant: "destructive", title: data.error || "เกิดข้อผิดพลาดในการโหลดข้อมูล" });
       }
     } catch (error) {
       console.error("Fetch users error:", error);
-      try {
-        message.error(`เกิดข้อผิดพลาด: ${error.message}`);
-      } catch (msgError) {
-        console.error("Message display error:", msgError);
-      }
+      toast({ variant: "destructive", title: `เกิดข้อผิดพลาด: ${error.message}` });
     } finally {
       setLoading(false);
     }
@@ -104,21 +96,20 @@ export const useUsers = () => {
     }));
   }, []);
 
-  // Handle table changes (pagination, sorting)
-  const handleTableChange = useCallback((pagination, filters, sorter) => {
-    setPagination(prev => ({
-      ...prev,
-      current: pagination.current,
-      pageSize: pagination.pageSize,
-    }));
+  // Handle pagination page changes
+  const handlePageChange = useCallback((page) => {
+    setPagination(prev => ({ ...prev, current: page }));
+  }, []);
 
-    if (sorter && sorter.field) {
-      setFilters(prev => ({
-        ...prev,
-        sortBy: sorter.field,
-        sortOrder: sorter.order === 'ascend' ? 'asc' : 'desc',
-      }));
-    }
+  // Handle sortable column header clicks — toggles asc/desc when clicking
+  // the already-active column, otherwise switches to that column desc-first.
+  const handleSortChange = useCallback((field) => {
+    setFilters(prev => ({
+      ...prev,
+      sortBy: field,
+      sortOrder: prev.sortBy === field && prev.sortOrder === 'desc' ? 'asc' : 'desc',
+    }));
+    setPagination(prev => ({ ...prev, current: 1 }));
   }, []);
 
   // Reset filters
@@ -146,12 +137,20 @@ export const useUsers = () => {
     return () => clearTimeout(timer);
   }, [searchInput, handleFilterChange]);
 
-  // Fetch data when filters or pagination change
+  // Fetch data when filters or pagination change.
+  // Depend only on `fetchUsers` — it already closes over pagination.current /
+  // pagination.pageSize / filters and only gets a new reference when one of
+  // those primitives actually changes. Depending on the whole `pagination`
+  // object here instead caused an infinite loop: fetchUsers' success handler
+  // calls setPagination with a freshly spread object every time (even when
+  // current/total are unchanged), which is a new reference on every render,
+  // which re-triggered this effect, which re-ran fetchUsers, forever.
   useEffect(() => {
-    if (pagination && pagination.current && pagination.pageSize) {
+    if (pagination.current && pagination.pageSize) {
       fetchUsers();
     }
-  }, [fetchUsers, pagination]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchUsers]);
 
   return {
     users,
@@ -163,7 +162,8 @@ export const useUsers = () => {
     pagination,
     fetchUsers,
     handleFilterChange,
-    handleTableChange,
+    handlePageChange,
+    handleSortChange,
     resetFilters,
   };
 };

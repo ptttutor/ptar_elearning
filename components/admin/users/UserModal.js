@@ -1,279 +1,245 @@
-import { Modal, Form, Input, Select, Upload, Avatar, Row, Col, Space } from "antd";
-import { UserOutlined, UploadOutlined } from "@ant-design/icons";
-import { useState, useEffect } from "react";
+"use client";
+import { useState, useEffect, useRef } from "react";
+import { User as UserIcon, Loader2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from "@/components/ui/use-toast";
 import { uploadDiagnostics } from "@/lib/upload-diagnostics";
-import { useMessage } from "@/hooks/admin/useAntdApp";
 import InfoBox from "@/components/admin/shared/InfoBox";
-import { MODAL_WIDTH } from "@/components/admin/shared/adminUiConstants";
 
-const { Option } = Select;
+const EMPTY_FORM = { name: "", email: "", role: "STUDENT", lineId: "", password: "" };
 
 export default function UserModal({ open, editing, onCancel, onSubmit }) {
-  const [form] = Form.useForm();
-  const message = useMessage();
+  const { toast } = useToast();
+  const [values, setValues] = useState(EMPTY_FORM);
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
+  const fileInputRef = useRef(null);
 
-  // Reset form when modal opens/closes
   useEffect(() => {
     if (open) {
       if (editing) {
-        form.setFieldsValue({
+        setValues({
           name: editing.name || "",
           email: editing.email || "",
           role: editing.role || "STUDENT",
           lineId: editing.lineId || "",
+          password: "",
         });
         setImageUrl(editing.image || "");
       } else {
-        form.resetFields();
+        setValues(EMPTY_FORM);
         setImageUrl("");
       }
+      setErrors({});
     }
-  }, [open, editing, form]);
+  }, [open, editing]);
 
-  // Handle form submission
-  const handleSubmit = async () => {
+  const setField = (field) => (e) => {
+    setValues((prev) => ({ ...prev, [field]: e.target.value }));
+  };
+
+  const validate = () => {
+    const next = {};
+    if (!values.name || values.name.length < 2) next.name = "ชื่อผู้ใช้ต้องมีอย่างน้อย 2 ตัวอักษร";
+    if (!values.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
+      next.email = "กรุณากรอกอีเมลให้ถูกต้อง";
+    }
+    if (!editing && (!values.password || values.password.length < 6)) {
+      next.password = "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร";
+    }
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+    setLoading(true);
     try {
-      const values = await form.validateFields();
-      setLoading(true);
-      
-      const userData = {
-        ...values,
-        image: imageUrl,
-      };
-
-      await onSubmit(userData);
-    } catch (error) {
-      console.error("Validation failed:", error);
+      await onSubmit({ ...values, image: imageUrl });
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle image upload
-  const handleImageUpload = async (info) => {
-    if (info.file.status === 'uploading') {
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast({ variant: "destructive", title: "กรุณาอัปโหลดไฟล์รูปภาพเท่านั้น!" });
       return;
     }
-    
-    if (info.file.status === 'done') {
-      // Handle successful upload
-      const imageUrl = info.file.response?.data?.url || info.file.response?.url;
-      if (imageUrl) {
-        setImageUrl(imageUrl);
-      }
-    }
-  };
 
-  // Custom upload function for Vercel Blob
-  const customUpload = async ({ file, onSuccess, onError, onProgress }) => {
     const monitor = uploadDiagnostics.createPerformanceMonitor();
-    
+    setUploading(true);
     try {
       monitor.start();
-      
-      // Log file info and check compatibility
-      uploadDiagnostics.logFileInfo(file, 'Upload ');
-      const compatibility = uploadDiagnostics.checkFileCompatibility(file);
-      
-      if (!compatibility.compatible) {
-        console.warn('⚠️ File compatibility issues detected, but proceeding:', compatibility.issues);
-      }
-      
-      console.log('🚀 Starting upload:', file.name, 'Size:', (file.size / 1024 / 1024).toFixed(2) + 'MB');
-      
+      uploadDiagnostics.logFileInfo(file, "Upload ");
+
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('type', 'general'); // User profile images
+      formData.append("file", file);
+      formData.append("type", "general");
 
-      // Simulate progress
-      onProgress({ percent: 30 });
-      monitor.progress(30);
-
-      const response = await fetch('/api/upload-blob', {
-        method: 'POST',
-        body: formData,
-      });
-
-      onProgress({ percent: 70 });
-      monitor.progress(70);
-
+      const response = await fetch("/api/upload-blob", { method: "POST", body: formData });
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ Upload response error:', response.status, errorText);
         throw new Error(`Upload failed: ${response.status} - ${errorText}`);
       }
 
       const result = await response.json();
-      onProgress({ percent: 90 });
-      monitor.progress(90);
+      if (!result.success) {
+        throw new Error(result.error || "Upload failed");
+      }
 
-      console.log('📊 Upload result:', result);
+      monitor.complete(result.data);
+      setImageUrl(result.data.url);
 
-      if (result.success) {
-        onProgress({ percent: 100 });
-        monitor.complete(result.data);
-        
-        // Show compression info if applicable
-        if (result.data.compressed) {
-          const originalSizeMB = (result.data.originalSize / 1024 / 1024).toFixed(2);
-          const finalSizeMB = (result.data.size / 1024 / 1024).toFixed(2);
-          message.success(`อัปโหลดสำเร็จ! บีบอัดจาก ${originalSizeMB}MB เป็น ${finalSizeMB}MB`);
-        } else {
-          message.success('อัปโหลดสำเร็จ!');
-        }
-        
-        onSuccess(result, file);
+      if (result.data.compressed) {
+        const originalSizeMB = (result.data.originalSize / 1024 / 1024).toFixed(2);
+        const finalSizeMB = (result.data.size / 1024 / 1024).toFixed(2);
+        toast({ title: `อัปโหลดสำเร็จ! บีบอัดจาก ${originalSizeMB}MB เป็น ${finalSizeMB}MB` });
       } else {
-        console.error('❌ Upload failed:', result.error);
-        monitor.error(new Error(result.error));
-        onError(new Error(result.error || 'Upload failed'));
+        toast({ title: "อัปโหลดสำเร็จ!" });
       }
     } catch (error) {
-      console.error('❌ Upload error:', error);
+      console.error("Upload error:", error);
       monitor.error(error);
-      onProgress({ percent: 0 });
-      onError(error);
-      message.error(`การอัปโหลดล้มเหลว: ${error.message}`);
+      toast({ variant: "destructive", title: `การอัปโหลดล้มเหลว: ${error.message}` });
+    } finally {
+      setUploading(false);
     }
   };
 
-  // Upload props for image
-  const uploadProps = {
-    name: 'file',
-    customRequest: customUpload,
-    showUploadList: false,
-    onChange: handleImageUpload,
-    beforeUpload: (file) => {
-      const isImage = file.type.startsWith('image/');
-      if (!isImage) {
-        message.error('กรุณาอัปโหลดไฟล์รูปภาพเท่านั้น!');
-        return false;
-      }
-      
-      // Show file info
-      const sizeMB = (file.size / 1024 / 1024).toFixed(2);
-      console.log('📄 File info:', { name: file.name, size: sizeMB + 'MB', type: file.type });
-      
-      return true;
-    },
-  };
-
   return (
-    <Modal
-      title={
-        <Space>
-          {editing ? "แก้ไขข้อมูลผู้ใช้" : "เพิ่มผู้ใช้ใหม่"}
-        </Space>
-      }
-      open={open}
-      onCancel={onCancel}
-      onOk={handleSubmit}
-      confirmLoading={loading}
-      width={MODAL_WIDTH.sm}
-      okText={editing ? "บันทึกการแก้ไข" : "สร้างผู้ใช้"}
-      cancelText="ยกเลิก"
-    >
-      <Form
-        form={form}
-        layout="vertical"
-        style={{ marginTop: "24px" }}
-      >
-        {/* Profile Image */}
-        <Form.Item label="รูปโปรไฟล์">
-          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-            <Avatar
-              size={64}
-              src={imageUrl && imageUrl.trim() ? imageUrl : null}
-              icon={<UserOutlined />}
-              style={{
-                backgroundColor: imageUrl && imageUrl.trim() ? "transparent" : "#1890ff",
-              }}
-            />
-            <Upload {...uploadProps}>
-              <div style={{ cursor: "pointer", color: "#1890ff" }}>
-                เปลี่ยนรูปภาพ
-              </div>
-            </Upload>
+    <Dialog open={open} onOpenChange={(next) => !next && onCancel()}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>{editing ? "แก้ไขข้อมูลผู้ใช้" : "เพิ่มผู้ใช้ใหม่"}</DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Profile Image */}
+          <div className="space-y-1.5">
+            <Label>รูปโปรไฟล์</Label>
+            <div className="flex items-center gap-4">
+              <Avatar className="h-16 w-16">
+                {imageUrl && <AvatarImage src={imageUrl} alt="" />}
+                <AvatarFallback className="bg-blue-500 text-white">
+                  <UserIcon className="h-6 w-6" />
+                </AvatarFallback>
+              </Avatar>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:underline disabled:opacity-50"
+              >
+                {uploading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                {uploading ? "กำลังอัปโหลด..." : "เปลี่ยนรูปภาพ"}
+              </button>
+            </div>
           </div>
-        </Form.Item>
 
-        <Row gutter={16}>
-          {/* Name */}
-          <Col span={12}>
-            <Form.Item
-              name="name"
-              label="ชื่อผู้ใช้"
-              rules={[
-                { required: true, message: "กรุณากรอกชื่อผู้ใช้" },
-                { min: 2, message: "ชื่อผู้ใช้ต้องมีอย่างน้อย 2 ตัวอักษร" },
-              ]}
-            >
-              <Input placeholder="กรอกชื่อผู้ใช้" />
-            </Form.Item>
-          </Col>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="name">ชื่อผู้ใช้</Label>
+              <Input id="name" value={values.name} onChange={setField("name")} placeholder="กรอกชื่อผู้ใช้" />
+              {errors.name && <p className="text-xs text-red-600">{errors.name}</p>}
+            </div>
 
-          {/* Role */}
-          <Col span={12}>
-            <Form.Item
-              name="role"
-              label="บทบาท"
-              rules={[{ required: true, message: "กรุณาเลือกบทบาท" }]}
-            >
-              <Select placeholder="เลือกบทบาท">
-                <Option value="STUDENT">นักเรียน</Option>
-                <Option value="INSTRUCTOR">ผู้สอน</Option>
-                <Option value="ADMIN">ผู้ดูแลระบบ</Option>
+            <div className="space-y-1.5">
+              <Label>บทบาท</Label>
+              <Select value={values.role} onValueChange={(value) => setValues((p) => ({ ...p, role: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="เลือกบทบาท" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="STUDENT">นักเรียน</SelectItem>
+                  <SelectItem value="INSTRUCTOR">ผู้สอน</SelectItem>
+                  <SelectItem value="ADMIN">ผู้ดูแลระบบ</SelectItem>
+                </SelectContent>
               </Select>
-            </Form.Item>
-          </Col>
-        </Row>
+            </div>
+          </div>
 
-        {/* Email */}
-        <Form.Item
-          name="email"
-          label="อีเมล"
-          rules={[
-            { required: true, message: "กรุณากรอกอีเมล" },
-            { type: "email", message: "รูปแบบอีเมลไม่ถูกต้อง" },
-          ]}
-        >
-          <Input placeholder="กรอกที่อยู่อีเมล" />
-        </Form.Item>
+          <div className="space-y-1.5">
+            <Label htmlFor="email">อีเมล</Label>
+            <Input id="email" type="email" value={values.email} onChange={setField("email")} placeholder="กรอกที่อยู่อีเมล" />
+            {errors.email && <p className="text-xs text-red-600">{errors.email}</p>}
+          </div>
 
-        <Row gutter={16}>
-          {/* LINE User ID */}
-          <Col span={24}>
-            <Form.Item
-              name="lineId"
-              label="LINE User ID"
-            >
-              <Input placeholder="U1234567890abcdef..." />
-            </Form.Item>
-          </Col>
-        </Row>
+          <div className="space-y-1.5">
+            <Label htmlFor="lineId">LINE User ID</Label>
+            <Input id="lineId" value={values.lineId} onChange={setField("lineId")} placeholder="U1234567890abcdef..." />
+          </div>
 
-        {/* Password (only for new users) */}
-        {!editing && (
-          <Form.Item
-            name="password"
-            label="รหัสผ่าน"
-            rules={[
-              { required: true, message: "กรุณากรอกรหัสผ่าน" },
-              { min: 6, message: "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร" },
-            ]}
-          >
-            <Input.Password placeholder="กรอกรหัสผ่าน" />
-          </Form.Item>
-        )}
-      </Form>
+          {!editing && (
+            <div className="space-y-1.5">
+              <Label htmlFor="password">รหัสผ่าน</Label>
+              <Input
+                id="password"
+                type="password"
+                value={values.password}
+                onChange={setField("password")}
+                placeholder="กรอกรหัสผ่าน"
+              />
+              {errors.password && <p className="text-xs text-red-600">{errors.password}</p>}
+            </div>
+          )}
 
-      {editing && (
-        <InfoBox tone="warning" style={{ marginTop: "16px" }}>
-          <strong>หมายเหตุ:</strong> การแก้ไขข้อมูลผู้ใช้จะมีผลทันที
-        </InfoBox>
-      )}
-    </Modal>
+          {editing && (
+            <InfoBox tone="warning">
+              <strong>หมายเหตุ:</strong> การแก้ไขข้อมูลผู้ใช้จะมีผลทันที
+            </InfoBox>
+          )}
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onCancel}>
+              ยกเลิก
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  กำลังบันทึก...
+                </>
+              ) : editing ? (
+                "บันทึกการแก้ไข"
+              ) : (
+                "สร้างผู้ใช้"
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

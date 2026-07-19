@@ -1,11 +1,17 @@
-import { Card, Typography, Space, Button, Breadcrumb } from "antd";
-import { ArrowLeftOutlined, HomeOutlined } from "@ant-design/icons";
-import { ADMIN_PAGE_CONTAINER_STYLE } from "./adminUiConstants";
-
-const { Title, Text } = Typography;
+import Link from "next/link";
+import { Home, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 /**
- * Canonical admin page shell: outer padded container + a header Card with
+ * Canonical admin page shell: outer padded container + a header card with
  * icon/title/subtitle, an optional breadcrumb, an optional back button, and
  * an optional primary action (e.g. "+ เพิ่ม..."). Renders `children` below
  * the header, inside the same container, so every admin page shares one
@@ -24,51 +30,59 @@ export default function AdminPageHeader({
   children,
 }) {
   const items = breadcrumbItems
-    ? [
-        {
-          href: "/admin/dashboard",
-          title: (
-            <Space size={4}>
-              <HomeOutlined />
-              <span>หน้าหลัก</span>
-            </Space>
-          ),
-        },
-        ...breadcrumbItems.map((item) => ({
-          href: item.href,
-          title: item.label,
-        })),
-      ]
+    ? [{ href: "/admin/dashboard", label: (
+        <span className="inline-flex items-center gap-1">
+          <Home className="h-3.5 w-3.5" />
+          หน้าหลัก
+        </span>
+      ) }, ...breadcrumbItems]
     : null;
 
   return (
-    <div style={ADMIN_PAGE_CONTAINER_STYLE}>
-      <Card style={{ marginBottom: "24px" }}>
-        <Space direction="vertical" size={items ? 12 : 4} style={{ width: "100%" }}>
-          {items && <Breadcrumb items={items} />}
-          <Space
-            align="center"
-            style={{ justifyContent: "space-between", width: "100%" }}
-            wrap
-          >
-            <Space direction="vertical" size={4}>
-              <Title level={2} style={{ margin: 0 }}>
-                {icon && <span style={{ marginRight: 8 }}>{icon}</span>}
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="mb-6 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-3">
+          {items && (
+            <Breadcrumb>
+              <BreadcrumbList>
+                {items.map((item, idx) => (
+                  <>
+                    <BreadcrumbItem key={`item-${idx}`}>
+                      {idx === items.length - 1 || !item.href ? (
+                        <BreadcrumbPage>{item.label}</BreadcrumbPage>
+                      ) : (
+                        <BreadcrumbLink asChild>
+                          <Link href={item.href}>{item.label}</Link>
+                        </BreadcrumbLink>
+                      )}
+                    </BreadcrumbItem>
+                    {idx < items.length - 1 && <BreadcrumbSeparator key={`sep-${idx}`} />}
+                  </>
+                ))}
+              </BreadcrumbList>
+            </Breadcrumb>
+          )}
+
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="flex items-center gap-2 text-2xl font-semibold text-gray-900">
+                {icon}
                 {title}
-              </Title>
-              {subtitle && <Text type="secondary">{subtitle}</Text>}
-            </Space>
-            <Space>
+              </h2>
+              {subtitle && <p className="mt-1 text-sm text-gray-500">{subtitle}</p>}
+            </div>
+            <div className="flex items-center gap-2">
               {onBack && (
-                <Button icon={<ArrowLeftOutlined />} onClick={onBack}>
+                <Button variant="outline" onClick={onBack}>
+                  <ArrowLeft className="mr-2 h-4 w-4" />
                   กลับ
                 </Button>
               )}
               {actions}
-            </Space>
-          </Space>
-        </Space>
-      </Card>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {children}
     </div>

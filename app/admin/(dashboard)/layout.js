@@ -75,7 +75,7 @@ export default function AdminShellLayout({ children }) {
         <AdminSidebar collapsed={collapsed} pathname={pathname} onToggle={handleToggle} />
       </aside>
 
-      <div className="flex flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-[100] flex h-16 items-center border-b border-gray-200 bg-white px-6">
           <AdminHeader
             collapsed={collapsed}
@@ -85,7 +85,7 @@ export default function AdminShellLayout({ children }) {
           />
         </header>
 
-        <main className="min-h-[calc(100vh-64px)] flex-1">{children}</main>
+        <main className="min-h-[calc(100vh-64px)] min-w-0 flex-1 overflow-x-hidden">{children}</main>
       </div>
     </div>
   );

@@ -1,9 +1,67 @@
-import { Table, Card, Button, Space, Tag, Avatar, Typography, Tooltip } from "antd";
-import { EditOutlined, DeleteOutlined, UserOutlined, SwapOutlined, BookOutlined } from "@ant-design/icons";
+"use client";
+
+import { Edit, Repeat, BookPlus, Trash2, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { th } from "date-fns/locale";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationEllipsis,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { getPaginationRange } from "@/lib/get-pagination-range";
 
-const { Text, Paragraph } = Typography;
+const ROLE_STYLES = {
+  STUDENT: "border-green-200 bg-green-50 text-green-700",
+  INSTRUCTOR: "border-orange-200 bg-orange-50 text-orange-700",
+  ADMIN: "border-red-200 bg-red-50 text-red-700",
+};
+const ROLE_LABELS = { STUDENT: "นักเรียน", INSTRUCTOR: "ผู้สอน", ADMIN: "ผู้ดูแลระบบ" };
+
+function SortableHead({ field, label, sortBy, sortOrder, onSort }) {
+  const isActive = sortBy === field;
+  return (
+    <TableHead>
+      <button
+        type="button"
+        onClick={() => onSort(field)}
+        className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-900"
+      >
+        {label}
+        {isActive ? (
+          sortOrder === "asc" ? (
+            <ArrowUp className="h-3 w-3" />
+          ) : (
+            <ArrowDown className="h-3 w-3" />
+          )
+        ) : (
+          <ArrowUpDown className="h-3 w-3 text-gray-300" />
+        )}
+      </button>
+    </TableHead>
+  );
+}
 
 export default function UserTable({
   users,
@@ -14,211 +72,223 @@ export default function UserTable({
   onDelete,
   onToggleStatus,
   onGrantCourse,
-  onTableChange,
+  onPageChange,
+  onSortChange,
 }) {
-  // Format date
   const formatDate = (dateString) => {
     if (!dateString) return "-";
     try {
-      return formatDistanceToNow(new Date(dateString), {
-        addSuffix: true,
-        locale: th,
-      });
-    } catch (error) {
+      return formatDistanceToNow(new Date(dateString), { addSuffix: true, locale: th });
+    } catch {
       return "-";
     }
   };
 
-  // Get role display
-  const getRoleDisplay = (role) => {
-    const roleConfig = {
-      STUDENT: { text: "นักเรียน", color: "green" },
-      INSTRUCTOR: { text: "ผู้สอน", color: "orange" },
-      ADMIN: { text: "ผู้ดูแลระบบ", color: "red" },
-    };
-    return roleConfig[role] || { text: role, color: "default" };
-  };
-
-  // Get status display
-  const getStatusDisplay = (user) => {
-    // You can add custom logic here based on user properties
-    // For now, assuming all users are active
-    const isActive = true; // All users are considered active since no status field
-    return isActive ? 
-      { text: "เปิดใช้งาน", color: "success" } : 
-      { text: "ปิดใช้งาน", color: "error" };
-  };
-
-  const columns = [
-    {
-      title: "ผู้ใช้งาน",
-      key: "user",
-      width: 300,
-      render: (_, record) => (
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <Avatar
-            size={40}
-            src={record.image && record.image.trim() ? record.image : null}
-            icon={<UserOutlined />}
-            style={{
-              backgroundColor: record.image && record.image.trim() ? "transparent" : "#1890ff",
-            }}
-          />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: "600", marginBottom: "4px" }}>
-              {record.name || "ไม่ระบุชื่อ"}
-            </div>
-            <Paragraph
-              style={{
-                margin: 0,
-                fontSize: "12px",
-                color: "#666",
-              }}
-              ellipsis={{ rows: 1, tooltip: record.email }}
-            >
-              {record.email}
-            </Paragraph>
-            {record.lineId && (
-              <Text
-                style={{
-                  fontSize: "12px",
-                  color: "#666",
-                }}
-              >
-                LINE: {record.lineId.substring(0, 10)}...
-              </Text>
-            )}
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: "บทบาท",
-      key: "role",
-      width: 150,
-      sorter: true,
-      render: (_, record) => {
-        const roleDisplay = getRoleDisplay(record.role);
-        return <Tag color={roleDisplay.color}>{roleDisplay.text}</Tag>;
-      },
-    },
-    {
-      title: "สถานะ",
-      key: "status",
-      width: 130,
-      render: (_, record) => {
-        const statusDisplay = getStatusDisplay(record);
-        return <Tag color={statusDisplay.color}>{statusDisplay.text}</Tag>;
-      },
-    },
-    {
-      title: "LINE ID",
-      dataIndex: "lineId",
-      key: "lineId",
-      width: 150,
-      render: (lineId) => (
-        <Text style={{ fontSize: "12px", color: "#666" }}>
-          {lineId ? `${lineId.substring(0, 10)}...` : "ไม่เชื่อมต่อ"}
-        </Text>
-      ),
-    },
-    {
-      title: "วันที่สร้าง",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      width: 150,
-      sorter: true,
-      render: (createdAt) => (
-        <Tooltip title={new Date(createdAt).toLocaleString('th-TH')}>
-          <Text style={{ fontSize: "12px", color: "#666" }}>
-            {formatDate(createdAt)}
-          </Text>
-        </Tooltip>
-      ),
-    },
-    {
-      title: "จัดการ",
-      key: "actions",
-      width: 160,
-      render: (_, record) => (
-        <Space size="small">
-          <Tooltip title="แก้ไข">
-            <Button
-              type="text"
-              icon={<EditOutlined />}
-              onClick={() => onEdit(record)}
-              style={{ color: "#1890ff" }}
-            />
-          </Tooltip>
-          
-          <Tooltip title={
-            record.role === 'STUDENT' ? "เปลี่ยนเป็นผู้สอน" : 
-            record.role === 'INSTRUCTOR' ? "เปลี่ยนเป็นนักเรียน" :
-            "เปลี่ยนบทบาท"
-          }>
-            <Button
-              type="text"
-              icon={<SwapOutlined />}
-              onClick={() => onToggleStatus(record)}
-              style={{ color: "#fa8c16" }}
-              disabled={record.role === 'ADMIN'} // Don't allow changing admin role
-            />
-          </Tooltip>
-
-          <Tooltip title="เพิ่มคอร์สให้ผู้ใช้ (ไม่ผ่านการซื้อ)">
-            <Button
-              type="text"
-              icon={<BookOutlined />}
-              onClick={() => onGrantCourse(record)}
-              style={{ color: "#52c41a" }}
-              disabled={record.role === 'ADMIN'}
-            />
-          </Tooltip>
-
-          <Tooltip title="ลบ">
-            <Button
-              type="text"
-              danger
-              icon={<DeleteOutlined />}
-              onClick={() => onDelete(record)}
-              disabled={record.role === 'ADMIN'} // Protect admin accounts
-            />
-          </Tooltip>
-        </Space>
-      ),
-    },
-  ];
+  const totalPages = Math.max(1, Math.ceil((pagination.total || 0) / pagination.pageSize));
 
   return (
-    <Card 
-      title={
-        <Space>
-          รายการผู้ใช้งาน
-          <Tag color="blue" style={{ marginLeft: "8px" }}>
-            {pagination.total} รายการ
-          </Tag>
-        </Space>
-      }
-    >
-      <Table
-        columns={columns}
-        dataSource={users}
-        loading={loading}
-        rowKey="id"
-        pagination={{
-          current: pagination.current,
-          pageSize: pagination.pageSize,
-          total: pagination.total,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total, range) =>
-            `แสดง ${range[0]}-${range[1]} จาก ${total} รายการ`,
-          pageSizeOptions: ["10", "20", "50", "100"],
-        }}
-        onChange={onTableChange}
-        scroll={{ x: 1000 }}
-        size="middle"
-      />
-    </Card>
+    <TooltipProvider delayDuration={200}>
+      <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+        <div className="mb-4 flex items-center gap-2">
+          <h3 className="font-semibold text-gray-900">รายการผู้ใช้งาน</h3>
+          <Badge variant="secondary">{pagination.total} รายการ</Badge>
+        </div>
+
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="min-w-[260px]">ผู้ใช้งาน</TableHead>
+                <SortableHead
+                  field="role"
+                  label="บทบาท"
+                  sortBy={filters.sortBy}
+                  sortOrder={filters.sortOrder}
+                  onSort={onSortChange}
+                />
+                <TableHead>สถานะ</TableHead>
+                <TableHead>LINE ID</TableHead>
+                <SortableHead
+                  field="createdAt"
+                  label="วันที่สร้าง"
+                  sortBy={filters.sortBy}
+                  sortOrder={filters.sortOrder}
+                  onSort={onSortChange}
+                />
+                <TableHead className="text-right">จัดการ</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell colSpan={6}>
+                      <Skeleton className="h-10 w-full" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : users.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-gray-400">
+                    ไม่พบผู้ใช้งาน
+                  </TableCell>
+                </TableRow>
+              ) : (
+                users.map((record) => (
+                  <TableRow key={record.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          {record.image && <AvatarImage src={record.image} alt={record.name} />}
+                          <AvatarFallback className="bg-blue-500 text-white">
+                            {record.name?.charAt(0)?.toUpperCase() || "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <div className="font-semibold text-gray-900">
+                            {record.name || "ไม่ระบุชื่อ"}
+                          </div>
+                          <div className="truncate text-xs text-gray-500">{record.email}</div>
+                          {record.lineId && (
+                            <div className="text-xs text-gray-400">
+                              LINE: {record.lineId.substring(0, 10)}...
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={ROLE_STYLES[record.role]}>
+                        {ROLE_LABELS[record.role] || record.role}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
+                        เปิดใช้งาน
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-xs text-gray-500">
+                      {record.lineId ? `${record.lineId.substring(0, 10)}...` : "ไม่เชื่อมต่อ"}
+                    </TableCell>
+                    <TableCell>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-xs text-gray-500">{formatDate(record.createdAt)}</span>
+                        </TooltipTrigger>
+                        <TooltipContent>{new Date(record.createdAt).toLocaleString("th-TH")}</TooltipContent>
+                      </Tooltip>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-end gap-1">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="text-blue-600" onClick={() => onEdit(record)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>แก้ไข</TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-orange-500"
+                              onClick={() => onToggleStatus(record)}
+                              disabled={record.role === "ADMIN"}
+                            >
+                              <Repeat className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {record.role === "STUDENT" ? "เปลี่ยนเป็นผู้สอน" : "เปลี่ยนเป็นนักเรียน"}
+                          </TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-green-600"
+                              onClick={() => onGrantCourse(record)}
+                              disabled={record.role === "ADMIN"}
+                            >
+                              <BookPlus className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>เพิ่มคอร์สให้ผู้ใช้ (ไม่ผ่านการซื้อ)</TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-red-600"
+                              onClick={() => onDelete(record)}
+                              disabled={record.role === "ADMIN"}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>ลบ</TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {totalPages > 1 && (
+          <Pagination className="mt-4">
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onPageChange(Math.max(1, pagination.current - 1));
+                  }}
+                />
+              </PaginationItem>
+              {getPaginationRange(pagination.current, totalPages).map((p, i) =>
+                p === "..." ? (
+                  <PaginationItem key={`ellipsis-${i}`}>
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                ) : (
+                  <PaginationItem key={p}>
+                    <PaginationLink
+                      href="#"
+                      isActive={pagination.current === p}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onPageChange(p);
+                      }}
+                    >
+                      {p}
+                    </PaginationLink>
+                  </PaginationItem>
+                )
+              )}
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onPageChange(Math.min(totalPages, pagination.current + 1));
+                  }}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
+      </div>
+    </TooltipProvider>
   );
 }

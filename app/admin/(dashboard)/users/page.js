@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
-import { Button } from "antd";
-import { UserOutlined, PlusOutlined } from "@ant-design/icons";
-import { useMessage } from "@/hooks/admin/useAntdApp";
+import { Users as UsersIcon, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 import AdminPageHeader from "@/components/admin/shared/AdminPageHeader";
 
 // Components
@@ -25,7 +25,7 @@ export default function UsersPage() {
   const [deleting, setDeleting] = useState(false);
   const [grantModalOpen, setGrantModalOpen] = useState(false);
   const [grantUser, setGrantUser] = useState(null);
-  const message = useMessage();
+  const { toast } = useToast();
 
   // Use custom hook for users data
   const {
@@ -38,7 +38,8 @@ export default function UsersPage() {
     pagination,
     fetchUsers,
     handleFilterChange,
-    handleTableChange,
+    handlePageChange,
+    handleSortChange,
     resetFilters,
   } = useUsers();
 
@@ -63,16 +64,16 @@ export default function UsersPage() {
       const data = await res.json();
 
       if (data.success) {
-        message.success(editing ? "แก้ไขผู้ใช้สำเร็จ" : "สร้างผู้ใช้สำเร็จ");
+        toast({ title: editing ? "แก้ไขผู้ใช้สำเร็จ" : "สร้างผู้ใช้สำเร็จ" });
         setModalOpen(false);
         setEditing(null);
         fetchUsers();
       } else {
-        message.error(`${data.error || "เกิดข้อผิดพลาด"}`);
+        toast({ variant: "destructive", title: data.error || "เกิดข้อผิดพลาด" });
       }
     } catch (error) {
       console.error("Submit user error:", error);
-      message.error("เกิดข้อผิดพลาดในการบันทึกผู้ใช้");
+      toast({ variant: "destructive", title: "เกิดข้อผิดพลาดในการบันทึกผู้ใช้" });
     }
   };
 
@@ -85,7 +86,7 @@ export default function UsersPage() {
   // Confirm delete
   const confirmDelete = async () => {
     if (!userToDelete?.id) {
-      message.error("ไม่พบ ID ของผู้ใช้");
+      toast({ variant: "destructive", title: "ไม่พบ ID ของผู้ใช้" });
       return;
     }
 
@@ -99,16 +100,16 @@ export default function UsersPage() {
       const data = await response.json();
 
       if (data.success) {
-        message.success(data.message || "ลบผู้ใช้สำเร็จ");
+        toast({ title: data.message || "ลบผู้ใช้สำเร็จ" });
         setDeleteModalOpen(false);
         setUserToDelete(null);
         await fetchUsers();
       } else {
-        message.error(`${data.error || "เกิดข้อผิดพลาดในการลบผู้ใช้"}`);
+        toast({ variant: "destructive", title: data.error || "เกิดข้อผิดพลาดในการลบผู้ใช้" });
       }
     } catch (error) {
       console.error("Delete user error:", error);
-      message.error(`เกิดข้อผิดพลาด: ${error.message}`);
+      toast({ variant: "destructive", title: `เกิดข้อผิดพลาด: ${error.message}` });
     } finally {
       setDeleting(false);
     }
@@ -146,20 +147,20 @@ export default function UsersPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        message.error(data.error || "เกิดข้อผิดพลาดในการเพิ่มคอร์ส");
+        toast({ variant: "destructive", title: data.error || "เกิดข้อผิดพลาดในการเพิ่มคอร์ส" });
         return;
       }
 
       if (data.granted?.length) {
-        message.success(`เพิ่มคอร์สสำเร็จ: ${data.granted.join(", ")}`);
+        toast({ title: `เพิ่มคอร์สสำเร็จ: ${data.granted.join(", ")}` });
       }
       if (data.alreadyEnrolled?.length) {
-        message.info(`ผู้ใช้มีคอร์สนี้อยู่แล้ว: ${data.alreadyEnrolled.join(", ")}`);
+        toast({ title: `ผู้ใช้มีคอร์สนี้อยู่แล้ว: ${data.alreadyEnrolled.join(", ")}` });
       }
       closeGrantModal();
     } catch (error) {
       console.error("Quick grant error:", error);
-      message.error("เกิดข้อผิดพลาดในการเพิ่มคอร์ส");
+      toast({ variant: "destructive", title: "เกิดข้อผิดพลาดในการเพิ่มคอร์ส" });
     }
   };
 
@@ -178,38 +179,36 @@ export default function UsersPage() {
   // Toggle user status
   const handleToggleStatus = async (user) => {
     try {
-      const newRole = user.role === 'STUDENT' ? 'INSTRUCTOR' : 'STUDENT';
-      
+      const newRole = user.role === "STUDENT" ? "INSTRUCTOR" : "STUDENT";
+
       const res = await fetch(`/api/admin/users/${user.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...user,
-          role: newRole,
-        }),
+        body: JSON.stringify({ ...user, role: newRole }),
       });
 
       const data = await res.json();
 
       if (data.success) {
-        message.success(`เปลี่ยนสถานะเป็น ${newRole === 'INSTRUCTOR' ? 'ผู้สอน' : 'นักเรียน'} สำเร็จ`);
+        toast({ title: `เปลี่ยนสถานะเป็น ${newRole === "INSTRUCTOR" ? "ผู้สอน" : "นักเรียน"} สำเร็จ` });
         fetchUsers();
       } else {
-        message.error(`${data.error || "เกิดข้อผิดพลาด"}`);
+        toast({ variant: "destructive", title: data.error || "เกิดข้อผิดพลาด" });
       }
     } catch (error) {
       console.error("Toggle user status error:", error);
-      message.error("เกิดข้อผิดพลาดในการเปลี่ยนสถานะ");
+      toast({ variant: "destructive", title: "เกิดข้อผิดพลาดในการเปลี่ยนสถานะ" });
     }
   };
 
   return (
     <AdminPageHeader
-      icon={<UserOutlined />}
+      icon={<UsersIcon className="h-6 w-6" />}
       title="จัดการผู้ใช้งาน"
       subtitle="จัดการข้อมูลผู้ใช้งาน สิทธิ์การเข้าถึง และสถานะการเรียน"
       actions={
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal(null)} size="large">
+        <Button onClick={() => openModal(null)} size="lg">
+          <Plus className="mr-2 h-4 w-4" />
           เพิ่มผู้ใช้ใหม่
         </Button>
       }
@@ -239,16 +238,12 @@ export default function UsersPage() {
         onDelete={handleDelete}
         onToggleStatus={handleToggleStatus}
         onGrantCourse={openGrantModal}
-        onTableChange={handleTableChange}
+        onPageChange={handlePageChange}
+        onSortChange={handleSortChange}
       />
 
       {/* Create/Edit Modal */}
-      <UserModal
-        open={modalOpen}
-        editing={editing}
-        onCancel={closeModal}
-        onSubmit={handleSubmitUser}
-      />
+      <UserModal open={modalOpen} editing={editing} onCancel={closeModal} onSubmit={handleSubmitUser} />
 
       {/* Delete Confirmation Modal */}
       <DeleteModal

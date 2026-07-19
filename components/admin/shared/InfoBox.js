@@ -1,26 +1,21 @@
-const TONE_STYLES = {
-  warning: { background: "#fff7e6", border: "1px solid #ffd591", text: "#d48806" },
-  info: { background: "#f6f8fa", border: "1px solid #d9d9d9", text: "#595959" },
-  success: { background: "#f6ffed", border: "1px solid #b7eb8f", text: "#389e0d" },
+const TONE_CLASSES = {
+  warning: "bg-amber-50 border-amber-200 text-amber-700",
+  info: "bg-gray-50 border-gray-200 text-gray-600",
+  success: "bg-green-50 border-green-200 text-green-700",
 };
 
 /**
  * Small colored note box used inside modals/forms — replaces the ad hoc
  * hand-rolled <div> variants that used to exist per-modal.
  */
-export default function InfoBox({ tone = "info", children, style }) {
-  const t = TONE_STYLES[tone] || TONE_STYLES.info;
+export default function InfoBox({ tone = "info", children, style, className }) {
+  const toneClass = TONE_CLASSES[tone] || TONE_CLASSES.info;
   return (
     <div
-      style={{
-        padding: "12px",
-        background: t.background,
-        border: t.border,
-        borderRadius: "6px",
-        ...style,
-      }}
+      className={`rounded-md border p-3 text-xs ${toneClass} ${className || ""}`}
+      style={style}
     >
-      <div style={{ fontSize: "12px", color: t.text }}>{children}</div>
+      {children}
     </div>
   );
 }
