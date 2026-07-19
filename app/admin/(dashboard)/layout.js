@@ -64,7 +64,6 @@ export default function AdminShellLayout({ children }) {
   const handleLogout = async () => {
     try {
       await logout();
-      router.push("/admin/login");
     } catch (error) {
       console.error("Logout error:", error);
     }

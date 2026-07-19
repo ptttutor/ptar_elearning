@@ -82,11 +82,12 @@ export function AdminAuthProvider({ children }) {
   };
 
   const logout = async () => {
-    if (session) {
-      await signOut({ redirect: false });
-    }
     setUser(null);
     localStorage.removeItem("admin_user");
+    // Let NextAuth own the redirect (a full navigation) instead of racing
+    // it against this layout's own auth-check effect, which also tries to
+    // router.push to /admin/login the moment `user` becomes null.
+    await signOut({ callbackUrl: "/admin/login" });
   };
 
   const loginWithLine = () => {
