@@ -19,9 +19,15 @@ import { useToast } from "@/components/ui/use-toast";
  * changes.
  *
  * @param {object} options
- * @param {(params: {page:number, limit:number, [key:string]:any}) => Promise<{items:any[], total:number, page?:number}>} options.fetcher
+ * @param {(params: {page:number, limit:number, [key:string]:any}) => Promise<{items:any[], total:number, page?:number, meta?:any}>} options.fetcher
  *   Must be stable (wrap in useCallback in the caller) — an inline arrow
  *   function recreated every render works but re-fetches on every render.
+ *   `meta` is an optional passthrough slot for resource-specific summary
+ *   data the endpoint returns alongside the page of results — e.g. Users'
+ *   role-count stat cards need real counts across the *whole* table, which
+ *   is not something you can derive from just the current (filtered,
+ *   paginated) `items` array, so the API returns it separately and the
+ *   fetcher forwards it here untouched.
  * @param {object} [options.initialFilters] Extra filter fields beyond
  *   search/sortBy/sortOrder, e.g. `{ role: "all", status: "all" }`.
  * @param {string} [options.defaultSortBy]
@@ -39,6 +45,7 @@ export function useAdminListState({
 }) {
   const { toast } = useToast();
   const [items, setItems] = useState([]);
+  const [meta, setMeta] = useState(null);
   const [loading, setLoading] = useState(false);
   const [searchInput, setSearchInput] = useState("");
 
@@ -64,6 +71,7 @@ export function useAdminListState({
         ...filters,
       });
       setItems(result.items || []);
+      setMeta(result.meta ?? null);
       setPagination((prev) => ({
         ...prev,
         total: result.total ?? 0,
@@ -137,6 +145,7 @@ export function useAdminListState({
 
   return {
     items,
+    meta,
     loading,
     filters,
     searchInput,

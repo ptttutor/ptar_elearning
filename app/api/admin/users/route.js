@@ -34,12 +34,12 @@ export async function GET(request) {
     // Build where conditions
     const whereConditions = {};
 
-    // Search filter
+    // Search filter — case-insensitive so "tawan" also matches "Tawan"/"TAWAN"
     if (search) {
       whereConditions.OR = [
-        { name: { contains: search } },
-        { email: { contains: search } },
-        { lineId: { contains: search } },
+        { name: { contains: search, mode: "insensitive" } },
+        { email: { contains: search, mode: "insensitive" } },
+        { lineId: { contains: search, mode: "insensitive" } },
       ];
     }
 
@@ -59,8 +59,10 @@ export async function GET(request) {
     const orderBy = {};
     orderBy[safeSortBy] = safeSortOrder;
 
-    // Fetch users
-    const [users, totalCount] = await Promise.all([
+    // Fetch users + global (unfiltered) role counts for the overview stat
+    // cards — those must reflect the real counts across the whole table,
+    // not just whatever page/filter the admin currently has selected.
+    const [users, totalCount, roleCounts] = await Promise.all([
       prisma.user.findMany({
         where: whereConditions,
         orderBy,
@@ -86,7 +88,19 @@ export async function GET(request) {
       prisma.user.count({
         where: whereConditions,
       }),
+      prisma.user.groupBy({
+        by: ["role"],
+        _count: { _all: true },
+      }),
     ]);
+
+    const stats = { total: 0, students: 0, instructors: 0, admins: 0 };
+    for (const row of roleCounts) {
+      stats.total += row._count._all;
+      if (row.role === "STUDENT") stats.students = row._count._all;
+      else if (row.role === "INSTRUCTOR") stats.instructors = row._count._all;
+      else if (row.role === "ADMIN") stats.admins = row._count._all;
+    }
 
     // Calculate total pages
     const totalPages = Math.ceil(totalCount / limit);
@@ -104,6 +118,7 @@ export async function GET(request) {
           hasPrev: page > 1,
         },
         total: totalCount,
+        stats,
       },
     });
   } catch (error) {

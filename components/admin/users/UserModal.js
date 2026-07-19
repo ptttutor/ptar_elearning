@@ -178,7 +178,7 @@ export default function UserModal({ open, editing, onCancel, onSubmit }) {
             <div className="space-y-1.5">
               <Label>บทบาท</Label>
               <Select value={values.role} onValueChange={(value) => setValues((p) => ({ ...p, role: value }))}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="เลือกบทบาท" />
                 </SelectTrigger>
                 <SelectContent>

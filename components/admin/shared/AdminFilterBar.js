@@ -1,6 +1,7 @@
 import { Search, RotateCcw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -19,11 +20,13 @@ import { RESET_FILTERS_LABEL } from "@/components/admin/shared/adminUiConstants"
  * layout per section.
  *
  * @param {object} props
+ * @param {string} [props.searchLabel]
  * @param {string} props.searchValue
  * @param {(value: string) => void} props.onSearchChange
  * @param {string} [props.searchPlaceholder]
- * @param {Array<{key:string, value:string, onChange:(v:string)=>void, placeholder:string, options:Array<{value:string,label:string}>}>} [props.selects]
+ * @param {Array<{key:string, label:string, value:string, onChange:(v:string)=>void, placeholder:string, options:Array<{value:string,label:string}>}>} [props.selects]
  *   One entry per dropdown filter (role, status, category, ...).
+ * @param {string} [props.sortLabel]
  * @param {string} [props.sortValue] Combined `${sortBy}-${sortOrder}` value.
  * @param {(value: string) => void} [props.onSortChange]
  * @param {Array<{value:string,label:string}>} [props.sortOptions]
@@ -36,10 +39,12 @@ import { RESET_FILTERS_LABEL } from "@/components/admin/shared/adminUiConstants"
  *   its own filters state since the labels are resource-specific.
  */
 export default function AdminFilterBar({
+  searchLabel = "ค้นหา",
   searchValue,
   onSearchChange,
   searchPlaceholder = "ค้นหา...",
   selects = [],
+  sortLabel = "เรียงลำดับ",
   sortValue,
   onSortChange,
   sortOptions,
@@ -52,42 +57,51 @@ export default function AdminFilterBar({
   return (
     <div className="mb-6 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-5">
-        <div className="relative sm:col-span-2 md:col-span-2">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <Input
-            placeholder={searchPlaceholder}
-            value={searchValue}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-9"
-          />
+        <div className="space-y-2 sm:col-span-2 md:col-span-2">
+          <Label>{searchLabel}</Label>
+          <div className="relative">
+            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Input
+              placeholder={searchPlaceholder}
+              value={searchValue}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="pl-10"
+            />
+          </div>
         </div>
 
         {selects.map((select) => (
-          <Select key={select.key} value={select.value} onValueChange={select.onChange}>
-            <SelectTrigger>
-              <SelectValue placeholder={select.placeholder} />
-            </SelectTrigger>
-            <SelectContent>
-              {select.options.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div key={select.key} className="space-y-2">
+            <Label>{select.label || select.placeholder}</Label>
+            <Select value={select.value} onValueChange={select.onChange}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={select.placeholder} />
+              </SelectTrigger>
+              <SelectContent>
+                {select.options.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         ))}
 
-        <Button variant="outline" onClick={onReset} disabled={loading}>
-          <RotateCcw className="mr-2 h-4 w-4" />
-          {RESET_FILTERS_LABEL}
-        </Button>
+        <div className="flex items-end">
+          <Button variant="outline" onClick={onReset} disabled={loading} className="w-full">
+            <RotateCcw className="mr-2 h-4 w-4" />
+            {RESET_FILTERS_LABEL}
+          </Button>
+        </div>
       </div>
 
       {sortOptions && (
-        <div className="mt-4 max-w-xs">
+        <div className="mt-4 max-w-xs space-y-2">
+          <Label>{sortLabel}</Label>
           <Select value={sortValue} onValueChange={onSortChange}>
-            <SelectTrigger>
-              <SelectValue placeholder="เรียงลำดับ" />
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder={sortLabel} />
             </SelectTrigger>
             <SelectContent>
               {sortOptions.map((opt) => (

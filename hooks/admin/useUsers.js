@@ -1,5 +1,7 @@
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import { useAdminListState } from "./useAdminListState";
+
+const EMPTY_STATS = { total: 0, students: 0, instructors: 0, admins: 0 };
 
 export const useUsers = () => {
   const fetcher = useCallback(async ({ page, limit, search, role, status, sortBy, sortOrder }) => {
@@ -34,6 +36,10 @@ export const useUsers = () => {
       items: data.data.users,
       total: data.data.total,
       page: data.data.pagination?.page,
+      // Real counts across the whole table (unaffected by the current
+      // search/filter/page) — the API computes these via a separate
+      // unfiltered groupBy, not derivable from just this page's rows.
+      meta: data.data.stats,
     };
   }, []);
 
@@ -42,23 +48,10 @@ export const useUsers = () => {
     initialFilters: { role: "all", status: "all" },
   });
 
-  // Stats data, derived from the current page of results.
-  const stats = useMemo(() => {
-    const users = list.items;
-    if (!users.length) return { total: 0, students: 0, instructors: 0, admins: 0 };
-
-    return {
-      total: users.length,
-      students: users.filter((user) => user.role === "STUDENT").length,
-      instructors: users.filter((user) => user.role === "INSTRUCTOR").length,
-      admins: users.filter((user) => user.role === "ADMIN").length,
-    };
-  }, [list.items]);
-
   return {
     users: list.items,
     loading: list.loading,
-    stats,
+    stats: list.meta || EMPTY_STATS,
     filters: list.filters,
     searchInput: list.searchInput,
     setSearchInput: list.setSearchInput,
