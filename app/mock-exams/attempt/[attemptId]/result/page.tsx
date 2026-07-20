@@ -9,10 +9,20 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
-import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
-import { RadarChart, PolarGrid, PolarAngleAxis, Radar } from "recharts"
+import {
+  Chart as ChartJS,
+  RadialLinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip as ChartTooltip,
+  Legend as ChartLegend,
+} from "chart.js"
+import { Radar } from "react-chartjs-2"
 import { useAuth } from "@/components/auth-provider"
 import http from "@/lib/http"
+
+ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, ChartTooltip, ChartLegend)
 
 type QuestionReview = {
   id: string
@@ -109,33 +119,48 @@ export default function MockExamResultPage() {
               <CardContent className="p-6">
                 <h3 className="font-semibold text-foreground mb-1">วิเคราะห์จุดที่ควรพัฒนา</h3>
                 <p className="text-sm text-muted-foreground mb-4">สรุปคะแนนแยกตามเรื่องที่ข้อสอบวัด (%) ยิ่งใกล้ศูนย์กลางยิ่งควรทบทวนเพิ่ม</p>
-                <ChartContainer
-                  config={{ percent: { label: "ทำได้ (%)", color: "hsl(var(--primary))" } } satisfies ChartConfig}
-                  className="mx-auto aspect-square max-h-80"
-                >
-                  <RadarChart data={result.topicBreakdown} outerRadius="75%">
-                    <ChartTooltip
-                      cursor={false}
-                      content={
-                        <ChartTooltipContent
-                          formatter={(value, _name, item) => {
-                            const t = item?.payload as TopicBreakdown | undefined
-                            return `${Number(value).toFixed(0)}%${t ? ` (${t.correct}/${t.total})` : ""}`
-                          }}
-                        />
-                      }
-                    />
-                    <PolarAngleAxis dataKey="topicName" tick={{ fontSize: 12 }} />
-                    <PolarGrid />
-                    <Radar
-                      dataKey="percent"
-                      fill="var(--color-percent)"
-                      fillOpacity={0.35}
-                      stroke="var(--color-percent)"
-                      strokeWidth={2}
-                    />
-                  </RadarChart>
-                </ChartContainer>
+                <div className="relative mx-auto h-[380px] w-full max-w-[420px]">
+                  <Radar
+                    data={{
+                      labels: result.topicBreakdown.map((t) => t.topicName),
+                      datasets: [
+                        {
+                          label: "ทำได้ (%)",
+                          data: result.topicBreakdown.map((t) => t.percent),
+                          backgroundColor: "rgba(59, 130, 246, 0.35)",
+                          borderColor: "rgb(59, 130, 246)",
+                          borderWidth: 2,
+                          pointBackgroundColor: "rgb(59, 130, 246)",
+                          pointBorderColor: "#fff",
+                          pointRadius: 5,
+                        },
+                      ],
+                    }}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      scales: {
+                        r: {
+                          min: 0,
+                          max: 100,
+                          ticks: { stepSize: 25, backdropColor: "transparent" },
+                          pointLabels: { font: { size: 13 } },
+                        },
+                      },
+                      plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                          callbacks: {
+                            label: (ctx) => {
+                              const t = result.topicBreakdown[ctx.dataIndex]
+                              return `${ctx.parsed.r.toFixed(0)}% (${t.correct}/${t.total})`
+                            },
+                          },
+                        },
+                      },
+                    }}
+                  />
+                </div>
                 <div className="mt-4 space-y-1.5">
                   {result.topicBreakdown.map((t) => (
                     <div key={t.topicId} className="flex items-center justify-between text-sm">
