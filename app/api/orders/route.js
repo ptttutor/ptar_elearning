@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/requireUser";
+import { grantEntitlementsForOrder } from "@/lib/grantOrderEntitlements";
 
 
 // POST - สร้าง order ใหม่
@@ -33,6 +34,8 @@ export async function POST(request) {
         itemData = await prisma.course.findUnique({ where: { id: itemId, status: "PUBLISHED" } });
       } else if (itemType === "EBOOK") {
         itemData = await prisma.ebook.findUnique({ where: { id: itemId, isActive: true } });
+      } else if (itemType === "MOCK_EXAM") {
+        itemData = await prisma.mockExam.findUnique({ where: { id: itemId, isActive: true } });
       }
       if (!itemData) {
         return NextResponse.json({ success: false, error: `ไม่พบสินค้า ${itemId}` }, { status: 404 });
@@ -136,15 +139,10 @@ export async function POST(request) {
     } catch (cartError) {
       console.error("Error clearing cart after order:", cartError);
     }
-    // Enrollment for free course(s)
+    // Grant entitlements immediately for free (total === 0) orders — same
+    // helper used by every payment-confirm path, see lib/grantOrderEntitlements.js.
     if (total === 0) {
-      for (const item of orderItems) {
-        if (item.itemType === "COURSE") {
-          await prisma.enrollment.create({
-            data: { userId: user.id, courseId: item.itemId, status: "ACTIVE" }
-          });
-        }
-      }
+      await grantEntitlementsForOrder(order.id);
     }
     // Coupon usage
     if (couponId) {

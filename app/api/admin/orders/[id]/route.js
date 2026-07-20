@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/requireAdmin';
+import { grantEntitlementsForOrder } from '@/lib/grantOrderEntitlements';
 
 
 // GET - ดึงข้อมูล order ตาม ID สำหรับ admin
@@ -196,7 +197,8 @@ export async function PATCH(request, { params }) {
 
     // Find the order
     const order = await prisma.order.findUnique({
-      where: { id }
+      where: { id },
+      include: { items: true }
     });
 
     if (!order) {
@@ -261,29 +263,19 @@ export async function PATCH(request, { params }) {
         }
       });
 
-      // Create enrollment for course
-      if (order.orderType === 'COURSE' && order.courseId) {
-        try {
-          const existingEnrollment = await prisma.enrollment.findFirst({
-            where: {
-              userId: order.userId,
-              courseId: order.courseId
-            }
+      // Grant entitlements (course enrollment, mock exam purchase, ...) for
+      // every line item on the order — keyed off OrderItem, not the legacy
+      // singular order.courseId/orderType (see lib/grantOrderEntitlements.js).
+      try {
+        await grantEntitlementsForOrder(id);
+        const courseItem = order.items.find((item) => item.itemType === 'COURSE');
+        if (courseItem) {
+          enrollment = await prisma.enrollment.findUnique({
+            where: { userId_courseId: { userId: order.userId, courseId: courseItem.itemId } },
           });
-
-          if (!existingEnrollment) {
-            enrollment = await prisma.enrollment.create({
-              data: {
-                userId: order.userId,
-                courseId: order.courseId,
-                status: 'ACTIVE'
-              }
-            });
-            console.log('Enrollment created:', enrollment.id);
-          }
-        } catch (enrollmentError) {
-          console.error('Enrollment error:', enrollmentError);
         }
+      } catch (entitlementError) {
+        console.error('Entitlement grant error:', entitlementError);
       }
     }
 

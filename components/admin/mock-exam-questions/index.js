@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { HelpCircle, Plus, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import AdminPageHeader from "@/components/admin/shared/AdminPageHeader";
 
 import MockQuestionFilters from "./MockQuestionFilters";

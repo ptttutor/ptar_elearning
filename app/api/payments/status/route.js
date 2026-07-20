@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { verifySlipWithEasySlip } from "@/lib/easyslip";
 import { sendPaymentSuccessNotification, sendPaymentFailureNotification } from "@/lib/email";
 import { requireAdmin } from "@/lib/requireAdmin";
+import { grantEntitlementsForOrder } from "@/lib/grantOrderEntitlements";
 
 // GET - ตรวจสอบสถานะการชำระเงิน (แอดมินเท่านั้น — endpoint นี้เปิดเผยข้อมูลผู้ใช้/คำสั่งซื้อของทุกคน)
 export async function GET(request) {
@@ -292,23 +293,16 @@ export async function POST(request) {
       },
     });
 
-    // ถ้าอนุมัติแล้ว ให้สร้าง enrollment
+    // ถ้าอนุมัติแล้ว ให้สร้าง entitlement (enrollment / mock exam purchase / ...)
+    // ต่อทุกรายการใน order — ดู lib/grantOrderEntitlements.js
     if (newStatus === "APPROVED" && payment.status !== "APPROVED") {
-      console.log("🎓 Creating enrollment for approved payment...");
+      console.log("🎓 Granting entitlements for approved payment...");
 
       try {
-        const enrollment = await prisma.enrollment.create({
-          data: {
-            userId: payment.order.userId,
-            courseId: payment.order.courseId,
-            enrolledAt: new Date(),
-            status: "ACTIVE",
-          },
-        });
-
-        console.log("Enrollment created:", enrollment.id);
+        await grantEntitlementsForOrder(payment.order.id);
+        console.log("Entitlements granted for order:", payment.order.id);
       } catch (enrollError) {
-        console.error("Failed to create enrollment:", enrollError);
+        console.error("Failed to grant entitlements:", enrollError);
         // ไม่ throw error เพราะการชำระเงินสำเร็จแล้ว
       }
     }

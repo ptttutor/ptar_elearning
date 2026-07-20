@@ -1,5 +1,6 @@
 "use client"
 
+import { CheckCircle2, AlertCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import {
   Toast,
@@ -15,9 +16,11 @@ export function Toaster() {
 
   return (
     <ToastProvider>
-      {toasts.map(function ({ id, title, description, action, ...props }) {
+      {toasts.map(function ({ id, title, description, action, variant, ...props }) {
+        const Icon = variant === "destructive" ? AlertCircle : CheckCircle2
         return (
-          <Toast key={id} {...props}>
+          <Toast key={id} variant={variant} {...props}>
+            <Icon className="h-5 w-5 shrink-0 mt-0.5" />
             <div className="grid gap-1">
               {title && <ToastTitle>{title}</ToastTitle>}
               {description && (

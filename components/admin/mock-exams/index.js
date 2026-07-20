@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileQuestion, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import AdminPageHeader from "@/components/admin/shared/AdminPageHeader";
 
 import MockExamFilters from "./MockExamFilters";

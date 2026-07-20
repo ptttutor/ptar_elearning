@@ -10,7 +10,7 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const data = await request.json();
     const {
       questionText,
@@ -144,7 +144,7 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     const existingQuestion = await prisma.mockQuestion.findUnique({
       where: { id },
@@ -188,7 +188,7 @@ export async function GET(request, { params }) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     const question = await prisma.mockQuestion.findUnique({
       where: { id },

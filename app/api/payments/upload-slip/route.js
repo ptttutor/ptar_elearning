@@ -8,6 +8,7 @@ import {
   sendPaymentPendingNotification
 } from "@/lib/email";
 import { requireUser } from "@/lib/requireUser";
+import { grantEntitlementsForOrder } from "@/lib/grantOrderEntitlements";
 
 // POST - อัปโหลด slip และตรวจสอบอัตโนมัติ
 export async function POST(request) {
@@ -210,32 +211,13 @@ export async function POST(request) {
       console.log('📝 Created new payment:', payment.id);
     }
 
-    // ถ้าอนุมัติอัตโนมัติ ให้สร้าง enrollment
-    if (shouldAutoApprove && order.courseId) {
+    // ถ้าอนุมัติอัตโนมัติ ให้สร้าง entitlement (enrollment / mock exam purchase / ...)
+    // ต่อทุกรายการใน order — ดู lib/grantOrderEntitlements.js
+    if (shouldAutoApprove) {
       try {
-        console.log('🎓 Creating enrollment...');
-        
-        // ตรวจสอบว่ามี enrollment แล้วหรือยัง
-        const existingEnrollment = await prisma.enrollment.findFirst({
-          where: {
-            userId: order.userId,
-            courseId: order.courseId
-          }
-        });
-
-        if (!existingEnrollment) {
-          const enrollment = await prisma.enrollment.create({
-            data: {
-              userId: order.userId,
-              courseId: order.courseId,
-              enrolledAt: new Date(),
-              status: 'ACTIVE'
-            }
-          });
-          console.log('✅ Enrollment created:', enrollment.id);
-        } else {
-          console.log('ℹ️ Enrollment already exists');
-        }
+        console.log('🎓 Granting entitlements...');
+        await grantEntitlementsForOrder(orderId);
+        console.log('✅ Entitlements granted');
 
         // อัปเดต order status
         await prisma.order.update({
@@ -259,7 +241,7 @@ export async function POST(request) {
         console.log('✅ Payment marked as completed');
 
       } catch (enrollError) {
-        console.error('❌ Failed to create enrollment:', enrollError);
+        console.error('❌ Failed to grant entitlements:', enrollError);
       }
     }
 

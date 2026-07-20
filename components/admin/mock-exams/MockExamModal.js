@@ -21,6 +21,8 @@ const EMPTY_FORM = {
   subject: "",
   gradeLevel: "",
   timeLimit: "",
+  price: "0",
+  discountPrice: "",
   passingMarks: "0",
   attemptsAllowed: "1",
   allowPracticeMode: true,
@@ -61,6 +63,8 @@ export default function MockExamModal({ open, editing, onCancel, onSubmit }) {
         subject: editing.subject || "",
         gradeLevel: editing.gradeLevel || "",
         timeLimit: editing.timeLimit != null ? String(editing.timeLimit) : "",
+        price: String(editing.price ?? 0),
+        discountPrice: editing.discountPrice != null ? String(editing.discountPrice) : "",
         passingMarks: String(editing.passingMarks ?? 0),
         attemptsAllowed: String(editing.attemptsAllowed ?? 1),
         allowPracticeMode: editing.allowPracticeMode ?? true,
@@ -74,6 +78,7 @@ export default function MockExamModal({ open, editing, onCancel, onSubmit }) {
     } else {
       setValues(EMPTY_FORM);
     }
+    setCourseComboOpen(false);
     setErrors({});
   }, [open, editing]);
 
@@ -102,6 +107,8 @@ export default function MockExamModal({ open, editing, onCancel, onSubmit }) {
         subject: values.subject,
         gradeLevel: values.gradeLevel || null,
         timeLimit: values.timeLimit === "" ? null : Number(values.timeLimit),
+        price: Number(values.price) || 0,
+        discountPrice: values.discountPrice === "" ? null : Number(values.discountPrice),
         passingMarks: Number(values.passingMarks) || 0,
         attemptsAllowed: Number(values.attemptsAllowed) || 1,
         allowPracticeMode: values.allowPracticeMode,
@@ -237,6 +244,26 @@ export default function MockExamModal({ open, editing, onCancel, onSubmit }) {
               </PopoverContent>
             </Popover>
           </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>ราคา (฿)</Label>
+              <Input type="number" min={0} value={values.price} onChange={(e) => set({ price: e.target.value })} placeholder="0 = ฟรี" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>ราคาหลังส่วนลด (ไม่บังคับ)</Label>
+              <Input
+                type="number"
+                min={0}
+                value={values.discountPrice}
+                onChange={(e) => set({ discountPrice: e.target.value })}
+                placeholder="เว้นว่าง = ไม่มีส่วนลด"
+              />
+            </div>
+          </div>
+          <p className="text-xs text-gray-400 -mt-2">
+            ถ้าราคามากกว่า 0 นักเรียนต้องซื้อก่อนจึงจะเข้าโหมดสอบจริงได้ (โหมดฝึกฝนใช้ token ไม่เกี่ยวกับราคานี้) — ถ้าผูกกับคอร์ส การซื้อคอร์สนั้นจะปลดล็อคให้อัตโนมัติโดยไม่ต้องซื้อซ้ำ
+          </p>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">

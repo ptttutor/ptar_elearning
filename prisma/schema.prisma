@@ -58,6 +58,7 @@ model User {
   mockExamAttempts    MockExamAttempt[]
   mockPracticeUnlocks MockPracticeUnlock[]
   mockPracticeWallet  MockPracticeWallet?
+  mockExamPurchases   MockExamPurchase[]
 }
 
 // NextAuth.js required models
@@ -348,6 +349,7 @@ enum ApplicableType {
 enum ItemType {
   COURSE
   EBOOK
+  MOCK_EXAM
 }
 
 model PostType {
@@ -784,27 +786,43 @@ model MockTopic {
 }
 
 model MockExam {
-  id                     String      @id @default(uuid())
-  title                  String
-  description            String?
-  courseId               String? // optional tie-in to existing paid-course entitlement
-  subject                Subjects
-  gradeLevel             GradeLevel?
-  timeLimit              Int? // minutes; null = untimed
-  passingMarks           Int         @default(0)
-  attemptsAllowed        Int         @default(1) // REAL mode only
-  allowPracticeMode      Boolean     @default(true)
-  allowRealMode          Boolean     @default(true)
-  practiceUnlockCost     Int         @default(1)
-  isActive               Boolean     @default(true)
-  createdAt              DateTime    @default(now())
-  updatedAt              DateTime    @updatedAt
+  id                 String      @id @default(uuid())
+  title              String
+  description        String?
+  courseId           String? // optional tie-in to existing paid-course entitlement
+  subject            Subjects
+  gradeLevel         GradeLevel?
+  timeLimit          Int? // minutes; null = untimed
+  price              Float       @default(0) // 0 = free, no purchase required for REAL mode
+  discountPrice      Float?
+  passingMarks       Int         @default(0)
+  attemptsAllowed    Int         @default(1) // REAL mode only
+  allowPracticeMode  Boolean     @default(true)
+  allowRealMode      Boolean     @default(true)
+  practiceUnlockCost Int         @default(1)
+  isActive           Boolean     @default(true)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
 
-  course    Course?           @relation(fields: [courseId], references: [id])
+  course    Course?            @relation(fields: [courseId], references: [id])
   questions MockQuestion[]
   attempts  MockExamAttempt[]
+  purchases MockExamPurchase[]
 
   @@index([courseId])
+}
+
+model MockExamPurchase {
+  id          String   @id @default(uuid())
+  userId      String
+  mockExamId  String
+  orderId     String?
+  purchasedAt DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id])
+  mockExam MockExam @relation(fields: [mockExamId], references: [id])
+
+  @@unique([userId, mockExamId])
 }
 
 model MockQuestion {

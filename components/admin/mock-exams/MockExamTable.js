@@ -43,6 +43,7 @@ export default function MockExamTable({
               <TableRow>
                 <SortableTableHead field="title" label="ชื่อข้อสอบจำลอง" sortBy={filters.sortBy} sortOrder={filters.sortOrder} onSort={onSortChange} className="max-w-[220px]" />
                 <SortableTableHead field="subject" label="วิชา" sortBy={filters.sortBy} sortOrder={filters.sortOrder} onSort={onSortChange} />
+                <SortableTableHead field="price" label="ราคา" sortBy={filters.sortBy} sortOrder={filters.sortOrder} onSort={onSortChange} />
                 <TableHead>จำนวนข้อ</TableHead>
                 <TableHead>เวลาจำกัด</TableHead>
                 <TableHead>โหมด</TableHead>
@@ -54,14 +55,14 @@ export default function MockExamTable({
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell colSpan={7}>
+                    <TableCell colSpan={8}>
                       <Skeleton className="h-10 w-full" />
                     </TableCell>
                   </TableRow>
                 ))
               ) : exams.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-gray-400">
+                  <TableCell colSpan={8} className="text-center text-gray-400">
                     ไม่พบข้อสอบจำลอง
                   </TableCell>
                 </TableRow>
@@ -79,6 +80,24 @@ export default function MockExamTable({
                       <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
                         {getSubjectLabel(exam.subject)}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {exam.price > 0 ? (
+                        <div className="text-sm">
+                          {exam.discountPrice != null && exam.discountPrice < exam.price ? (
+                            <>
+                              <span className="text-gray-400 line-through mr-1">฿{exam.price.toLocaleString()}</span>
+                              <span className="font-semibold text-amber-700">฿{exam.discountPrice.toLocaleString()}</span>
+                            </>
+                          ) : (
+                            <span className="font-semibold text-gray-700">฿{exam.price.toLocaleString()}</span>
+                          )}
+                        </div>
+                      ) : (
+                        <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
+                          ฟรี
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1.5 text-sm text-gray-600">

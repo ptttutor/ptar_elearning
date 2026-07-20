@@ -10,7 +10,7 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const data = await request.json();
     const {
       title,
@@ -19,6 +19,8 @@ export async function PUT(request, { params }) {
       subject,
       gradeLevel,
       timeLimit,
+      price,
+      discountPrice,
       passingMarks,
       attemptsAllowed,
       allowPracticeMode,
@@ -68,6 +70,8 @@ export async function PUT(request, { params }) {
         subject,
         gradeLevel: gradeLevel || null,
         timeLimit: timeLimit || null,
+        price: price || 0,
+        discountPrice: discountPrice || null,
         passingMarks: passingMarks || 0,
         attemptsAllowed: attemptsAllowed || 1,
         allowPracticeMode: allowPracticeMode ?? true,
@@ -104,7 +108,7 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     const existingExam = await prisma.mockExam.findUnique({
       where: { id },
@@ -149,7 +153,7 @@ export async function GET(request, { params }) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     const exam = await prisma.mockExam.findUnique({
       where: { id },

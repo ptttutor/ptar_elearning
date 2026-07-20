@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/requireAdmin';
+import { grantEntitlementsForOrder } from '@/lib/grantOrderEntitlements';
 
 
 // POST - Bulk actions for orders
@@ -92,27 +93,6 @@ export async function POST(request) {
               }
             });
 
-            // Create enrollment for course
-            if (order.orderType === 'COURSE' && order.courseId) {
-              const existingEnrollment = await tx.enrollment.findFirst({
-                where: {
-                  userId: order.userId,
-                  courseId: order.courseId
-                }
-              });
-
-              if (!existingEnrollment) {
-                await tx.enrollment.create({
-                  data: {
-                    userId: order.userId,
-                    courseId: order.courseId,
-                    status: 'ACTIVE',
-                    enrolledAt: new Date()
-                  }
-                });
-              }
-            }
-
             // Update coupon usage
             if (order.couponId) {
               await tx.coupon.update({
@@ -142,6 +122,10 @@ export async function POST(request) {
               }
             }
           });
+
+          // Grant entitlements (course enrollment, mock exam purchase, ...)
+          // for every line item — see lib/grantOrderEntitlements.js.
+          await grantEntitlementsForOrder(order.id);
 
           results.push({
             orderId: order.id,
