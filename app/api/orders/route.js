@@ -13,15 +13,23 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const { items, couponCode, shippingAddress } = body;
+    const { items, couponCode, shippingAddress, school } = body;
     const userId = session.userId; // always the caller's own id — never trust a client-supplied userId
     if (!Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ success: false, error: "ข้อมูลไม่ครบถ้วน" }, { status: 400 });
     }
     // Get user
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    let user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       return NextResponse.json({ success: false, error: "ไม่พบผู้ใช้งาน" }, { status: 404 });
+    }
+    // ต้องมีชื่อโรงเรียนก่อนสั่งซื้อเสมอ (บันทึกครั้งเดียว ครั้งต่อไปดึงมาใช้)
+    if (!user.school) {
+      const schoolTrimmed = typeof school === "string" ? school.trim() : "";
+      if (!schoolTrimmed) {
+        return NextResponse.json({ success: false, error: "กรุณากรอกชื่อโรงเรียน" }, { status: 400 });
+      }
+      user = await prisma.user.update({ where: { id: userId }, data: { school: schoolTrimmed } });
     }
     // Validate & collect item data
     let subtotal = 0;

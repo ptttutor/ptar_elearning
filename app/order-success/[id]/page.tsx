@@ -22,6 +22,7 @@ import {
   Download,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
+import { useSchoolField } from "@/hooks/use-school-field";
 
 // New accounts (created via the LINE OAuth redirect chain) don't reliably
 // have the `jwt` cookie yet by the time this page loads, so requests here
@@ -134,6 +135,7 @@ export default function OrderSuccessPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
+  const { school, schoolInput, setSchoolInput, validateSchool, onSaved: onSchoolSaved } = useSchoolField();
 
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
@@ -454,12 +456,52 @@ export default function OrderSuccessPage() {
   // ────────────────────────────────────────────────────────────────────────────
   const uploadSlip = async () => {
     if (!order || !file) return;
+    const schoolCheck = validateSchool();
+    if (!schoolCheck.ok) {
+      setUploadMsg(schoolCheck.error);
+      return;
+    }
+    if (!normalizedShipping) {
+      const missing = [
+        !shipping.name && "ชื่อผู้ติดต่อ",
+        !shipping.phone && "เบอร์โทร",
+        !shipping.address && "ที่อยู่",
+        !shipping.district && "อำเภอ/เขต",
+        !shipping.province && "จังหวัด",
+        !shipping.postalCode && "รหัสไปรษณีย์",
+      ].filter(Boolean) as string[];
+      if (missing.length > 0) {
+        setUploadMsg(`กรุณากรอก: ${missing.join(", ")}`);
+        return;
+      }
+      const phoneDigits = shipping.phone.replace(/\D/g, "");
+      if (phoneDigits.length !== 10) {
+        setUploadMsg("กรุณากรอกเบอร์โทรให้เป็นตัวเลข 10 หลัก");
+        return;
+      }
+      const postalDigits = shipping.postalCode.replace(/\D/g, "");
+      if (postalDigits.length !== 5) {
+        setUploadMsg("กรุณากรอกรหัสไปรษณีย์เป็นตัวเลข 5 หลัก");
+        return;
+      }
+    }
     try {
       setUploading(true);
       setUploadMsg(null);
       const form = new FormData();
       form.append("orderId", order.id);
       form.append("file", file);
+      if (schoolCheck.value) {
+        form.append("school", schoolCheck.value);
+      }
+      if (!normalizedShipping) {
+        form.append("shippingName", shipping.name);
+        form.append("shippingPhone", shipping.phone);
+        form.append("shippingAddress", shipping.address);
+        form.append("shippingDistrict", shipping.district);
+        form.append("shippingProvince", shipping.province);
+        form.append("shippingPostalCode", shipping.postalCode);
+      }
       const res = await fetch(`/api/payments/upload-slip`, {
         method: "POST",
         headers: authHeaders(),
@@ -476,6 +518,7 @@ export default function OrderSuccessPage() {
         throw new Error(msg);
       }
 
+      if (schoolCheck.value) onSchoolSaved(schoolCheck.value);
       setUploadMsg("อัพโหลดสลิปสำเร็จ กำลังรอตรวจสอบ…");
       setOpenUpload(false);
       setFile(null);
@@ -1460,6 +1503,74 @@ export default function OrderSuccessPage() {
                 <DialogTitle>อัพโหลดหลักฐานการชำระเงิน</DialogTitle>
               </DialogHeader>
               <div className="space-y-3">
+                <div className="space-y-2 border-b pb-3">
+                  <div className="text-sm font-medium">โรงเรียน</div>
+                  {school ? (
+                    <div className="text-sm text-muted-foreground">{school}</div>
+                  ) : (
+                    <Input
+                      placeholder="ชื่อโรงเรียน"
+                      value={schoolInput}
+                      onChange={(e) => setSchoolInput(e.target.value)}
+                    />
+                  )}
+                </div>
+                {!normalizedShipping && (
+                  <div className="space-y-2 border-b pb-3">
+                    <div className="text-sm font-medium">
+                      ข้อมูลติดต่อ / ที่อยู่
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <Input
+                        placeholder="ชื่อผู้ติดต่อ"
+                        value={shipping.name}
+                        onChange={(e) =>
+                          setShipping({ ...shipping, name: e.target.value })
+                        }
+                      />
+                      <Input
+                        placeholder="เบอร์โทร"
+                        value={shipping.phone}
+                        onChange={(e) =>
+                          setShipping({ ...shipping, phone: e.target.value })
+                        }
+                      />
+                    </div>
+                    <Input
+                      placeholder="ที่อยู่"
+                      value={shipping.address}
+                      onChange={(e) =>
+                        setShipping({ ...shipping, address: e.target.value })
+                      }
+                    />
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      <Input
+                        placeholder="อำเภอ/เขต"
+                        value={shipping.district}
+                        onChange={(e) =>
+                          setShipping({ ...shipping, district: e.target.value })
+                        }
+                      />
+                      <Input
+                        placeholder="จังหวัด"
+                        value={shipping.province}
+                        onChange={(e) =>
+                          setShipping({ ...shipping, province: e.target.value })
+                        }
+                      />
+                      <Input
+                        placeholder="รหัสไปรษณีย์"
+                        value={shipping.postalCode}
+                        onChange={(e) =>
+                          setShipping({
+                            ...shipping,
+                            postalCode: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                )}
                 <Input
                   type="file"
                   accept="image/*"

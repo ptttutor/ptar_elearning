@@ -36,6 +36,7 @@ model User {
   id           String          @id @default(uuid())
   email        String?         @unique // ทำให้ email เป็น optional สำหรับ LINE users
   name         String?
+  school       String?
   password     String?
   image        String? // สำหรับ profile image จาก LINE
   lineId       String?         @unique // LINE User ID

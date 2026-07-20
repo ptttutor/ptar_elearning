@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Loader2 } from "lucide-react"
 import { useAuth } from "@/components/auth-provider"
+import { useSchoolField } from "@/hooks/use-school-field"
 
 type ApiCourse = {
   id: string
@@ -27,6 +28,7 @@ export default function CheckoutCoursePage() {
   const router = useRouter()
   const search = useSearchParams()
   const { isAuthenticated, user, loading: authLoading } = useAuth()
+  const { school, schoolInput, setSchoolInput, validateSchool, onSaved: onSchoolSaved } = useSchoolField()
 
   const couponFromQuery = (search.get("coupon") || "").trim()
   const authUserId = (user as any)?.id ?? null
@@ -177,6 +179,11 @@ export default function CheckoutCoursePage() {
     if (!isAuthenticated) { router.push(`/courses/${encodeURIComponent(String(id))}`); return }
     setShippingError(null)
     try {
+      const schoolCheck = validateSchool()
+      if (!schoolCheck.ok) {
+        setShippingError(schoolCheck.error)
+        return
+      }
       if (course.isPhysical) {
         const s = shipping
         const missing = [
@@ -243,10 +250,12 @@ export default function CheckoutCoursePage() {
           ],
           couponCode: couponCode || undefined,
           shippingAddress: course.isPhysical ? shipping : undefined,
+          school: schoolCheck.value,
         }),
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok || json?.success === false) throw new Error(json?.error || "สร้างคำสั่งซื้อไม่สำเร็จ")
+      if (schoolCheck.value) onSchoolSaved(schoolCheck.value)
       const oid = String(json?.data?.orderId || json?.data?.id)
       router.push(`/order-success/${encodeURIComponent(oid)}`)
     } catch (e: any) {
@@ -289,6 +298,18 @@ export default function CheckoutCoursePage() {
                 </div>
               </div>
             )}
+            <div className="space-y-2">
+              <div className="text-sm font-medium">โรงเรียน</div>
+              {school ? (
+                <div className="text-sm text-muted-foreground">{school}</div>
+              ) : (
+                <Input
+                  placeholder="ชื่อโรงเรียน"
+                  value={schoolInput}
+                  onChange={(e) => setSchoolInput(e.target.value)}
+                />
+              )}
+            </div>
             {course?.isPhysical && (
               <div className="space-y-2">
                 <div className="text-sm font-medium">ที่อยู่จัดส่ง</div>
@@ -302,9 +323,9 @@ export default function CheckoutCoursePage() {
                   <Input placeholder="จังหวัด" value={shipping.province} onChange={(e) => setShipping({ ...shipping, province: e.target.value })} />
                   <Input placeholder="รหัสไปรษณีย์" value={shipping.postalCode} onChange={(e) => setShipping({ ...shipping, postalCode: e.target.value })} />
                 </div>
-                {shippingError && <div className="text-xs text-destructive">{shippingError}</div>}
               </div>
             )}
+            {shippingError && <div className="text-xs text-destructive">{shippingError}</div>}
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => router.back()}>ยกเลิก</Button>
               <Button className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={confirmOrder} disabled={creating}>

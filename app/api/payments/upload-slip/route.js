@@ -24,6 +24,13 @@ export async function POST(request) {
     const file = formData.get("file");
     const orderId = formData.get("orderId");
     const paymentMethod = formData.get("paymentMethod") || "BANK_TRANSFER";
+    const shippingName = formData.get("shippingName");
+    const shippingPhone = formData.get("shippingPhone");
+    const shippingAddress = formData.get("shippingAddress");
+    const shippingDistrict = formData.get("shippingDistrict");
+    const shippingProvince = formData.get("shippingProvince");
+    const shippingPostalCode = formData.get("shippingPostalCode");
+    const school = formData.get("school");
 
     console.log('📋 Request data:', { 
       hasFile: !!file, 
@@ -66,7 +73,8 @@ export async function POST(request) {
         course: true,
         ebook: true,
         coupon: true,
-        payment: true
+        payment: true,
+        shipping: true
       }
     });
 
@@ -85,6 +93,61 @@ export async function POST(request) {
     }
 
     console.log('📦 Order found:', order.id, order.orderNumber, order.total);
+
+    // ต้องมีชื่อโรงเรียนก่อนอัปโหลดสลิปเสมอ (ปกติจะถูกกรอกไปแล้วตอนสั่งซื้อ — เช็คซ้ำไว้เผื่อ order เก่า/ทางอื่น)
+    if (!order.user.school) {
+      const schoolTrimmed = typeof school === "string" ? school.trim() : "";
+      if (!schoolTrimmed) {
+        return NextResponse.json(
+          { success: false, error: "กรุณากรอกชื่อโรงเรียน" },
+          { status: 400 }
+        );
+      }
+      await prisma.user.update({ where: { id: order.userId }, data: { school: schoolTrimmed } });
+    }
+
+    // ต้องมีข้อมูลที่อยู่/เบอร์โทรก่อนอัปโหลดสลิปเสมอ (ออเดอร์กายภาพจะมีข้อมูลนี้จากตอน checkout อยู่แล้ว)
+    if (!order.shipping) {
+      const missing = [];
+      if (!shippingName) missing.push("ชื่อผู้ติดต่อ");
+      if (!shippingPhone) missing.push("เบอร์โทร");
+      if (!shippingAddress) missing.push("ที่อยู่");
+      if (!shippingDistrict) missing.push("อำเภอ/เขต");
+      if (!shippingProvince) missing.push("จังหวัด");
+      if (!shippingPostalCode) missing.push("รหัสไปรษณีย์");
+      if (missing.length > 0) {
+        return NextResponse.json(
+          { success: false, error: `กรุณากรอก: ${missing.join(", ")}` },
+          { status: 400 }
+        );
+      }
+      const phoneDigits = String(shippingPhone).replace(/\D/g, "");
+      if (phoneDigits.length !== 10) {
+        return NextResponse.json(
+          { success: false, error: "กรุณากรอกเบอร์โทรให้เป็นตัวเลข 10 หลัก" },
+          { status: 400 }
+        );
+      }
+      const postalDigits = String(shippingPostalCode).replace(/\D/g, "");
+      if (postalDigits.length !== 5) {
+        return NextResponse.json(
+          { success: false, error: "กรุณากรอกรหัสไปรษณีย์เป็นตัวเลข 5 หลัก" },
+          { status: 400 }
+        );
+      }
+
+      await prisma.shipping.create({
+        data: {
+          orderId: order.id,
+          recipientName: String(shippingName),
+          recipientPhone: String(shippingPhone),
+          address: String(shippingAddress),
+          district: String(shippingDistrict),
+          province: String(shippingProvince),
+          postalCode: String(shippingPostalCode),
+        },
+      });
+    }
 
     // อัปโหลดไฟล์ไปยัง Vercel Blob
     console.log('☁️ Uploading to Vercel Blob...');

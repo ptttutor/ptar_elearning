@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input"
 import { useCart } from "@/components/cart-provider"
 import { useAuth } from "@/components/auth-provider"
 import { useToast } from "@/components/ui/use-toast"
+import { useSchoolField } from "@/hooks/use-school-field"
 
 type ShippingAddress = {
   name: string
@@ -28,6 +29,7 @@ export default function CartCheckoutPage() {
   const { toast } = useToast()
   const { isAuthenticated, user, loading: authLoading } = useAuth()
   const { items, loading, itemCount, subtotal: cartSubtotal, refresh, syncing } = useCart()
+  const { school, schoolInput, setSchoolInput, validateSchool, onSaved: onSchoolSaved } = useSchoolField()
 
   const [coverMap, setCoverMap] = useState<Record<string, string>>({})
   const [shipping, setShipping] = useState<ShippingAddress>({
@@ -233,6 +235,13 @@ export default function CartCheckoutPage() {
       return
     }
 
+    setShippingError(null)
+    const schoolCheck = validateSchool()
+    if (!schoolCheck.ok) {
+      setShippingError(schoolCheck.error)
+      return
+    }
+
     if (anyPhysical) {
       const required: Array<keyof ShippingAddress> = ["name", "phone", "address", "district", "province", "postalCode"]
       const missing = required.filter((field) => !shipping[field]?.trim())
@@ -269,12 +278,14 @@ export default function CartCheckoutPage() {
           })),
           couponCode: couponCode ? couponCode.trim() : undefined,
           shippingAddress: anyPhysical ? shipping : undefined,
+          school: schoolCheck.value,
         }),
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok || json?.success === false) {
         throw new Error(json?.error || "ไม่สามารถสร้างคำสั่งซื้อได้")
       }
+      if (schoolCheck.value) onSchoolSaved(schoolCheck.value)
       toast({ title: "สร้างคำสั่งซื้อสำเร็จ", description: "โปรดอัพโหลดสลิปชำระเงินหากมี" })
       void refresh()
       const orderId = String(json?.data?.orderId ?? json?.data?.id ?? "")
@@ -405,6 +416,15 @@ export default function CartCheckoutPage() {
                 <span>฿{totalAfterDiscount.toLocaleString()}</span>
               </div>
             </CardContent>
+            <Separator className="mx-6" />
+            <CardContent className="space-y-2">
+              <h3 className="text-sm font-semibold text-gray-700">โรงเรียน</h3>
+              {school ? (
+                <p className="text-sm text-gray-600">{school}</p>
+              ) : (
+                <Input placeholder="ชื่อโรงเรียน" value={schoolInput} onChange={(event) => setSchoolInput(event.target.value)} />
+              )}
+            </CardContent>
             {anyPhysical && (
               <>
                 <Separator className="mx-6" />
@@ -418,9 +438,13 @@ export default function CartCheckoutPage() {
                     <Input placeholder="เขต / จังหวัด" value={shipping.province} onChange={(event) => setShipping({ ...shipping, province: event.target.value })} />
                     <Input placeholder="รหัสไปรษณีย์" value={shipping.postalCode} onChange={(event) => setShipping({ ...shipping, postalCode: event.target.value })} />
                   </div>
-                  {shippingError && <p className="text-xs text-red-500">{shippingError}</p>}
                 </CardContent>
               </>
+            )}
+            {shippingError && (
+              <CardContent className="pt-0">
+                <p className="text-xs text-red-500">{shippingError}</p>
+              </CardContent>
             )}
             <CardFooter className="flex flex-col gap-3">
               <Button className="w-full bg-[#004B7D] hover:bg-[#00395d]" size="lg" onClick={handleSubmit} disabled={syncing || submitting}>
