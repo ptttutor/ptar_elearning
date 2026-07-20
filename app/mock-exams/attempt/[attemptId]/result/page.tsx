@@ -9,6 +9,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
+import { RadarChart, PolarGrid, PolarAngleAxis, Radar } from "recharts"
 import { useAuth } from "@/components/auth-provider"
 import http from "@/lib/http"
 
@@ -106,19 +108,41 @@ export default function MockExamResultPage() {
             <Card>
               <CardContent className="p-6">
                 <h3 className="font-semibold text-foreground mb-1">วิเคราะห์จุดที่ควรพัฒนา</h3>
-                <p className="text-sm text-muted-foreground mb-4">สรุปคะแนนแยกตามเรื่องที่ข้อสอบวัด เรียงจากเรื่องที่ทำได้น้อยที่สุดก่อน</p>
-                <div className="space-y-3">
+                <p className="text-sm text-muted-foreground mb-4">สรุปคะแนนแยกตามเรื่องที่ข้อสอบวัด (%) ยิ่งใกล้ศูนย์กลางยิ่งควรทบทวนเพิ่ม</p>
+                <ChartContainer
+                  config={{ percent: { label: "ทำได้ (%)", color: "hsl(var(--primary))" } } satisfies ChartConfig}
+                  className="mx-auto aspect-square max-h-80"
+                >
+                  <RadarChart data={result.topicBreakdown} outerRadius="75%">
+                    <ChartTooltip
+                      cursor={false}
+                      content={
+                        <ChartTooltipContent
+                          formatter={(value, _name, item) => {
+                            const t = item?.payload as TopicBreakdown | undefined
+                            return `${Number(value).toFixed(0)}%${t ? ` (${t.correct}/${t.total})` : ""}`
+                          }}
+                        />
+                      }
+                    />
+                    <PolarAngleAxis dataKey="topicName" tick={{ fontSize: 12 }} />
+                    <PolarGrid />
+                    <Radar
+                      dataKey="percent"
+                      fill="var(--color-percent)"
+                      fillOpacity={0.35}
+                      stroke="var(--color-percent)"
+                      strokeWidth={2}
+                    />
+                  </RadarChart>
+                </ChartContainer>
+                <div className="mt-4 space-y-1.5">
                   {result.topicBreakdown.map((t) => (
-                    <div key={t.topicId}>
-                      <div className="flex items-center justify-between mb-1 text-sm">
-                        <span className={t.isWeak ? "font-semibold text-destructive" : "text-foreground"}>{t.topicName}</span>
-                        <span className="text-muted-foreground">
-                          {t.correct}/{t.total} ({t.percent.toFixed(0)}%)
-                        </span>
-                      </div>
-                      <div className="h-2 rounded-full bg-muted overflow-hidden">
-                        <div className={`h-full ${t.isWeak ? "bg-destructive" : "bg-emerald-500"}`} style={{ width: `${t.percent}%` }} />
-                      </div>
+                    <div key={t.topicId} className="flex items-center justify-between text-sm">
+                      <span className={t.isWeak ? "font-semibold text-destructive" : "text-foreground"}>{t.topicName}</span>
+                      <span className="text-muted-foreground">
+                        {t.correct}/{t.total} ({t.percent.toFixed(0)}%)
+                      </span>
                     </div>
                   ))}
                 </div>
