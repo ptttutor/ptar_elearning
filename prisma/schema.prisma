@@ -1,12 +1,12 @@
 // ระบบตะกร้าสินค้า (Cart)
 model Cart {
-  id        String      @id @default(uuid())
+  id        String     @id @default(uuid())
   userId    String
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
   items     CartItem[]
 
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model CartItem {
@@ -19,39 +19,45 @@ model CartItem {
   unitPrice Float?
   createdAt DateTime @default(now())
 
-  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  cart Cart @relation(fields: [cartId], references: [id], onDelete: Cascade)
 }
+
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id           String        @id @default(uuid())
-  email        String?       @unique // ทำให้ email เป็น optional สำหรับ LINE users
+  id           String          @id @default(uuid())
+  email        String?         @unique // ทำให้ email เป็น optional สำหรับ LINE users
   name         String?
   password     String?
-  image        String?       // สำหรับ profile image จาก LINE
-  lineId       String?       @unique // LINE User ID
-  role         Role          @default(STUDENT)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  courses      Course[]      @relation("InstructorCourses")
+  image        String? // สำหรับ profile image จาก LINE
+  lineId       String?         @unique // LINE User ID
+  role         Role            @default(STUDENT)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  courses      Course[]        @relation("InstructorCourses")
   enrollments  Enrollment[]
   examAttempts ExamAttempt[]
   orders       Order[]
-  posts        Post[]        @relation("AuthorPosts")
-  postContents PostContent[] @relation("PostContentAuthor")
+  posts        Post[]          @relation("AuthorPosts")
+  postContents PostContent[]   @relation("PostContentAuthor")
   reviews      Review[]
   couponUsages CouponUsage[]
   downloads    EbookDownload[]
   accounts     Account[]
   sessions     Session[]
   carts        Cart[]
+
+  mockExamAttempts    MockExamAttempt[]
+  mockPracticeUnlocks MockPracticeUnlock[]
+  mockPracticeWallet  MockPracticeWallet?
 }
 
 // NextAuth.js required models
@@ -91,36 +97,37 @@ model VerificationToken {
 }
 
 model Course {
-  id           String       @id @default(uuid())
-  title        String
-  description  String?      @db.Text
-  price        Float        @default(0)
-  discountPrice Float?      // ราคาหลังส่วนลด
-  sampleVideo  String?      // URL วิดีโอตัวอย่าง
-  duration     Int?
-  accessDuration Int?       @default(60) // ระยะเวลาที่เรียนได้ (วัน)
-  accessHours    Int?       @default(120) // จำนวนชั่วโมงที่เรียนได้ (ถ้าต้องการจำกัดเป็นชั่วโมง)
-  isFree       Boolean      @default(false)
-  isRecommended Boolean     @default(false) // คอร์สแนะนำ
-  status       CourseStatus @default(DRAFT)
-  instructorId String
-  categoryId   String?
-  subject      Subjects?
-  gradeLevel   GradeLevel?
-  coverImageUrl String?
-  coverPublicId String?
-  isPhysical   Boolean      @default(false) // หากเป็น physical course (เช่น หนังสือประกอบ, CD, DVD)
-  weight       Float?       // น้ำหนัก (กรัม) สำหรับการคำนวณค่าจัดส่ง
-  dimensions   String?      // ขนาด "กว้าง x ยาว x สูง (ซม.)"
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  chapters     Chapter[]
-  exams        Exam[]
-  category     Category?    @relation(fields: [categoryId], references: [id])
-  instructor   User         @relation("InstructorCourses", fields: [instructorId], references: [id])
-  enrollments  Enrollment[]
-  orders       Order[]
-  reviews      Review[]
+  id             String       @id @default(uuid())
+  title          String
+  description    String?      @db.Text
+  price          Float        @default(0)
+  discountPrice  Float? // ราคาหลังส่วนลด
+  sampleVideo    String? // URL วิดีโอตัวอย่าง
+  duration       Int?
+  accessDuration Int?         @default(60) // ระยะเวลาที่เรียนได้ (วัน)
+  accessHours    Int?         @default(120) // จำนวนชั่วโมงที่เรียนได้ (ถ้าต้องการจำกัดเป็นชั่วโมง)
+  isFree         Boolean      @default(false)
+  isRecommended  Boolean      @default(false) // คอร์สแนะนำ
+  status         CourseStatus @default(DRAFT)
+  instructorId   String
+  categoryId     String?
+  subject        Subjects?
+  gradeLevel     GradeLevel?
+  coverImageUrl  String?
+  coverPublicId  String?
+  isPhysical     Boolean      @default(false) // หากเป็น physical course (เช่น หนังสือประกอบ, CD, DVD)
+  weight         Float? // น้ำหนัก (กรัม) สำหรับการคำนวณค่าจัดส่ง
+  dimensions     String? // ขนาด "กว้าง x ยาว x สูง (ซม.)"
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  chapters       Chapter[]
+  exams          Exam[]
+  category       Category?    @relation(fields: [categoryId], references: [id])
+  instructor     User         @relation("InstructorCourses", fields: [instructorId], references: [id])
+  enrollments    Enrollment[]
+  orders         Order[]
+  reviews        Review[]
+  mockExams      MockExam[]
 }
 
 model Chapter {
@@ -145,17 +152,17 @@ model Content {
 }
 
 model Enrollment {
-  id         String       @id @default(uuid())
-  userId     String
-  courseId   String
-  progress   Float        @default(0)
-  status     EnrollStatus @default(ACTIVE)
-  viewedContentIds Json   @default("[]")
-  enrolledAt DateTime     @default(now())
-  accessDuration Int?     // override (วัน) รายบุคคล ถ้าไม่กำหนดใช้ค่าจาก Course.accessDuration
-  accessHours    Int?     // override (ชั่วโมง) รายบุคคล ถ้าไม่กำหนดใช้ค่าจาก Course.accessHours
-  course     Course       @relation(fields: [courseId], references: [id])
-  user       User         @relation(fields: [userId], references: [id])
+  id               String       @id @default(uuid())
+  userId           String
+  courseId         String
+  progress         Float        @default(0)
+  status           EnrollStatus @default(ACTIVE)
+  viewedContentIds Json         @default("[]")
+  enrolledAt       DateTime     @default(now())
+  accessDuration   Int? // override (วัน) รายบุคคล ถ้าไม่กำหนดใช้ค่าจาก Course.accessDuration
+  accessHours      Int? // override (ชั่วโมง) รายบุคคล ถ้าไม่กำหนดใช้ค่าจาก Course.accessHours
+  course           Course       @relation(fields: [courseId], references: [id])
+  user             User         @relation(fields: [userId], references: [id])
 
   @@unique([userId, courseId])
 }
@@ -175,7 +182,7 @@ model Order {
   ebookId        String?
   orderType      OrderType   @default(COURSE)
   status         OrderStatus @default(PENDING)
-  subtotal       Float       // ราคาสินค้า
+  subtotal       Float // ราคาสินค้า
   shippingFee    Float       @default(0)
   tax            Float       @default(0)
   discount       Float       @default(0)
@@ -186,54 +193,54 @@ model Order {
   couponCode     String?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
-  
-  user           User        @relation(fields: [userId], references: [id])
-  course         Course?     @relation(fields: [courseId], references: [id])
-  ebook          Ebook?      @relation(fields: [ebookId], references: [id])
-  coupon         Coupon?     @relation(fields: [couponId], references: [id])
-  items          OrderItem[]
-  payment        Payment?
-  shipping       Shipping?
-  couponUsages   CouponUsage[]
-  downloads      EbookDownload[]
+
+  user         User            @relation(fields: [userId], references: [id])
+  course       Course?         @relation(fields: [courseId], references: [id])
+  ebook        Ebook?          @relation(fields: [ebookId], references: [id])
+  coupon       Coupon?         @relation(fields: [couponId], references: [id])
+  items        OrderItem[]
+  payment      Payment?
+  shipping     Shipping?
+  couponUsages CouponUsage[]
+  downloads    EbookDownload[]
 }
 
 model Payment {
-  id           String        @id @default(uuid())
-  orderId      String        @unique
-  method       PaymentMethod @default(BANK_TRANSFER)
-  status       PaymentStatus @default(PENDING)
-  amount       Float
-  paidAt       DateTime?
-  ref          String?
-  slipUrl      String?
-  uploadedAt   DateTime?
-  verifiedAt   DateTime?
-  verifiedBy   String?       // Admin ID ที่ตรวจสอบ
-  notes        String?
-  
+  id         String        @id @default(uuid())
+  orderId    String        @unique
+  method     PaymentMethod @default(BANK_TRANSFER)
+  status     PaymentStatus @default(PENDING)
+  amount     Float
+  paidAt     DateTime?
+  ref        String?
+  slipUrl    String?
+  uploadedAt DateTime?
+  verifiedAt DateTime?
+  verifiedBy String? // Admin ID ที่ตรวจสอบ
+  notes      String?
+
   // Slip Analysis Fields
-  slipAnalysisData    String?      // JSON ข้อมูลการวิเคราะห์สลิป
-  detectedAmount      Float?       // จำนวนเงินที่ AI ตรวจพบ
-  detectedDate        DateTime?    // วันที่ที่ AI ตรวจพบ
-  detectedTime        String?      // เวลาที่ AI ตรวจพบ
-  senderAccount       String?      // บัญชีผู้โอน
-  senderName          String?      // ชื่อผู้โอน
-  senderBank          String?      // ธนาคารผู้โอน
-  receiverAccount     String?      // บัญชีผู้รับ
-  receiverName        String?      // ชื่อผู้รับ
-  receiverBank        String?      // ธนาคารผู้รับ
-  transactionRef      String?      // เลขอ้างอิงธุรกรรม
-  confidenceScore     Float?       // คะแนนความเชื่อมั่นจาก AI
-  validationScore     String?      // คะแนนการตรวจสอบ เช่น "3/3"
-  validationPassed    Boolean?     // ผ่านการตรวจสอบหรือไม่
-  analysisError       String?      // ข้อผิดพลาดในการวิเคราะห์
-  lastAnalyzedAt      DateTime?    // วันที่วิเคราะห์ครั้งล่าสุด
-  
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  
-  order        Order         @relation(fields: [orderId], references: [id])
+  slipAnalysisData String? // JSON ข้อมูลการวิเคราะห์สลิป
+  detectedAmount   Float? // จำนวนเงินที่ AI ตรวจพบ
+  detectedDate     DateTime? // วันที่ที่ AI ตรวจพบ
+  detectedTime     String? // เวลาที่ AI ตรวจพบ
+  senderAccount    String? // บัญชีผู้โอน
+  senderName       String? // ชื่อผู้โอน
+  senderBank       String? // ธนาคารผู้โอน
+  receiverAccount  String? // บัญชีผู้รับ
+  receiverName     String? // ชื่อผู้รับ
+  receiverBank     String? // ธนาคารผู้รับ
+  transactionRef   String? // เลขอ้างอิงธุรกรรม
+  confidenceScore  Float? // คะแนนความเชื่อมั่นจาก AI
+  validationScore  String? // คะแนนการตรวจสอบ เช่น "3/3"
+  validationPassed Boolean? // ผ่านการตรวจสอบหรือไม่
+  analysisError    String? // ข้อผิดพลาดในการวิเคราะห์
+  lastAnalyzedAt   DateTime? // วันที่วิเคราะห์ครั้งล่าสุด
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id])
 }
 
 enum Role {
@@ -354,58 +361,58 @@ model PostType {
 }
 
 model Post {
-  id                  String    @id @default(uuid())
-  title               String
-  content             String?
-  excerpt             String?
-  imageUrl            String?
-  imageUrlMobileMode  String?
-  slug                String?   @unique
-  isActive            Boolean   @default(true)
-  isFeatured          Boolean   @default(false)
-  publishedAt         DateTime?
-  authorId            String
-  postTypeId          String
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-  author              User      @relation("AuthorPosts", fields: [authorId], references: [id])
-  postType            PostType  @relation(fields: [postTypeId], references: [id])
-  postContents        PostContent[]
+  id                 String        @id @default(uuid())
+  title              String
+  content            String?
+  excerpt            String?
+  imageUrl           String?
+  imageUrlMobileMode String?
+  slug               String?       @unique
+  isActive           Boolean       @default(true)
+  isFeatured         Boolean       @default(false)
+  publishedAt        DateTime?
+  authorId           String
+  postTypeId         String
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  author             User          @relation("AuthorPosts", fields: [authorId], references: [id])
+  postType           PostType      @relation(fields: [postTypeId], references: [id])
+  postContents       PostContent[]
 }
 
 model PostContent {
   id          String   @id @default(uuid())
-  urlImg      String?  // URL รูปภาพ
-  name        String?  // ชื่อรูปหรือ caption
-  description String?  // คำอธิบายรูป
-  authorId    String   // ผู้สร้าง content
-  postId      String   // เชื่อมกับ Post
+  urlImg      String? // URL รูปภาพ
+  name        String? // ชื่อรูปหรือ caption
+  description String? // คำอธิบายรูป
+  authorId    String // ผู้สร้าง content
+  postId      String // เชื่อมกับ Post
   createdAt   DateTime @default(now())
-  
-  author      User     @relation("PostContentAuthor", fields: [authorId], references: [id])
-  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  
+
+  author User @relation("PostContentAuthor", fields: [authorId], references: [id])
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
   @@index([postId])
   @@index([authorId])
 }
 
 // ระบบรีวิวสำหรับ Course และ Ebook
 model Review {
-  id         String    @id @default(uuid())
+  id         String   @id @default(uuid())
   userId     String
-  courseId   String?   // nullable สำหรับรีวิว ebook
-  ebookId    String?   // nullable สำหรับรีวิว course
-  rating     Int       @default(5)
-  title      String?   // หัวข้อรีวิว
+  courseId   String? // nullable สำหรับรีวิว ebook
+  ebookId    String? // nullable สำหรับรีวิว course
+  rating     Int      @default(5)
+  title      String? // หัวข้อรีวิว
   comment    String?
-  isActive   Boolean   @default(true)
-  isVerified Boolean   @default(false) // ตรวจสอบว่าเป็นผู้ซื้อจริง
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  course     Course?   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  ebook      Ebook?    @relation(fields: [ebookId], references: [id], onDelete: Cascade)
+  isActive   Boolean  @default(true)
+  isVerified Boolean  @default(false) // ตรวจสอบว่าเป็นผู้ซื้อจริง
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course? @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  ebook  Ebook?  @relation(fields: [ebookId], references: [id], onDelete: Cascade)
 
   @@unique([userId, courseId], name: "unique_user_course_review")
   @@unique([userId, ebookId], name: "unique_user_ebook_review")
@@ -416,55 +423,49 @@ model Review {
   @@index([createdAt])
 }
 
-
-
-
-
 model Ebook {
-  id              String        @id @default(uuid())
-  title           String
-  description     String?
-  author          String
-  isbn            String?       @unique
-  price           Float
-  discountPrice   Float?
-  coverImageUrl   String?
-  previewUrl      String?
-  fileUrl         String?
-  fileSize        Int?
-  pageCount       Int?
-  language        String        @default("th")
-  format          EbookFormat   @default(PDF)
-  isPhysical      Boolean       @default(false)
-  weight          Float?        // กรัม
-  dimensions      String?       // "กว้าง x ยาว x สูง (ซม.)"
-  downloadLimit   Int?          // จำกัดการดาวน์โหลด
-  accessDuration  Int?          // ระยะเวลาการเข้าถึง (วัน)
-  isActive        Boolean       @default(true)
-  isFeatured      Boolean       @default(false)
-  publishedAt     DateTime?
-  publishedYear   Int?          // ปีที่หนังสือถูกตีพิมพ์ เช่น 2025
-  categoryId      String?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  
-  category        EbookCategory? @relation(fields: [categoryId], references: [id])
-  orders          Order[]
-  reviews         Review[]
-  downloads       EbookDownload[]
+  id             String      @id @default(uuid())
+  title          String
+  description    String?
+  author         String
+  isbn           String?     @unique
+  price          Float
+  discountPrice  Float?
+  coverImageUrl  String?
+  previewUrl     String?
+  fileUrl        String?
+  fileSize       Int?
+  pageCount      Int?
+  language       String      @default("th")
+  format         EbookFormat @default(PDF)
+  isPhysical     Boolean     @default(false)
+  weight         Float? // กรัม
+  dimensions     String? // "กว้าง x ยาว x สูง (ซม.)"
+  downloadLimit  Int? // จำกัดการดาวน์โหลด
+  accessDuration Int? // ระยะเวลาการเข้าถึง (วัน)
+  isActive       Boolean     @default(true)
+  isFeatured     Boolean     @default(false)
+  publishedAt    DateTime?
+  publishedYear  Int? // ปีที่หนังสือถูกตีพิมพ์ เช่น 2025
+  categoryId     String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  category  EbookCategory?  @relation(fields: [categoryId], references: [id])
+  orders    Order[]
+  reviews   Review[]
+  downloads EbookDownload[]
 }
 
 model EbookCategory {
-  id          String  @id @default(uuid())
-  name        String  @unique
+  id          String   @id @default(uuid())
+  name        String   @unique
   description String?
-  isActive    Boolean @default(true)
+  isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   ebooks      Ebook[]
 }
-
-
 
 model Shipping {
   id                String         @id @default(uuid())
@@ -486,8 +487,8 @@ model Shipping {
   notes             String?
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
-  
-  order             Order          @relation(fields: [orderId], references: [id])
+
+  order Order @relation(fields: [orderId], references: [id])
 }
 
 model ExamCategory {
@@ -501,13 +502,13 @@ model ExamCategory {
 }
 
 model ExamBank {
-  id          String       @id @default(uuid())
+  id          String        @id @default(uuid())
   title       String
   description String?
   categoryId  String?
-  isActive    Boolean      @default(true)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
   category    ExamCategory? @relation(fields: [categoryId], references: [id])
   files       ExamFile[]
 }
@@ -526,42 +527,42 @@ model ExamFile {
 
 // ระบบ Coupon/Discount Code
 model Coupon {
-  id              String         @id @default(uuid())
-  code            String         @unique
-  name            String         // ชื่อโปรโมชั่น
-  description     String?
-  type            CouponType     @default(PERCENTAGE)
-  value           Float          // เปอร์เซ็นต์ หรือ จำนวนเงิน
-  minOrderAmount  Float?         // ยอดขั้นต่ำ
-  maxDiscount     Float?         // ส่วนลดสูงสุด (สำหรับ percentage)
-  usageLimit      Int?           // จำนวนครั้งที่ใช้ได้ทั้งหมด
-  usageCount      Int            @default(0)
-  userUsageLimit  Int?           // จำนวนครั้งที่ user คนเดียวใช้ได้
-  isActive        Boolean        @default(true)
-  validFrom       DateTime
-  validUntil      DateTime
-  applicableType  ApplicableType @default(ALL)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  
+  id             String         @id @default(uuid())
+  code           String         @unique
+  name           String // ชื่อโปรโมชั่น
+  description    String?
+  type           CouponType     @default(PERCENTAGE)
+  value          Float // เปอร์เซ็นต์ หรือ จำนวนเงิน
+  minOrderAmount Float? // ยอดขั้นต่ำ
+  maxDiscount    Float? // ส่วนลดสูงสุด (สำหรับ percentage)
+  usageLimit     Int? // จำนวนครั้งที่ใช้ได้ทั้งหมด
+  usageCount     Int            @default(0)
+  userUsageLimit Int? // จำนวนครั้งที่ user คนเดียวใช้ได้
+  isActive       Boolean        @default(true)
+  validFrom      DateTime
+  validUntil     DateTime
+  applicableType ApplicableType @default(ALL)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
   // Relations
-  orders          Order[]
-  usages          CouponUsage[]
-  categories      CouponCategory[]
-  items           CouponItem[]
+  orders     Order[]
+  usages     CouponUsage[]
+  categories CouponCategory[]
+  items      CouponItem[]
 }
 
 model CouponUsage {
-  id        String   @id @default(uuid())
-  couponId  String
-  userId    String
-  orderId   String
-  usedAt    DateTime @default(now())
-  
-  coupon    Coupon   @relation(fields: [couponId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
-  order     Order    @relation(fields: [orderId], references: [id])
-  
+  id       String   @id @default(uuid())
+  couponId String
+  userId   String
+  orderId  String
+  usedAt   DateTime @default(now())
+
+  coupon Coupon @relation(fields: [couponId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+  order  Order  @relation(fields: [orderId], references: [id])
+
   @@unique([couponId, userId, orderId])
 }
 
@@ -570,9 +571,9 @@ model CouponCategory {
   couponId   String
   categoryId String
   itemType   ItemType // COURSE หรือ EBOOK
-  
-  coupon     Coupon   @relation(fields: [couponId], references: [id])
-  
+
+  coupon Coupon @relation(fields: [couponId], references: [id])
+
   @@unique([couponId, categoryId, itemType])
 }
 
@@ -581,9 +582,9 @@ model CouponItem {
   couponId String
   itemId   String
   itemType ItemType
-  
-  coupon   Coupon   @relation(fields: [couponId], references: [id])
-  
+
+  coupon Coupon @relation(fields: [couponId], references: [id])
+
   @@unique([couponId, itemId, itemType])
 }
 
@@ -593,13 +594,13 @@ model OrderItem {
   orderId    String
   itemType   ItemType
   itemId     String
-  title      String   // เก็บชื่อสินค้าตอนสั่งซื้อ
+  title      String // เก็บชื่อสินค้าตอนสั่งซื้อ
   quantity   Int      @default(1)
   unitPrice  Float
   totalPrice Float
   createdAt  DateTime @default(now())
-  
-  order      Order    @relation(fields: [orderId], references: [id])
+
+  order Order @relation(fields: [orderId], references: [id])
 }
 
 // ระบบ Download Management
@@ -614,86 +615,87 @@ model EbookDownload {
   ipAddress    String?
   userAgent    String?
   createdAt    DateTime  @default(now())
-  
-  user         User      @relation(fields: [userId], references: [id])
-  ebook        Ebook     @relation(fields: [ebookId], references: [id])
-  order        Order     @relation(fields: [orderId], references: [id])
+
+  user  User  @relation(fields: [userId], references: [id])
+  ebook Ebook @relation(fields: [ebookId], references: [id])
+  order Order @relation(fields: [orderId], references: [id])
 }
+
 // ระบบข้อสอบพื้นฐาน
 model Exam {
-  id              String       @id @default(uuid())
+  id              String   @id @default(uuid())
   title           String
   description     String?
-  courseId        String?      // เชื่อมกับ Course
-  examType        ExamType     @default(QUIZ)
-  timeLimit       Int?         // เวลาจำกัด (นาที)
-  totalMarks      Int          @default(0)
-  passingMarks    Int          @default(0)
-  attemptsAllowed Int          @default(1)
-  showResults     Boolean      @default(true)
-  showAnswers     Boolean      @default(false)
-  isActive        Boolean      @default(true)
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  
-  course          Course?      @relation(fields: [courseId], references: [id])
-  questions       Question[]
-  attempts        ExamAttempt[]
-  
+  courseId        String? // เชื่อมกับ Course
+  examType        ExamType @default(QUIZ)
+  timeLimit       Int? // เวลาจำกัด (นาที)
+  totalMarks      Int      @default(0)
+  passingMarks    Int      @default(0)
+  attemptsAllowed Int      @default(1)
+  showResults     Boolean  @default(true)
+  showAnswers     Boolean  @default(false)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  course    Course?       @relation(fields: [courseId], references: [id])
+  questions Question[]
+  attempts  ExamAttempt[]
+
   @@index([courseId])
 }
 
 // คำถาม
 model Question {
-  id              String         @id @default(uuid())
-  examId          String
-  questionText    String
-  questionImage   String?        // รูปประกอบ (optional)
-  questionType    QuestionType   @default(MULTIPLE_CHOICE)
-  marks           Int            @default(1)
-  explanation     String?        // เฉลย
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  
-  exam            Exam           @relation(fields: [examId], references: [id], onDelete: Cascade)
-  options         QuestionOption[]
-  answers         StudentAnswer[]
-  
+  id            String       @id @default(uuid())
+  examId        String
+  questionText  String
+  questionImage String? // รูปประกอบ (optional)
+  questionType  QuestionType @default(MULTIPLE_CHOICE)
+  marks         Int          @default(1)
+  explanation   String? // เฉลย
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  exam    Exam             @relation(fields: [examId], references: [id], onDelete: Cascade)
+  options QuestionOption[]
+  answers StudentAnswer[]
+
   @@index([examId])
 }
 
 // ตัวเลือกคำตอบ
 model QuestionOption {
-  id          String   @id @default(uuid())
-  questionId  String
-  optionText  String
-  isCorrect   Boolean  @default(false)
-  order       Int      @default(0)
-  
-  question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  
+  id         String  @id @default(uuid())
+  questionId String
+  optionText String
+  isCorrect  Boolean @default(false)
+  order      Int     @default(0)
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
   @@index([questionId])
 }
 
 // การทำข้อสอบ
 model ExamAttempt {
-  id              String          @id @default(uuid())
-  examId          String
-  userId          String
-  status          ExamStatus      @default(IN_PROGRESS)
-  startedAt       DateTime        @default(now())
-  completedAt     DateTime?
-  totalQuestions  Int             @default(0)
-  correctAnswers  Int             @default(0)
-  totalMarks      Int             @default(0)
-  obtainedMarks   Int             @default(0)
-  percentage      Float           @default(0)
-  passed          Boolean         @default(false)
-  
-  exam            Exam            @relation(fields: [examId], references: [id])
-  user            User            @relation(fields: [userId], references: [id])
-  answers         StudentAnswer[]
-  
+  id             String     @id @default(uuid())
+  examId         String
+  userId         String
+  status         ExamStatus @default(IN_PROGRESS)
+  startedAt      DateTime   @default(now())
+  completedAt    DateTime?
+  totalQuestions Int        @default(0)
+  correctAnswers Int        @default(0)
+  totalMarks     Int        @default(0)
+  obtainedMarks  Int        @default(0)
+  percentage     Float      @default(0)
+  passed         Boolean    @default(false)
+
+  exam    Exam            @relation(fields: [examId], references: [id])
+  user    User            @relation(fields: [userId], references: [id])
+  answers StudentAnswer[]
+
   @@unique([examId, userId]) // ทำได้ครั้งเดียว (ถ้าต้องการหลายครั้ง ให้เอาออก)
   @@index([examId])
   @@index([userId])
@@ -701,36 +703,35 @@ model ExamAttempt {
 
 // คำตอบนักเรียน
 model StudentAnswer {
-  id           String      @id @default(uuid())
-  attemptId    String
-  questionId   String
-  optionId     String?     // สำหรับ Multiple Choice
-  textAnswer   String?     // สำหรับ Text Answer
-  isCorrect    Boolean     @default(false)
-  marks        Int         @default(0)
-  answeredAt   DateTime    @default(now())
-  
-  attempt      ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-  question     Question    @relation(fields: [questionId], references: [id])
-  
+  id         String   @id @default(uuid())
+  attemptId  String
+  questionId String
+  optionId   String? // สำหรับ Multiple Choice
+  textAnswer String? // สำหรับ Text Answer
+  isCorrect  Boolean  @default(false)
+  marks      Int      @default(0)
+  answeredAt DateTime @default(now())
+
+  attempt  ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question Question    @relation(fields: [questionId], references: [id])
+
   @@unique([attemptId, questionId])
   @@index([attemptId])
 }
 
-
 enum ExamType {
-  PRETEST     // ทดสอบก่อนเรียน
-  POSTTEST    // ทดสอบหลังเรียน
-  QUIZ        // แบบทดสอบ
-  MIDTERM     // สอบกลางภาค
-  FINAL       // สอบปลายภาค
-  PRACTICE    // ฝึกทำ
+  PRETEST // ทดสอบก่อนเรียน
+  POSTTEST // ทดสอบหลังเรียน
+  QUIZ // แบบทดสอบ
+  MIDTERM // สอบกลางภาค
+  FINAL // สอบปลายภาค
+  PRACTICE // ฝึกทำ
 }
 
 enum QuestionType {
-  MULTIPLE_CHOICE  // เลือกตอบ
-  TRUE_FALSE       // จริง/เท็จ
-  SHORT_ANSWER     // ตอบสั้น
+  MULTIPLE_CHOICE // เลือกตอบ
+  TRUE_FALSE // จริง/เท็จ
+  SHORT_ANSWER // ตอบสั้น
 }
 
 enum ExamStatus {
@@ -740,26 +741,177 @@ enum ExamStatus {
 }
 
 enum Subjects {
-  Thai                    // ภาษาไทย / 泰语
-  Mathematics             // คณิตศาสตร์ / 数学
-  Science                 // วิทยาศาสตร์ / 科学
-  Physics                 // ฟิสิกส์ / 物理
-  Chemistry               // เคมี / 化学
-  Biology                 // ชีววิทยา / 生物
-  SocialStudies           // สังคมศึกษา ศาสนา วัฒนธรรม / 社会学, 宗教, 文化
-  History                 // ประวัติศาสตร์ / 历史
-  Geography               // ภูมิศาสตร์ / 地理
-  HealthAndPE             // สุขศึกษาและพลศึกษา / 健康与体育
-  Art                     // ศิลปะ / 美术
-  Music                   // ดนตรี / 音乐
+  Thai // ภาษาไทย / 泰语
+  Mathematics // คณิตศาสตร์ / 数学
+  Science // วิทยาศาสตร์ / 科学
+  Physics // ฟิสิกส์ / 物理
+  Chemistry // เคมี / 化学
+  Biology // ชีววิทยา / 生物
+  SocialStudies // สังคมศึกษา ศาสนา วัฒนธรรม / 社会学, 宗教, 文化
+  History // ประวัติศาสตร์ / 历史
+  Geography // ภูมิศาสตร์ / 地理
+  HealthAndPE // สุขศึกษาและพลศึกษา / 健康与体育
+  Art // ศิลปะ / 美术
+  Music // ดนตรี / 音乐
   OccupationsAndTechnology // การงานอาชีพและเทคโนโลยี / 职业与技术
-  ComputerScience         // วิทยาการคอมพิวเตอร์ / 计算机科学
-  ForeignLanguages        // ภาษาต่างประเทศ / 外语
-  English                 // ภาษาอังกฤษ / 英语
-  Chinese                 // ภาษาจีน / 汉语
-  Japanese                // ภาษาญี่ปุ่น / 日语
+  ComputerScience // วิทยาการคอมพิวเตอร์ / 计算机科学
+  ForeignLanguages // ภาษาต่างประเทศ / 外语
+  English // ภาษาอังกฤษ / 英语
+  Chinese // ภาษาจีน / 汉语
+  Japanese // ภาษาญี่ปุ่น / 日语
 }
+
 enum GradeLevel {
-  JUNIOR_HIGH             // ม.ต้น (มัธยมศึกษาตอนต้น)
-  SENIOR_HIGH             // ม.ปลาย (มัธยมศึกษาตอนปลาย)
+  JUNIOR_HIGH // ม.ต้น (มัธยมศึกษาตอนต้น)
+  SENIOR_HIGH // ม.ปลาย (มัธยมศึกษาตอนปลาย)
+}
+
+// =========================================================================
+// Mock Exam System — independent from Exam/Question/ExamAttempt/StudentAnswer
+// above. Only relates to existing models via User and (optionally) Course.
+// =========================================================================
+
+model MockTopic {
+  id        String   @id @default(uuid())
+  subject   Subjects
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  questions MockQuestion[]
+
+  @@unique([subject, name])
+}
+
+model MockExam {
+  id                     String      @id @default(uuid())
+  title                  String
+  description            String?
+  courseId               String? // optional tie-in to existing paid-course entitlement
+  subject                Subjects
+  gradeLevel             GradeLevel?
+  timeLimit              Int? // minutes; null = untimed
+  passingMarks           Int         @default(0)
+  attemptsAllowed        Int         @default(1) // REAL mode only
+  allowPracticeMode      Boolean     @default(true)
+  allowRealMode          Boolean     @default(true)
+  practiceUnlockCost     Int         @default(1)
+  isActive               Boolean     @default(true)
+  createdAt              DateTime    @default(now())
+  updatedAt              DateTime    @updatedAt
+
+  course    Course?           @relation(fields: [courseId], references: [id])
+  questions MockQuestion[]
+  attempts  MockExamAttempt[]
+
+  @@index([courseId])
+}
+
+model MockQuestion {
+  id                String       @id @default(uuid())
+  mockExamId        String
+  topicId           String?
+  questionText      String
+  questionImage     String?
+  questionType      QuestionType @default(MULTIPLE_CHOICE)
+  marks             Int          @default(1)
+  numericTolerance  Float? // SHORT_ANSWER only; null = exact string match
+  explanation       String?
+  explanationImages String[]     @default([])
+  order             Int          @default(0)
+  isActive          Boolean      @default(true)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  mockExam            MockExam             @relation(fields: [mockExamId], references: [id], onDelete: Cascade)
+  topic               MockTopic?           @relation(fields: [topicId], references: [id])
+  options             MockQuestionOption[]
+  answers             MockStudentAnswer[]
+  mockPracticeUnlocks MockPracticeUnlock[]
+
+  @@index([mockExamId])
+  @@index([topicId])
+}
+
+model MockQuestionOption {
+  id         String  @id @default(uuid())
+  questionId String
+  optionText String
+  isCorrect  Boolean @default(false)
+  order      Int     @default(0)
+
+  question MockQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+}
+
+enum MockAttemptMode {
+  PRACTICE
+  REAL
+}
+
+enum MockAttemptStatus {
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model MockExamAttempt {
+  id            String            @id @default(uuid())
+  mockExamId    String
+  userId        String
+  mode          MockAttemptMode
+  status        MockAttemptStatus @default(IN_PROGRESS)
+  startedAt     DateTime          @default(now())
+  completedAt   DateTime?
+  totalMarks    Int               @default(0)
+  obtainedMarks Int               @default(0)
+  percentage    Float             @default(0)
+  passed        Boolean           @default(false)
+
+  mockExam MockExam            @relation(fields: [mockExamId], references: [id])
+  user     User                @relation(fields: [userId], references: [id])
+  answers  MockStudentAnswer[]
+
+  @@index([mockExamId])
+  @@index([userId])
+}
+
+model MockStudentAnswer {
+  id         String   @id @default(uuid())
+  attemptId  String
+  questionId String
+  optionId   String?
+  textAnswer String?
+  isCorrect  Boolean?
+  marks      Int      @default(0)
+  answeredAt DateTime @default(now())
+
+  attempt  MockExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question MockQuestion    @relation(fields: [questionId], references: [id])
+
+  @@unique([attemptId, questionId])
+}
+
+model MockPracticeUnlock {
+  id         String   @id @default(uuid())
+  userId     String
+  questionId String
+  unlockedAt DateTime @default(now())
+
+  user     User         @relation(fields: [userId], references: [id])
+  question MockQuestion @relation(fields: [questionId], references: [id])
+
+  @@unique([userId, questionId])
+}
+
+// One wallet per user, shared across every MockExam — a student's practice
+// tokens are a single pool they can spend on whichever exam they choose, not
+// a separate allotment reset per exam. `tokens` defaults to 10 on first
+// creation (lazily created the first time a user touches practice mode).
+model MockPracticeWallet {
+  userId String @id
+  tokens Int    @default(10)
+
+  user User @relation(fields: [userId], references: [id])
 }

@@ -11,6 +11,7 @@ import UserTable from "@/components/admin/users/UserTable";
 import UserModal from "@/components/admin/users/UserModal";
 import DeleteModal from "@/components/admin/users/DeleteModal";
 import QuickGrantCourseModal from "@/components/admin/users/QuickGrantCourseModal";
+import TokenModal from "@/components/admin/users/TokenModal";
 import UserStatsCards from "@/components/admin/users/UserStatsCards";
 
 // Hooks
@@ -25,6 +26,8 @@ export default function UsersPage() {
   const [deleting, setDeleting] = useState(false);
   const [grantModalOpen, setGrantModalOpen] = useState(false);
   const [grantUser, setGrantUser] = useState(null);
+  const [tokenModalOpen, setTokenModalOpen] = useState(false);
+  const [tokenUser, setTokenUser] = useState(null);
   const { toast } = useToast();
 
   // Use custom hook for users data
@@ -165,6 +168,39 @@ export default function UsersPage() {
     }
   };
 
+  // Open the token-management modal for this user
+  const openTokenModal = (record) => {
+    setTokenUser(record);
+    setTokenModalOpen(true);
+  };
+
+  const closeTokenModal = () => {
+    setTokenModalOpen(false);
+    setTokenUser(null);
+  };
+
+  const handleSubmitTokens = async (tokens) => {
+    if (!tokenUser?.id) return;
+    try {
+      const res = await fetch(`/api/admin/users/${tokenUser.id}/practice-tokens`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tokens }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        toast({ title: "แก้ไขยอด token สำเร็จ" });
+        closeTokenModal();
+      } else {
+        toast({ variant: "destructive", title: data.error || "เกิดข้อผิดพลาดในการแก้ไขยอด token" });
+      }
+    } catch (error) {
+      console.error("Update tokens error:", error);
+      toast({ variant: "destructive", title: "เกิดข้อผิดพลาดในการแก้ไขยอด token" });
+    }
+  };
+
   // Open modal for create/edit
   const openModal = (record) => {
     setEditing(record || null);
@@ -240,6 +276,7 @@ export default function UsersPage() {
         onDelete={handleDelete}
         onToggleStatus={handleToggleStatus}
         onGrantCourse={openGrantModal}
+        onManageTokens={openTokenModal}
         onPageChange={handlePageChange}
         onSortChange={handleSortChange}
       />
@@ -263,6 +300,9 @@ export default function UsersPage() {
         onCancel={closeGrantModal}
         onSubmit={handleQuickGrant}
       />
+
+      {/* Practice Token Modal */}
+      <TokenModal open={tokenModalOpen} user={tokenUser} onCancel={closeTokenModal} onSubmit={handleSubmitTokens} />
     </AdminPageHeader>
   );
 }

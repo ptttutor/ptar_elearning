@@ -129,6 +129,8 @@ function getAllowedTypes(type) {
     'payment-slip': ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
     'post-image': ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
     'question-image': ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
+    'mock-question-image': ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
+    'mock-explanation-image': ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'],
     'general': [], // Allow all types
   };
 

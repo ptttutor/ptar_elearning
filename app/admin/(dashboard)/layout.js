@@ -76,7 +76,7 @@ export default function AdminShellLayout({ children }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-[100] flex h-16 items-center border-b border-gray-200 bg-white px-6">
+        <header className="sticky top-0 z-30 flex h-16 items-center border-b border-gray-200 bg-white px-6">
           <AdminHeader
             collapsed={collapsed}
             onToggle={handleToggle}

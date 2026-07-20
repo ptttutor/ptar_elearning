@@ -1,6 +1,6 @@
 "use client";
 
-import { Edit, Repeat, BookPlus, Trash2 } from "lucide-react";
+import { Edit, Repeat, BookPlus, Coins, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { th } from "date-fns/locale";
 import {
@@ -40,6 +40,7 @@ export default function UserTable({
   onDelete,
   onToggleStatus,
   onGrantCourse,
+  onManageTokens,
   onPageChange,
   onSortChange,
 }) {
@@ -187,6 +188,21 @@ export default function UserTable({
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>เพิ่มคอร์สให้ผู้ใช้ (ไม่ผ่านการซื้อ)</TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-amber-600"
+                              onClick={() => onManageTokens(record)}
+                              disabled={record.role === "ADMIN"}
+                            >
+                              <Coins className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>จัดการ Token ฝึกฝน</TooltipContent>
                         </Tooltip>
 
                         <Tooltip>

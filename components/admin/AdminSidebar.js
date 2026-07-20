@@ -13,6 +13,8 @@ import {
   Users,
   ChevronLeft,
   ChevronRight,
+  FileQuestion,
+  ListTree,
 } from "lucide-react";
 
 const menuItems = [
@@ -22,6 +24,8 @@ const menuItems = [
   { key: "/admin/shipping", label: "การจัดส่ง", icon: Truck },
   { key: "/admin/courses", label: "คอร์สเรียน", icon: BookOpen },
   { key: "/admin/categories", label: "หมวดหมู่คอร์ส", icon: Folder },
+  { key: "/admin/mock-exams", label: "ข้อสอบจำลอง", icon: FileQuestion },
+  { key: "/admin/mock-topics", label: "หัวข้อข้อสอบจำลอง", icon: ListTree },
   { key: "/admin/posts", label: "โพสต์", icon: PenSquare },
   { key: "/admin/post-categories", label: "หมวดหมู่โพสต์", icon: Tag },
   { key: "/admin/users", label: "ผู้ใช้", icon: Users },

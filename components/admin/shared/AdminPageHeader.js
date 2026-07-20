@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import Link from "next/link";
 import { Home, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -46,8 +47,8 @@ export default function AdminPageHeader({
             <Breadcrumb>
               <BreadcrumbList>
                 {items.map((item, idx) => (
-                  <>
-                    <BreadcrumbItem key={`item-${idx}`}>
+                  <Fragment key={`crumb-${idx}`}>
+                    <BreadcrumbItem>
                       {idx === items.length - 1 || !item.href ? (
                         <BreadcrumbPage>{item.label}</BreadcrumbPage>
                       ) : (
@@ -56,8 +57,8 @@ export default function AdminPageHeader({
                         </BreadcrumbLink>
                       )}
                     </BreadcrumbItem>
-                    {idx < items.length - 1 && <BreadcrumbSeparator key={`sep-${idx}`} />}
-                  </>
+                    {idx < items.length - 1 && <BreadcrumbSeparator />}
+                  </Fragment>
                 ))}
               </BreadcrumbList>
             </Breadcrumb>
@@ -69,7 +70,7 @@ export default function AdminPageHeader({
                 {icon}
                 {title}
               </h2>
-              {subtitle && <p className="mt-1 text-sm text-gray-500">{subtitle}</p>}
+              {subtitle && <div className="mt-1 text-sm text-gray-500">{subtitle}</div>}
             </div>
             <div className="flex items-center gap-2">
               {onBack && (
