@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { CheckCircle2, XCircle, ArrowLeft } from "lucide-react"
+import { CheckCircle2, XCircle, ArrowLeft, ZoomIn } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { useAuth } from "@/components/auth-provider"
 import http from "@/lib/http"
 
@@ -40,6 +41,7 @@ export default function MockExamResultPage() {
   const [result, setResult] = useState<ResultView | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [previewImage, setPreviewImage] = useState<string | null>(null)
 
   useEffect(() => {
     if (authLoading || !isAuthenticated || !attemptId) return
@@ -150,6 +152,30 @@ export default function MockExamResultPage() {
               return (
                 <Card key={q.id} className={cardTone}>
                   <CardContent className="p-5 space-y-3">
+                    {(q.explanation || q.explanationImages.length > 0) && (
+                      <div className="rounded-md border border-dashed bg-background/60 p-3 space-y-2">
+                        <p className="text-xs font-semibold text-muted-foreground">เฉลย</p>
+                        {q.explanation && <p className="text-sm text-foreground">{q.explanation}</p>}
+                        {q.explanationImages.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {q.explanationImages.map((url, i) => (
+                              <button
+                                key={url + i}
+                                type="button"
+                                onClick={() => setPreviewImage(url)}
+                                className="group relative"
+                              >
+                                <img src={url} alt="" className="h-24 w-32 rounded-md border object-cover" />
+                                <span className="absolute inset-0 flex items-center justify-center rounded-md bg-black/0 opacity-0 transition group-hover:bg-black/30 group-hover:opacity-100">
+                                  <ZoomIn className="h-5 w-5 text-white" />
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     <div className="flex items-start justify-between gap-3">
                       <p className="font-medium text-foreground">
                         {idx + 1}. {q.questionText}
@@ -160,7 +186,12 @@ export default function MockExamResultPage() {
                     </div>
 
                     {q.questionImage && (
-                      <img src={q.questionImage} alt="" className="max-w-full rounded-md border" />
+                      <button type="button" onClick={() => setPreviewImage(q.questionImage)} className="group relative block">
+                        <img src={q.questionImage} alt="" className="max-w-full rounded-md border" />
+                        <span className="absolute inset-0 flex items-center justify-center rounded-md bg-black/0 opacity-0 transition group-hover:bg-black/30 group-hover:opacity-100">
+                          <ZoomIn className="h-6 w-6 text-white" />
+                        </span>
+                      </button>
                     )}
 
                     {q.questionType === "SHORT_ANSWER" ? (
@@ -189,15 +220,6 @@ export default function MockExamResultPage() {
                         })}
                       </div>
                     )}
-
-                    {q.explanation && <p className="text-sm text-muted-foreground">คำอธิบาย: {q.explanation}</p>}
-                    {q.explanationImages.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {q.explanationImages.map((url, i) => (
-                          <img key={url + i} src={url} alt="" className="h-24 w-32 rounded-md border object-cover" />
-                        ))}
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
               )
@@ -205,6 +227,13 @@ export default function MockExamResultPage() {
           </div>
         </>
       )}
+
+      <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
+        <DialogContent className="max-w-4xl p-2">
+          <DialogTitle className="sr-only">รูปภาพขยาย</DialogTitle>
+          {previewImage && <img src={previewImage} alt="" className="max-h-[85vh] w-full rounded-md object-contain" />}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
