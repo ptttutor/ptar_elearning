@@ -23,6 +23,20 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 
+// New accounts (created via the LINE OAuth redirect chain) don't reliably
+// have the `jwt` cookie yet by the time this page loads, so requests here
+// must also send the bearer token cached in localStorage — same as lib/http.ts.
+function authHeaders(extra?: Record<string, string>) {
+  let token: string | null = null;
+  try {
+    token = localStorage.getItem("token");
+  } catch {}
+  return {
+    ...extra,
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
 type OrderItem = {
   id?: string;
   itemType: "COURSE" | "EBOOK" | string;
@@ -191,6 +205,7 @@ export default function OrderSuccessPage() {
   async function fetchOrder(orderId: string) {
     const res = await fetch(`/api/orders/${encodeURIComponent(orderId)}`, {
       cache: "no-store",
+      headers: authHeaders(),
     });
     const text = await res.text().catch(() => "");
     let json: OrderResponse | null = null;
@@ -274,7 +289,7 @@ export default function OrderSuccessPage() {
     const doPost = async (url: string) => {
       const res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(payload),
       });
       const text = await res.text().catch(() => "");
@@ -413,7 +428,7 @@ export default function OrderSuccessPage() {
             `/api/enrollments?userId=${encodeURIComponent(
               userId
             )}&courseId=${encodeURIComponent(cid)}`,
-            { cache: "no-store" }
+            { cache: "no-store", headers: authHeaders() }
           );
           const json: any = await res.json().catch(() => ({}));
           const exists = !!(json?.enrollment || json?.data || json?.id);
@@ -447,6 +462,7 @@ export default function OrderSuccessPage() {
       form.append("file", file);
       const res = await fetch(`/api/payments/upload-slip`, {
         method: "POST",
+        headers: authHeaders(),
         body: form,
       });
       const text = await res.text().catch(() => "");

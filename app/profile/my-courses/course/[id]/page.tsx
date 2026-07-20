@@ -21,6 +21,20 @@ import LoginModal from '@/components/login-modal'
 import { useAuth } from '@/components/auth-provider'
 import Player from '@vimeo/player'
 
+// New accounts (created via the LINE OAuth redirect chain) don't reliably
+// have the `jwt` cookie yet by the time this page loads, so requests here
+// must also send the bearer token cached in localStorage — same as lib/http.ts.
+function authHeaders(extra?: Record<string, string>) {
+  let token: string | null = null
+  try {
+    token = localStorage.getItem('token')
+  } catch {}
+  return {
+    ...extra,
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
+}
+
 // ===== Types =====
 
 type Content = {
@@ -281,7 +295,7 @@ export default function CourseDetailPage() {
         setCourseLoading(true)
         const res = await fetch(
           `/api/my-courses/course/${courseId}?userId=${encodeURIComponent(user.id)}`,
-          { cache: 'no-store' }
+          { cache: 'no-store', headers: authHeaders() }
         )
         const json: CourseResponse = await res
           .json()
@@ -387,7 +401,7 @@ export default function CourseDetailPage() {
     try {
       const response = await fetch('/api/update-progress', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ userId: user.id, courseId, contentId: content.id }),
       })
       const result = await response.json()

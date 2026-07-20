@@ -13,6 +13,20 @@ import { PanelRightClose, PanelRightOpen } from "lucide-react"
 import { useAuth } from "@/components/auth-provider"
 import { useToast } from "@/components/ui/use-toast"
 
+// New accounts (created via the LINE OAuth redirect chain) don't reliably
+// have the `jwt` cookie yet by the time this page loads, so requests here
+// must also send the bearer token cached in localStorage — same as lib/http.ts.
+function authHeaders(extra?: Record<string, string>) {
+  let token: string | null = null
+  try {
+    token = localStorage.getItem("token")
+  } catch {}
+  return {
+    ...extra,
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
+}
+
 type ExamDetail = {
   id: string
   title: string
@@ -71,7 +85,7 @@ export default function ExamAttemptPage() {
       if (!courseId || !examId || !user?.id) { setLoading(false); return }
       try {
         setLoading(true)
-        const res = await fetch(`/api/my-courses/course/${encodeURIComponent(String(courseId))}/exams/${encodeURIComponent(String(examId))}?userId=${encodeURIComponent(String(user.id))}`, { cache: "no-store" })
+        const res = await fetch(`/api/my-courses/course/${encodeURIComponent(String(courseId))}/exams/${encodeURIComponent(String(examId))}?userId=${encodeURIComponent(String(user.id))}`, { cache: "no-store", headers: authHeaders() })
         const json: ExamDetailResponse = await res.json().catch(() => ({ success: false }))
         if (!res.ok || json.success === false) throw new Error(json?.error || `HTTP ${res.status}`)
         const payload = json.data || (json as any).exam || null
@@ -317,7 +331,7 @@ const summaryContent = exam ? (
       }
       const res = await fetch(`/api/my-courses/course/${encodeURIComponent(String(courseId))}/exams/${encodeURIComponent(String(examId))}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(payload),
       })
       const text = await res.text().catch(() => "")
