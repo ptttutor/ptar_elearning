@@ -162,3 +162,18 @@ stays in that feature's folder until a second consumer actually shows up.
   `triedEnrollRef` state pair that was read in JSX but never written to
   (so it could never actually render), and a `pollUntilPaid` polling
   function that was defined but never called anywhere.
+- `app/courses/{high,middle,netsat-course,high-competition,chemistry-content-course,
+  chemistry-olympiad-course}/page.tsx` / `features/course-category/**` — six
+  routes that were ~95% byte-identical (same intro-video-with-retry player,
+  paginated post-summary gallery, recommended-courses grid, LINE CTA), varying
+  only in copy strings, `postType` filter values, and two small visual knobs
+  (vimeo embed param set, summary-card background). Collapsed into one
+  `CourseCategoryClient` driven by a `CourseCategoryConfig` object per route.
+  The underlying video/summary-fetch logic was shared two levels up, at
+  `hooks/use-intro-video.ts` and `hooks/use-post-summaries.ts` (plus
+  `lib/video-embed.ts` for the YouTube/Vimeo URL builders and
+  `components/intro-video-player.tsx` / `components/contact-line-button.tsx`),
+  because the near-identical `app/courses/live/page.tsx` (`features/live-schedule/`)
+  needed the exact same fetch/player logic under genuinely different markup
+  (no courses grid, different empty/loading states) — reuse the hook, don't
+  force the seventh page's JSX to fit the other six's shared component.

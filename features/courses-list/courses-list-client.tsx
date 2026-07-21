@@ -6,7 +6,7 @@ import { GradeLevelSelector } from "@/features/courses-list/components/grade-lev
 import { SubjectSelector } from "@/features/courses-list/components/subject-selector"
 import { CourseCard } from "@/features/courses-list/components/course-card"
 import { CourseGridSkeleton } from "@/features/courses-list/components/course-grid-skeleton"
-import { PaginationControls } from "@/features/courses-list/components/pagination-controls"
+import { PaginationControls } from "@/components/pagination-controls"
 import type { ApiCourse, SubjectOption } from "@/features/courses-list/types"
 
 const staggerContainer = { animate: { transition: { staggerChildren: 0.1 } } }
