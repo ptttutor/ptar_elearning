@@ -1,10 +1,19 @@
 import { NextResponse } from "next/server"
+import { requireUser } from "@/lib/requireUser"
+import { isAllowedProxyTarget } from "@/lib/proxy-allowlist"
 
-export const dynamic = "force-dynamic"   
-export const runtime = "nodejs"          
+export const dynamic = "force-dynamic"
+export const runtime = "nodejs"
 
 export async function GET(req: Request) {
   try {
+    if (!requireUser(req as any)) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 }
+      )
+    }
+
     const { searchParams } = new URL(req.url)
     const target = searchParams.get("url")
     const rawFilename = searchParams.get("filename") || "file.pdf"
@@ -12,6 +21,12 @@ export async function GET(req: Request) {
     if (!target) {
       return NextResponse.json(
         { success: false, message: "Missing url parameter" },
+        { status: 400 }
+      )
+    }
+    if (!isAllowedProxyTarget(target)) {
+      return NextResponse.json(
+        { success: false, message: "Target host not allowed" },
         { status: 400 }
       )
     }

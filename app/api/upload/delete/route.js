@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/requireAdmin';
 import { deleteFromVercelBlob } from '@/lib/vercel-blob';
 
 export async function DELETE(request) {
   try {
+    const session = await requireAdmin();
+    if (!session) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const url = searchParams.get('url');
 

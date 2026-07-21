@@ -1,7 +1,16 @@
 import { NextResponse } from "next/server"
+import { requireUser } from "@/lib/requireUser"
+import { isAllowedProxyTarget } from "@/lib/proxy-allowlist"
 
 export async function GET(req: Request) {
   try {
+    if (!requireUser(req as any)) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 }
+      )
+    }
+
     const url = new URL(req.url)
     const target = url.searchParams.get("url")
     const filename = url.searchParams.get("filename") || "file.pdf"
@@ -11,8 +20,14 @@ export async function GET(req: Request) {
         { status: 400 }
       )
     }
+    if (!isAllowedProxyTarget(target)) {
+      return NextResponse.json(
+        { success: false, message: "Target host not allowed" },
+        { status: 400 }
+      )
+    }
 
-  
+
     const range = req.headers.get("range") || undefined
     const upstream = await fetch(target, {
       headers: range ? { range } : undefined,

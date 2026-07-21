@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { generateUniqueFilename, getFolderPath } from "@/lib/vercel-blob";
+import { requireAdmin } from "@/lib/requireAdmin";
 
 const s3Client = new S3Client({
   region: "auto",
@@ -14,6 +15,11 @@ const s3Client = new S3Client({
 
 export async function POST(request) {
   try {
+    const session = await requireAdmin();
+    if (!session) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await request.json();
     const { fileName, fileType, examId } = body;
 

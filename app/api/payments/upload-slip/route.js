@@ -373,6 +373,11 @@ export async function POST(request) {
 // GET - ดูข้อมูล payment slip
 export async function GET(request) {
   try {
+    const session = await requireUser(request);
+    if (!session) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
     console.log('🔍 Getting payment slip data...');
 
     const { searchParams } = new URL(request.url);
@@ -421,6 +426,13 @@ export async function GET(request) {
       return NextResponse.json(
         { success: false, error: "ไม่พบข้อมูลการชำระเงิน" },
         { status: 404 }
+      );
+    }
+
+    if (payment.order.userId !== session.userId && session.role !== "ADMIN") {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 403 }
       );
     }
 

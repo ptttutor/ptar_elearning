@@ -63,16 +63,3 @@ export async function refreshToken(token: string) {
     return { success: false, message: "เกิดข้อผิดพลาดในการรีเฟรช token" };
   }
 }
-
-export async function exchangeToken(userId: string, lineId?: string) {
-  try {
-    const response = await apiCall("/api/external/auth/exchange", {
-      method: "POST",
-      body: JSON.stringify({ userId, lineId }),
-    })
-    return (response as any).data
-  } catch (error) {
-    console.error("Token exchange error:", error);
-    return { success: false, message: "เกิดข้อผิดพลาดในการแลก token" };
-  }
-}

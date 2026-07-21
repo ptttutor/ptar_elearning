@@ -1,7 +1,6 @@
 "use client"
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react"
-import { exchangeToken } from "@/lib/api-utils"
 import http from "@/lib/http"
 
 type User = any
@@ -27,56 +26,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let active = true
     const init = async () => {
       try {
-        // check login success callback 
         const urlParams = new URLSearchParams(window.location.search)
-        const loginSuccess = urlParams.get('login_success')
-        const userId = urlParams.get('user_id')
-        const userName = urlParams.get('user_name')
-        const userEmail = urlParams.get('user_email')
-        const lineId = urlParams.get('line_id')
-        
-        if (loginSuccess === 'true' && userId && userName) {
-          // create user object from URL parameters
-          const userData = {
-            id: userId,
-            name: decodeURIComponent(userName),
-            email: decodeURIComponent(userEmail || ''),
-            lineId: lineId,
-            role: 'STUDENT' 
-          }
 
-          // transform temporary data into JWT token 
-          try {
-            const tokenResult = await exchangeToken(userId, lineId || undefined)
-            if (tokenResult.success && tokenResult.data) {
-              setUser(tokenResult.data.user)
-              localStorage.setItem('user', JSON.stringify(tokenResult.data.user))
-              localStorage.setItem('token', tokenResult.data.token)
-              localStorage.removeItem('temp_token') // clear temp token
-
-              console.log('✅ LINE login success with JWT token:', tokenResult.data.user)
-            } else {
-              // when exchange failed, use temp data
-              setUser(userData)
-              localStorage.setItem('user', JSON.stringify(userData))
-              localStorage.setItem('temp_token', `temp_${userId}_${Date.now()}`)
-              console.log('⚠️ Using temporary token, exchange failed:', tokenResult.message)
-            }
-          } catch (error) {
-            // when exchange error, use temp data
-            setUser(userData)
-            localStorage.setItem('user', JSON.stringify(userData))
-            localStorage.setItem('temp_token', `temp_${userId}_${Date.now()}`)
-            console.log('⚠️ Using temporary token, exchange error:', error)
-          }
-
-          // remove parameters from URL
-          window.history.replaceState({}, document.title, window.location.pathname)
-          if (active) setLoading(false)
-          return
-        }
-
-        // check LINE callback code 
+        // check LINE callback code
         const code = urlParams.get('code')
         
         if (code) {

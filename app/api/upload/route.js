@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/requireAdmin';
 import {
   uploadToVercelBlob,
   deleteFromVercelBlob,
@@ -9,6 +10,11 @@ import {
 
 export async function POST(request) {
   try {
+    const session = await requireAdmin();
+    if (!session) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') || formData.get('questionImage');
     const type = formData.get('type') || 'question'; // 'ebook', 'cover', or 'question'
@@ -72,6 +78,11 @@ export async function POST(request) {
 
 export async function DELETE(request) {
   try {
+    const session = await requireAdmin();
+    if (!session) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { url } = await request.json();
 
     if (!url) {
