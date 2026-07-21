@@ -115,7 +115,12 @@ folders:
   already does this — `hooks/use-school-field.ts` is used by three checkout
   pages; follow that precedent, don't add a second copy per feature).
 - Cross-feature **components** → the existing top-level `components/`
-  (unchanged from before this standard).
+  (unchanged from before this standard). Loose cross-cutting components live
+  directly under `components/` with no subfolder — matches the existing
+  `components/navigation.tsx`, `components/site-chrome.tsx` pattern (not
+  everything needs a category folder). Example: `components/school-field.tsx`
+  and `components/shipping-fields.tsx` started in `features/checkout/`,
+  graduated here once `features/order-success` needed them too.
 
 Don't promote pre-emptively — a schema/hook used by exactly one feature
 stays in that feature's folder until a second consumer actually shows up.
@@ -144,3 +149,16 @@ stays in that feature's folder until a second consumer actually shows up.
   `lib/schemas/shipping-address.schema.ts` and `lib/api/{orders,coupons}.ts`
   came from — they started in `features/cart`, then graduated once
   `features/checkout` needed the exact same validation/calls.
+- `app/order-success/[id]` / `features/order-success/**` — was the single
+  largest page in the app (1627 lines, one component). Split into
+  `selectors.ts` (pure functions deriving display values from the fetched
+  `Order` — no state, easy to reason about independently of React),
+  `api/` (one function per network call), `hooks/` (one hook per concern:
+  fetching the order, auto-enrollment + retry, resolving the ebook link,
+  the slip-upload dialog's form state), and ~10 presentational
+  `components/`. Also where `lib/auth-headers.ts` came from — it was
+  copy-pasted in three different page files before this pass.
+  Two silent dead-code removals happened during the split: an `enrollErr`/
+  `triedEnrollRef` state pair that was read in JSX but never written to
+  (so it could never actually render), and a `pollUntilPaid` polling
+  function that was defined but never called anywhere.

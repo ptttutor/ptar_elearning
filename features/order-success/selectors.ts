@@ -1,4 +1,5 @@
 import type { NormalizedShipping, Order, OrderItem, SummaryRow } from "@/features/order-success/types"
+import { formatCurrency } from "@/lib/format"
 
 /**
  * Pure derivations from an Order — no state, no effects. Kept out of the
@@ -15,11 +16,7 @@ export function getSafeUserId(user: any): string | undefined {
   return (user?.id ?? user?.userId ?? user?._id ?? user?.uid) || undefined
 }
 
-export function formatCurrency(value?: number | null) {
-  const numeric = Number(value ?? 0)
-  const safeNumber = Number.isFinite(numeric) ? numeric : 0
-  return `฿${safeNumber.toLocaleString()}`
-}
+export { formatCurrency }
 
 export function toItemTypeLabel(itemType?: string) {
   const t = (itemType || "").toUpperCase()
