@@ -36,6 +36,21 @@ export async function createOrder(payload: CreateOrderPayload): Promise<{ orderI
 }
 
 /**
+ * Raw order list for a user — shared by the profile "my orders" list and
+ * "my courses" (which uses it to backfill any enrollment that a completed
+ * order didn't create). Callers own their own typing of the result; this
+ * stays loose since it's a passthrough of whatever /api/orders returns.
+ */
+export async function fetchOrdersForUser(userId: string): Promise<any[]> {
+  const res = await fetch(`/api/orders?userId=${encodeURIComponent(userId)}`, { cache: "no-store" })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok || json?.success === false) {
+    throw new Error(json?.error || "โหลดคำสั่งซื้อไม่สำเร็จ")
+  }
+  return Array.isArray(json?.data) ? json.data : Array.isArray(json) ? json : []
+}
+
+/**
  * Looks up whether the user already has a non-cancelled order for this
  * exact item, so checkout pages can redirect straight to the existing
  * order instead of letting the student pay twice. Course/ebook checkout
