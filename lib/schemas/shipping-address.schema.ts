@@ -1,5 +1,13 @@
 import { z } from "zod"
 
+/**
+ * Shared shipping-address validation for every flow that can ship a
+ * physical item: the cart page, and all four checkout confirmation pages
+ * (cart, course, ebook — mock exams are never physical). One schema, one
+ * set of error messages, instead of four near-identical hand-rolled
+ * if-chains with slightly different wording.
+ */
+
 const REQUIRED_FIELDS = ["name", "phone", "address", "district", "province", "postalCode"] as const
 
 export const shippingAddressSchema = z
@@ -27,3 +35,5 @@ export const shippingAddressSchema = z
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: "กรุณากรอกรหัสไปรษณีย์ 5 หลัก" })
     }
   })
+
+export type ShippingAddress = z.infer<typeof shippingAddressSchema>

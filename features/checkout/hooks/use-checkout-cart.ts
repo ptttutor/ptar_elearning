@@ -1,13 +1,20 @@
-import { useEffect, useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useCart } from "@/components/cart-provider"
 import { useAuth } from "@/components/auth-provider"
 import { useToast } from "@/components/ui/use-toast"
-import type { ShippingAddress } from "@/features/cart/types"
-import { fetchCourseCover, fetchEbookCover } from "@/features/cart/api/fetch-item-cover"
+import { useSchoolField } from "@/hooks/use-school-field"
 import { validateCartCoupon } from "@/lib/api/coupons"
 import { createOrder } from "@/lib/api/orders"
-import { shippingAddressSchema } from "@/lib/schemas/shipping-address.schema"
+import { shippingAddressSchema, type ShippingAddress } from "@/lib/schemas/shipping-address.schema"
+
+/**
+ * The /checkout/cart confirm-and-pay step — distinct from
+ * features/cart/hooks/use-cart-checkout.ts, which powers the /cart
+ * basket-editing page (quantity +/-, remove). This hook is read-only on
+ * items, adds the school field + auto-apply-coupon-from-query, and
+ * redirects away if the cart is empty or the user isn't authenticated.
+ */
 
 const EMPTY_SHIPPING: ShippingAddress = {
   name: "",
@@ -18,22 +25,38 @@ const EMPTY_SHIPPING: ShippingAddress = {
   postalCode: "",
 }
 
-export function useCartCheckout() {
+export function useCheckoutCart() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { toast } = useToast()
-  const { items, loading, syncing, itemCount, increase, decrease, remove, refresh, subtotal: cartSubtotal } = useCart()
-  const { isAuthenticated, user } = useAuth()
+  const { isAuthenticated, user, loading: authLoading } = useAuth()
+  const { items, loading, itemCount, subtotal: cartSubtotal, refresh, syncing } = useCart()
+  const { school, schoolInput, setSchoolInput, validateSchool, onSaved: onSchoolSaved } = useSchoolField()
 
-  const [couponCode, setCouponCode] = useState("")
+  const [coverMap, setCoverMap] = useState<Record<string, string>>({})
   const [shipping, setShipping] = useState<ShippingAddress>(EMPTY_SHIPPING)
   const [shippingError, setShippingError] = useState<string | null>(null)
-  const [submitting, setSubmitting] = useState(false)
-  const [coverMap, setCoverMap] = useState<Record<string, string>>({})
-  const [physicalMap, setPhysicalMap] = useState<Record<string, boolean>>({})
+
+  const couponFromQuery = (searchParams?.get("coupon") || "").trim()
+  const [couponCode, setCouponCode] = useState(couponFromQuery)
   const [couponDiscount, setCouponDiscount] = useState(0)
   const [couponError, setCouponError] = useState<string | null>(null)
-  const [validatingCoupon, setValidatingCoupon] = useState(false)
   const [couponSuccess, setCouponSuccess] = useState<string | null>(null)
+  const [validatingCoupon, setValidatingCoupon] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const autoAppliedCoupon = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (couponFromQuery && couponFromQuery !== couponCode) {
+      setCouponCode(couponFromQuery)
+    }
+  }, [couponFromQuery, couponCode])
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.replace("/cart")
+    }
+  }, [authLoading, isAuthenticated, router])
 
   useEffect(() => {
     if (isAuthenticated) void refresh()
@@ -43,24 +66,13 @@ export function useCartCheckout() {
     if (cartSubtotal && !Number.isNaN(cartSubtotal)) return cartSubtotal
     return items.reduce((sum, item) => sum + (item.unitPrice || 0) * (item.quantity || 1), 0)
   }, [cartSubtotal, items])
+
+  const anyPhysical = useMemo(
+    () => items.some((item) => item.itemType.toUpperCase().includes("PHYSICAL") || Boolean((item as any)?.isPhysical)),
+    [items]
+  )
+
   const totalAfterDiscount = useMemo(() => Math.max(0, subtotal - couponDiscount), [subtotal, couponDiscount])
-  const anyPhysical = useMemo(() => {
-    return items.some((item) => {
-      const type = String(item?.itemType || item?.type || "").toUpperCase()
-      if (type.includes("PHYSICAL")) return true
-      if (item?.isPhysical) return true
-      if (item?.course?.isPhysical) return true
-      const courseType = String(item?.course?.type || "").toUpperCase()
-      if (courseType.includes("PHYSICAL")) return true
-      const productType = String(item?.productType || "").toUpperCase()
-      if (productType.includes("PHYSICAL")) return true
-      if (type === "COURSE") {
-        const key = `COURSE:${item?.itemId}`
-        if (physicalMap[key]) return true
-      }
-      return false
-    })
-  }, [items, physicalMap])
 
   useEffect(() => {
     let cancelled = false
@@ -69,34 +81,34 @@ export function useCartCheckout() {
       const ebookIds = new Set<string>()
 
       items.forEach((item) => {
-        const type = String(item.itemType).toUpperCase()
-        const key = `${type}:${item.itemId}`
-        if (type === "COURSE") {
-          if (item.itemId && (physicalMap[key] === undefined || (!item.coverImageUrl && !coverMap[key]))) {
-            courseIds.add(item.itemId)
-          }
-        } else if (type === "EBOOK") {
-          if (item.itemId && !item.coverImageUrl && !coverMap[key]) {
-            ebookIds.add(item.itemId)
-          }
+        if (item.coverImageUrl) return
+        const key = `${item.itemType}:${item.itemId}`
+        if (coverMap[key]) return
+        if (String(item.itemType).toUpperCase() === "COURSE") {
+          if (item.itemId) courseIds.add(item.itemId)
+        } else if (String(item.itemType).toUpperCase() === "EBOOK") {
+          if (item.itemId) ebookIds.add(item.itemId)
         }
       })
 
       try {
         if (courseIds.size) {
-          const results = await Promise.all(Array.from(courseIds).map(fetchCourseCover))
+          const results = await Promise.all(
+            Array.from(courseIds).map(async (courseId) => {
+              try {
+                const res = await fetch(`/api/courses/${encodeURIComponent(courseId)}`, { cache: "no-store" })
+                const json = await res.json().catch(() => ({}))
+                return [courseId, json?.data?.coverImageUrl || ""] as const
+              } catch {
+                return [courseId, ""] as const
+              }
+            })
+          )
           if (!cancelled) {
             setCoverMap((prev) => {
               const next = { ...prev }
-              results.forEach(({ id, cover }) => {
+              results.forEach(([id, cover]) => {
                 if (cover) next[`COURSE:${id}`] = cover
-              })
-              return next
-            })
-            setPhysicalMap((prev) => {
-              const next = { ...prev }
-              results.forEach(({ id, isPhysical }) => {
-                if (isPhysical) next[`COURSE:${id}`] = true
               })
               return next
             })
@@ -104,11 +116,21 @@ export function useCartCheckout() {
         }
 
         if (ebookIds.size) {
-          const results = await Promise.all(Array.from(ebookIds).map(fetchEbookCover))
+          const results = await Promise.all(
+            Array.from(ebookIds).map(async (ebookId) => {
+              try {
+                const res = await fetch(`/api/ebooks/${encodeURIComponent(ebookId)}`, { cache: "no-store" })
+                const json = await res.json().catch(() => ({}))
+                return [ebookId, json?.data?.coverImageUrl || ""] as const
+              } catch {
+                return [ebookId, ""] as const
+              }
+            })
+          )
           if (!cancelled) {
             setCoverMap((prev) => {
               const next = { ...prev }
-              results.forEach(({ id, cover }) => {
+              results.forEach(([id, cover]) => {
                 if (cover) next[`EBOOK:${id}`] = cover
               })
               return next
@@ -122,7 +144,7 @@ export function useCartCheckout() {
     return () => {
       cancelled = true
     }
-  }, [items, coverMap, physicalMap])
+  }, [items, coverMap])
 
   useEffect(() => {
     setCouponDiscount(0)
@@ -130,15 +152,9 @@ export function useCartCheckout() {
     setCouponSuccess(null)
   }, [items, subtotal])
 
-  const updateCouponCode = (value: string) => {
-    setCouponCode(value)
-    setCouponError(null)
-    setCouponSuccess(null)
-  }
-
-  const handleValidateCoupon = async () => {
-    if (!couponCode.trim()) {
-      setCouponError("กรุณากรอกรหัสคูปอง")
+  const runCouponValidation = async (code: string) => {
+    if (!code) {
+      setCouponError("กรุณากรอกโค้ดคูปอง")
       setCouponDiscount(0)
       setCouponSuccess(null)
       return
@@ -154,7 +170,7 @@ export function useCartCheckout() {
       setCouponError(null)
       setCouponSuccess(null)
       const { discount } = await validateCartCoupon({
-        code: couponCode.trim(),
+        code: code.trim(),
         userId: (user as any)?.id ?? "guest",
         subtotal,
         items: items.map((item) => ({
@@ -174,23 +190,49 @@ export function useCartCheckout() {
     }
   }
 
-  const handleCheckout = async () => {
+  const updateCouponCode = (value: string) => {
+    setCouponCode(value)
+    setCouponError(null)
+    setCouponSuccess(null)
+  }
+
+  const handleValidateCoupon = () => void runCouponValidation(couponCode.trim())
+
+  useEffect(() => {
+    if (!couponCode) return
+    if (!items.length) return
+    if (autoAppliedCoupon.current === couponCode) return
+    autoAppliedCoupon.current = couponCode
+    void runCouponValidation(couponCode.trim())
+  }, [couponCode, items])
+
+  const handleSubmit = async () => {
     if (!isAuthenticated) {
       toast({ variant: "destructive", title: "กรุณาเข้าสู่ระบบ", description: "เข้าสู่ระบบเพื่อทำการสั่งซื้อ" })
+      router.replace("/cart")
       return
     }
     if (!itemCount) {
-      toast({ variant: "destructive", title: "ไม่มีสินค้าในตะกร้า", description: "เลือกสินค้าที่ต้องการก่อนทำการสั่งซื้อ" })
+      toast({ variant: "destructive", title: "ไม่มีสินค้า", description: "เพิ่มสินค้าในตะกร้าเพื่อทำการสั่งซื้อ" })
+      router.replace("/cart")
       return
     }
+
+    setShippingError(null)
+    const schoolCheck = validateSchool()
+    if (!schoolCheck.ok) {
+      setShippingError(schoolCheck.error)
+      return
+    }
+
     if (anyPhysical) {
       const validation = shippingAddressSchema.safeParse(shipping)
       if (!validation.success) {
         setShippingError(validation.error.issues[0]?.message ?? "ข้อมูลจัดส่งไม่ถูกต้อง")
         return
       }
-      setShippingError(null)
     }
+
     try {
       setSubmitting(true)
       const { orderId } = await createOrder({
@@ -202,9 +244,11 @@ export function useCartCheckout() {
           quantity: item.quantity,
           unitPrice: item.unitPrice,
         })),
-        couponCode: couponCode || undefined,
+        couponCode: couponCode ? couponCode.trim() : undefined,
         shippingAddress: anyPhysical ? shipping : undefined,
+        school: schoolCheck.value,
       })
+      if (schoolCheck.value) onSchoolSaved(schoolCheck.value)
       toast({ title: "สร้างคำสั่งซื้อสำเร็จ", description: "โปรดอัพโหลดสลิปชำระเงินหากมี" })
       void refresh()
       if (orderId) {
@@ -219,19 +263,22 @@ export function useCartCheckout() {
     }
   }
 
+  useEffect(() => {
+    if (!loading && !itemCount) {
+      router.replace("/cart")
+    }
+  }, [loading, itemCount, router])
+
   return {
     router,
     items,
-    loading,
-    syncing,
     itemCount,
-    increase,
-    decrease,
-    remove,
-    isAuthenticated,
+    syncing,
+    loadingState: loading || authLoading,
     coverMap,
     subtotal,
     totalAfterDiscount,
+    couponDiscount,
     anyPhysical,
     couponCode,
     updateCouponCode,
@@ -239,11 +286,13 @@ export function useCartCheckout() {
     couponSuccess,
     validatingCoupon,
     handleValidateCoupon,
+    school,
+    schoolInput,
+    setSchoolInput,
     shipping,
     setShipping,
     shippingError,
-    couponDiscount,
     submitting,
-    handleCheckout,
+    handleSubmit,
   }
 }

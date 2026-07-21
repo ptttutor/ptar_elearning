@@ -101,6 +101,25 @@ Rules for what goes where:
   no SEO need, not part of this pass (see the approved plan for the full
   batch list and reasoning).
 
+## When something is needed by more than one feature
+
+`features/<x>/{hooks,api,schemas,components}` are for logic local to one
+feature. The moment a hook/api-call/schema is needed by a **second**
+feature, promote it out instead of copy-pasting or reaching across feature
+folders:
+
+- Cross-feature **schemas** → `lib/schemas/` (e.g. `lib/schemas/shipping-address.schema.ts`,
+  needed by both `features/cart` and `features/checkout`).
+- Cross-feature **api helpers** → `lib/api/` (e.g. `lib/api/orders.ts`, `lib/api/coupons.ts`).
+- Cross-feature **hooks** → the existing top-level `hooks/` folder (this repo
+  already does this — `hooks/use-school-field.ts` is used by three checkout
+  pages; follow that precedent, don't add a second copy per feature).
+- Cross-feature **components** → the existing top-level `components/`
+  (unchanged from before this standard).
+
+Don't promote pre-emptively — a schema/hook used by exactly one feature
+stays in that feature's folder until a second consumer actually shows up.
+
 ## Reference implementation
 
 - `app/page.tsx` / `features/home/home-client.tsx` — simplest case, no data
@@ -114,3 +133,14 @@ Rules for what goes where:
   before this standard existed; use them as the template for the server-side
   `getBaseUrl()` + `fetch` + `generateMetadata` pattern once a page needs
   real first-paint data (courses, books, exam-bank, mock-exams).
+- `app/checkout/**` / `features/checkout/**` — four routes (cart/course/ebook/mock-exam
+  checkout) that were ~90% duplicated logic between the course and ebook
+  pages specifically. `features/checkout/hooks/use-single-item-checkout.ts`
+  is the shared hook for "buy one item directly" (course + ebook); mock exam
+  checkout is intentionally its own hook (`use-mock-exam-checkout.ts`) since
+  it has no shipping/school step and a different already-purchased check —
+  don't force a single item type through one mega-hook when the flows
+  genuinely diverge. Good example of the promotion rule above: this is where
+  `lib/schemas/shipping-address.schema.ts` and `lib/api/{orders,coupons}.ts`
+  came from — they started in `features/cart`, then graduated once
+  `features/checkout` needed the exact same validation/calls.

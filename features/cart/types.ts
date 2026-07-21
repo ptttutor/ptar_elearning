@@ -1,8 +1,1 @@
-export type ShippingAddress = {
-  name: string
-  phone: string
-  address: string
-  district: string
-  province: string
-  postalCode: string
-}
+export type { ShippingAddress } from "@/lib/schemas/shipping-address.schema"
