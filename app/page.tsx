@@ -9,7 +9,6 @@ import Reviews from "@/components/sections/reviews";
 import Books from "@/components/sections/books";
 import Articles from "@/components/sections/articles";
 import TeachingVideos from "@/components/sections/teaching-videos";
-import { Footer } from "@/components/sections/footer";
 import AcademicTeam from "@/components/sections/academic-team";
 import ViewOfTeaching from "@/components/sections/view-of-teaching";
 import RecommendedCourses from "@/components/sections/recommended-courses";
@@ -75,8 +74,6 @@ export default function HomePage() {
       <motion.div variants={fadeInUp}>
         <TeachingVideos />
       </motion.div>
-
-      <Footer />
     </motion.div>
   );
 }

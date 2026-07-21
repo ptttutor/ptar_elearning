@@ -4,8 +4,6 @@ import { useEffect, useMemo, useState } from "react"
 import { MotionConfig, motion } from "framer-motion"
 import Image from "next/image"
 import Link from "next/link"
-import { Navigation } from "@/components/navigation"
-import { Footer } from "@/components/sections/footer"
 
 type WorkItem = {
   id: string | number
@@ -113,7 +111,6 @@ export default function StudentWorksPage() {
 
   return (
     <MotionConfig transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}>
-      <Navigation />
       <main className="min-h-screen bg-background flex flex-col">
         <section className="relative">
          
@@ -161,9 +158,7 @@ export default function StudentWorksPage() {
           </div>
         </motion.section>
       </main>
-      <Footer />
 
-   
       <style jsx>{`
         .shimmer {
           background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);

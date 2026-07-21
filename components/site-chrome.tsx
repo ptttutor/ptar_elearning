@@ -3,6 +3,7 @@
 import type React from "react"
 import { usePathname } from "next/navigation"
 import { Navigation } from "@/components/navigation"
+import { Footer } from "@/components/sections/footer"
 import { AuthProvider } from "@/components/auth-provider"
 import { CartProvider } from "@/components/cart-provider"
 import { Toaster } from "@/components/ui/toaster"
@@ -24,6 +25,7 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
       <CartProvider>
         <Navigation />
         <main className="pt-16 lg:pt-20">{children}</main>
+        <Footer />
         <Toaster />
       </CartProvider>
     </AuthProvider>

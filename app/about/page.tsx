@@ -2,8 +2,6 @@
 
 import React from "react"
 import { motion } from "framer-motion"
-import { Navigation } from "@/components/navigation"
-import { Footer } from "@/components/sections/footer"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -107,8 +105,6 @@ export default function AboutPage() {
 
   return (
     <>
-      <Navigation />
-
       <main className="min-h-screen bg-gradient-to-br from-accent to-background">
         <motion.section
           initial={{ opacity: 0, y: 20 }}
@@ -305,8 +301,6 @@ export default function AboutPage() {
           </div>
         </motion.section>
       </main>
-
-      <Footer />
     </>
   )
 }

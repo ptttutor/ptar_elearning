@@ -19,8 +19,6 @@ import { GraduationCap, BookOpen as BookIcon } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Navigation } from "@/components/navigation"
-import { Footer } from "@/components/sections/footer"
 import { useSearchParams } from "next/navigation"
 
 // Grade Level Enum
@@ -314,7 +312,6 @@ export default function CoursesPage() {
 
   return (
     <>
-      <Navigation />
       <div className="min-h-screen bg-background pt-0 md:pt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
@@ -538,7 +535,6 @@ export default function CoursesPage() {
           )}
         </div>
       </div>
-      <Footer />
     </>
   )
 }

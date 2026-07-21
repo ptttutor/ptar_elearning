@@ -30,8 +30,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Navigation } from "@/components/navigation";
-import { Footer } from "@/components/sections/footer";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import LoginModal from "@/components/login-modal";
@@ -637,7 +635,6 @@ export default function ExamBankPage() {
 
   return (
     <>
-      <Navigation />
       <div className="min-h-screen bg-gradient-to-br from-background to-accent pt-20">
         <div className="container mx-auto px-4 py-8">
           <motion.div
@@ -1024,8 +1021,6 @@ export default function ExamBankPage() {
       </Dialog>
 
       <LoginModal isOpen={loginOpen} onClose={() => setLoginOpen(false)} />
-
-      <Footer />
 
       <style jsx>{`
         .shimmer {

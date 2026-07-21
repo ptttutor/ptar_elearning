@@ -1,6 +1,9 @@
-"use client"
-
 import Link from "next/link"
+
+export const metadata = {
+  title: "ข้อกำหนดการใช้งาน | เคมีพี่ต้า",
+  description: "ข้อกำหนดการใช้งานสำหรับเว็บไซต์และระบบเรียนออนไลน์ เคมีพี่ต้า",
+}
 
 export default function TermsPage() {
   return (

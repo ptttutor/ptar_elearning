@@ -8,8 +8,6 @@ import { ArrowLeft, HelpCircle, Clock, School, Zap, Loader2, BookOpen } from "lu
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Navigation } from "@/components/navigation"
-import { Footer } from "@/components/sections/footer"
 import { useAuth } from "@/components/auth-provider"
 import { useToast } from "@/hooks/use-toast"
 import LoginModal from "@/components/login-modal"
@@ -126,7 +124,6 @@ export default function MockExamDetailPage() {
 
   return (
     <>
-      <Navigation />
       <div className="min-h-screen bg-background pt-0 md:pt-20">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <Button variant="ghost" className="mb-6" onClick={() => router.push("/mock-exams")}>
@@ -240,7 +237,6 @@ export default function MockExamDetailPage() {
           )}
         </div>
       </div>
-      <Footer />
       <LoginModal isOpen={loginOpen} onClose={() => setLoginOpen(false)} />
     </>
   )

@@ -3,8 +3,6 @@
 import { use, useEffect, useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
-import { Navigation } from "@/components/navigation"
-import { Footer } from "@/components/sections/footer"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -159,7 +157,6 @@ export default function ExamViewer({ params }: { params: Promise<{ id: string }>
 
   return (
     <>
-      <Navigation />
       <div className="min-h-screen bg-gradient-to-br from-background to-accent pt-20">
         <div className="container mx-auto px-4 py-6">
 <div className="mb-4">
@@ -219,7 +216,6 @@ export default function ExamViewer({ params }: { params: Promise<{ id: string }>
           )}
         </div>
       </div>
-      <Footer />
 
       <LoginModal isOpen={loginOpen} onClose={() => setLoginOpen(false)} />
     </>
