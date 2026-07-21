@@ -1,5 +1,6 @@
 import type { NormalizedShipping, Order, OrderItem, SummaryRow } from "@/features/order-success/types"
 import { formatCurrency } from "@/lib/format"
+import { isPaidLikeStatus } from "@/lib/order-status"
 
 /**
  * Pure derivations from an Order — no state, no effects. Kept out of the
@@ -7,10 +8,7 @@ import { formatCurrency } from "@/lib/format"
  * price breakdown rows are built, ...) can be read/tested on its own.
  */
 
-export function isPaidLikeStatus(status?: string) {
-  const s = (status || "").toUpperCase()
-  return ["COMPLETED", "PAID", "APPROVED", "SUCCESS"].includes(s)
-}
+export { isPaidLikeStatus }
 
 export function getSafeUserId(user: any): string | undefined {
   return (user?.id ?? user?.userId ?? user?._id ?? user?.uid) || undefined
