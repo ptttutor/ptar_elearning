@@ -6,8 +6,8 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Separator } from "@/components/ui/separator"
 import { useCheckoutCart } from "@/features/checkout/hooks/use-checkout-cart"
 import { CouponInput } from "@/features/checkout/components/coupon-input"
-import { SchoolField } from "@/features/checkout/components/school-field"
-import { ShippingFields } from "@/features/checkout/components/shipping-fields"
+import { SchoolField } from "@/components/school-field"
+import { ShippingFields } from "@/components/shipping-fields"
 import { CheckoutOrderItemRow } from "@/features/checkout/components/checkout-order-item-row"
 
 export function CheckoutCartClient() {

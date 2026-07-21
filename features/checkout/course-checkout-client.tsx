@@ -7,8 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { useSingleItemCheckout } from "@/features/checkout/hooks/use-single-item-checkout"
 import { fetchCourseById } from "@/features/checkout/api/fetch-course"
 import { CouponInput } from "@/features/checkout/components/coupon-input"
-import { SchoolField } from "@/features/checkout/components/school-field"
-import { ShippingFields } from "@/features/checkout/components/shipping-fields"
+import { SchoolField } from "@/components/school-field"
+import { ShippingFields } from "@/components/shipping-fields"
 
 export function CourseCheckoutClient({ id }: { id: string }) {
   const {
