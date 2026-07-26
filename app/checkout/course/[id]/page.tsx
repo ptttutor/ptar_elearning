@@ -1,7 +1,8 @@
 import { CourseCheckoutClient } from "@/features/checkout/course-checkout-client"
+import { pageTitle } from "@/lib/site-config"
 
 export const metadata = {
-  title: "ยืนยันการสั่งซื้อคอร์ส | เคมีพี่ต้า",
+  title: pageTitle("ยืนยันการสั่งซื้อคอร์ส"),
 }
 
 type PageProps = { params: Promise<{ id: string }> }

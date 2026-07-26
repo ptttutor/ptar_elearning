@@ -1,9 +1,11 @@
-# เคมีครูพี่ต้า (Chemistry P'Tar)
+# E-Learning Platform Template (เดิม: เคมีครูพี่ต้า)
 
-เว็บไซต์แนะนำโรงเรียนกวดวิชาเคมีครูพี่ต้า พัฒนาโดยใช้ **Next.js 15**, **React 19**, **Tailwind CSS 4**, และ **Shadcn/UI**
+เทมเพลตเว็บไซต์ e-learning สำหรับติวเตอร์/โรงเรียนกวดวิชา พัฒนาโดยใช้ **Next.js 15**, **React 18**,
+**Tailwind CSS 4**, และ **Shadcn/UI** — รองรับการปรับแบรนด์ใหม่ทั้งหมดผ่านไฟล์เดียว
+(`lib/site-config.ts`) โดยไม่ต้องแก้โค้ดหลายที่
 
-🌐 **เว็บไซต์หลัก**: [https://ptarchem.com](https://ptarchem.com)  
-
+📘 **สำหรับผู้ซื้อ/ผู้ติดตั้ง**: ดู [SETUP.md](./SETUP.md) สำหรับขั้นตอนติดตั้งและปรับแบรนด์แบบละเอียด
+📜 **ใบอนุญาต**: [LICENSE](./LICENSE) — Commercial Template License (1 โปรเจกต์ต่อ 1 ใบอนุญาต ห้ามขายต่อซอร์สโค้ด)
 
 ---
 
@@ -20,5 +22,5 @@
 
 
 ## License
-Proprietary (All rights reserved). See [LICENSE](./LICENSE).
-© 2025 Phuris Kruacharee.
+Commercial Template License. See [LICENSE](./LICENSE).
+© 2025–2026 tawan.dev.

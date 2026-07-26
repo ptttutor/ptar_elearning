@@ -1,7 +1,8 @@
 import { MyCoursesPageClient } from "@/features/profile-my-courses/my-courses-page-client"
+import { pageTitle } from "@/lib/site-config"
 
 export const metadata = {
-  title: "คอร์สของฉัน | เคมีพี่ต้า",
+  title: pageTitle("คอร์สของฉัน"),
 }
 
 export default function MyCoursesPage() {

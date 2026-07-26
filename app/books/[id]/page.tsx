@@ -1,6 +1,7 @@
 import { BookDetailClient } from "@/features/book-detail/book-detail-client"
 import { fetchBookById } from "@/features/book-detail/api/fetch-book"
 import { getBaseUrl } from "@/lib/get-base-url"
+import { siteConfig } from "@/lib/site-config"
 
 type PageProps = { params: Promise<{ id: string }> }
 
@@ -10,11 +11,11 @@ export async function generateMetadata({ params }: PageProps) {
   const book = await fetchBookById(id, baseUrl).catch(() => null)
 
   if (!book) {
-    return { title: "ไม่พบหนังสือนี้ | เคมีพี่ต้า" }
+    return { title: `ไม่พบหนังสือนี้ | ${siteConfig.siteName}` }
   }
 
   return {
-    title: `${book.title} | เคมีพี่ต้า`,
+    title: `${book.title} | ${siteConfig.siteName}`,
     description: book.description?.slice(0, 160) || `หนังสือ ${book.title}`,
     openGraph: {
       title: book.title,

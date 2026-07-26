@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { Order } from "@/features/order-success/types"
+import { siteConfig } from "@/lib/site-config"
 
 export function BankTransferCard({ order, onUploadClick }: { order: Order; onUploadClick: () => void }) {
   const copy = (text: string) => navigator.clipboard?.writeText(text)
@@ -68,7 +69,7 @@ export function BankTransferCard({ order, onUploadClick }: { order: Order; onUpl
               />
             </div>
             <div className="space-y-1 bg-white px-2 pb-3 text-center text-xs text-muted-foreground">
-              <div>กวดวิชาภาษาเคมีพี่ต้า</div>
+              <div>{siteConfig.fullName}</div>
             </div>
           </div>
           <span className="text-xs text-muted-foreground text-center">สแกน QR เพื่อโอนเงิน</span>

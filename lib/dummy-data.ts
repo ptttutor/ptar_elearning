@@ -1,3 +1,5 @@
+import { siteConfig } from "@/lib/site-config"
+
 export const bannerSlides = [
   {
     id: 1,
@@ -241,7 +243,7 @@ export const socialLinks = [
 
 export const contactInfo = {
   email: "contact@demo-physics.com",
-  schoolName: "โรงเรียนกวดวิชาเคมีพี่ต้า",
+  schoolName: siteConfig.fullName,
   subtitle: "(แพลตฟอร์มการเรียนรู้สำหรับทุกคน)",
   address: "สำนักงานใหญ่ : กรุงเทพมหานคร ประเทศไทย",
   hours: {

@@ -1,6 +1,7 @@
 import { MockExamDetailClient } from "@/features/mock-exam-detail/mock-exam-detail-client"
 import { fetchMockExamById } from "@/features/mock-exam-detail/api/mock-exam"
 import { getBaseUrl } from "@/lib/get-base-url"
+import { siteConfig } from "@/lib/site-config"
 
 type PageProps = { params: Promise<{ id: string }> }
 
@@ -10,11 +11,11 @@ export async function generateMetadata({ params }: PageProps) {
   const exam = await fetchMockExamById(id, baseUrl).catch(() => null)
 
   if (!exam) {
-    return { title: "ไม่พบข้อสอบจำลองนี้ | เคมีพี่ต้า" }
+    return { title: `ไม่พบข้อสอบจำลองนี้ | ${siteConfig.siteName}` }
   }
 
   return {
-    title: `${exam.title} | เคมีพี่ต้า`,
+    title: `${exam.title} | ${siteConfig.siteName}`,
     description: exam.description?.slice(0, 160) || `ข้อสอบจำลอง ${exam.title}`,
   }
 }

@@ -1,7 +1,8 @@
 import { CourseCategoryClient } from "@/features/course-category/course-category-client"
+import { pageTitle } from "@/lib/site-config"
 
 export const metadata = {
-  title: "คอร์ส ม.ต้น | เคมีพี่ต้า",
+  title: pageTitle("คอร์ส ม.ต้น"),
   description: "เลือกคอร์สที่เหมาะกับระดับ ม.ต้น พร้อมวิดีโอแนะนำและเนื้อหาคุณภาพสูง",
 }
 

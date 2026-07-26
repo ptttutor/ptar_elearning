@@ -1,10 +1,11 @@
 import { CoursesListClient } from "@/features/courses-list/courses-list-client"
 import { fetchCourses, fetchSubjectOptions, PAGE_SIZE } from "@/features/courses-list/api/fetch-courses"
 import { getBaseUrl } from "@/lib/get-base-url"
+import { pageTitle, siteConfig } from "@/lib/site-config"
 
 export const metadata = {
-  title: "คอร์สเรียนทั้งหมด | เคมีพี่ต้า",
-  description: "เลือกคอร์สเรียนเคมีที่เหมาะกับเป้าหมายของคุณ เรียนกับต้าเคมีพี่ต้าผู้เชี่ยวชาญ",
+  title: pageTitle("คอร์สเรียนทั้งหมด"),
+  description: `เลือกคอร์สเรียนเคมีที่เหมาะกับเป้าหมายของคุณ เรียนกับต้า${siteConfig.siteName}ผู้เชี่ยวชาญ`,
 }
 
 type PageProps = { searchParams: Promise<{ gradeLevel?: string }> }

@@ -1,7 +1,8 @@
 import { MockExamResultClient } from "@/features/mock-exam-result/mock-exam-result-client"
+import { pageTitle } from "@/lib/site-config"
 
 export const metadata = {
-  title: "ผลข้อสอบจำลอง | เคมีพี่ต้า",
+  title: pageTitle("ผลข้อสอบจำลอง"),
 }
 
 type PageProps = { params: Promise<{ attemptId: string }> }

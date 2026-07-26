@@ -1,7 +1,8 @@
 import { MockExamCheckoutClient } from "@/features/checkout/mock-exam-checkout-client"
+import { pageTitle } from "@/lib/site-config"
 
 export const metadata = {
-  title: "ยืนยันการสั่งซื้อข้อสอบจำลอง | เคมีพี่ต้า",
+  title: pageTitle("ยืนยันการสั่งซื้อข้อสอบจำลอง"),
 }
 
 type PageProps = { params: Promise<{ id: string }> }

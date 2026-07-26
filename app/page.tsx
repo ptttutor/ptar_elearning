@@ -1,8 +1,9 @@
 import { HomeClient } from "@/features/home/home-client"
+import { siteConfig } from "@/lib/site-config"
 
 export const metadata = {
-  title: "เคมีพี่ต้า โรงเรียนกวดวิชาเคมี",
-  description: "โรงเรียนกวดวิชาเคมีพี่ต้า คอร์สเรียนเคมี ม.ต้น-ม.ปลาย พร้อมข้อสอบและบทความ",
+  title: `${siteConfig.siteName} ${siteConfig.fullName}`,
+  description: siteConfig.defaultDescription,
 }
 
 export default function HomePage() {

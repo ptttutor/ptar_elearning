@@ -1,8 +1,9 @@
 import Link from "next/link"
+import { siteConfig, pageTitle } from "@/lib/site-config"
 
 export const metadata = {
-  title: "นโยบายความเป็นส่วนตัว | เคมีพี่ต้า",
-  description: "นโยบายความเป็นส่วนตัวสำหรับเว็บไซต์และระบบเรียนออนไลน์ เคมีพี่ต้า",
+  title: pageTitle("นโยบายความเป็นส่วนตัว"),
+  description: `นโยบายความเป็นส่วนตัวสำหรับเว็บไซต์และระบบเรียนออนไลน์ ${siteConfig.siteName}`,
 }
 
 export default function PrivacyPage() {

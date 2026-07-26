@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import Script from "next/script"
 import { getBaseUrl } from "@/lib/get-base-url"
+import { pageTitle } from "@/lib/site-config"
 
 const PAGE_SIZE = 9
 const FETCH_LIMIT = 200
 
 export const metadata = {
-  title: "บทความทั้งหมด | เคมีพี่ต้า",
+  title: pageTitle("บทความทั้งหมด"),
   description: "รวมบทความ เทคนิคการเรียนเคมี และแนะแนวการสอบ",
 }
 

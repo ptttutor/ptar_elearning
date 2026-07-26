@@ -1,9 +1,10 @@
 import { MockExamsListClient } from "@/features/mock-exams-list/mock-exams-list-client"
 import { fetchMockExams } from "@/features/mock-exams-list/api/fetch-mock-exams"
 import { getBaseUrl } from "@/lib/get-base-url"
+import { pageTitle } from "@/lib/site-config"
 
 export const metadata = {
-  title: "ระบบจำลองสอบ | เคมีพี่ต้า",
+  title: pageTitle("ระบบจำลองสอบ"),
   description: "ฝึกทำโจทย์แบบไม่จับเวลา หรือจำลองสถานการณ์สอบจริงแบบจับเวลา ก่อนลงสนามจริง",
 }
 

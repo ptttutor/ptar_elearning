@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Mail, MapPin, Clock } from "lucide-react";
 import { SiFacebook, SiInstagram, SiTiktok, SiLine, SiYoutube } from "react-icons/si";
-import { platform } from "os";
+import { siteConfig } from "@/lib/site-config";
 
 export function Footer() {
   const getSocialIcon = (platform: string) => {
@@ -21,38 +21,14 @@ export function Footer() {
     }
   };
 
-  const socialLinks = [
-    {
-      platform: "YouTube",
-      username: "เคมี พี่ต้า",
-      url: "https://www.youtube.com/@Chemistar",
-    },
-    {
-      platform: "Instagram",
-      username: "Chem_istar",
-      url: "https://www.instagram.com/chem_istar?igsh=eXRrMzA3c3N6bnV4",
-    },
-    {
-      platform: "Facebook",
-      username: "เคมี พี่ต้า online",
-      url: "https://www.facebook.com/komkaiChemistry/?locale=th_TH",
-    },
-    {
-      platform: "Line",
-      username: "chemistar518",
-      url: "https://line.me/ti/p/sjYGzkVGDL",
-    },
-  ];
+  const socialLinks = siteConfig.social.links;
 
   const contactInfo = {
-    email: "tihcuna888@gmail.com",
-    schoolName: "โรงเรียนกวดวิชาเคมีพี่ต้า",
-    subtitle: "(แพลตฟอร์มการเรียนรู้สำหรับทุกคน)",
-    address: "สำนักงานใหญ่ : กรุงเทพมหานคร ประเทศไทย",
-    hours: {
-      vacation: "เปิดให้บริการ 24/7 ออนไลน์",
-      semester: "เปิดให้บริการ 24/7 ออนไลน์",
-    },
+    email: siteConfig.contact.email,
+    schoolName: siteConfig.fullName,
+    subtitle: siteConfig.subtitle,
+    address: siteConfig.contact.address,
+    hours: siteConfig.contact.hours,
   };
 
   return (
@@ -62,14 +38,14 @@ export function Footer() {
           <div className="lg:col-span-2">
             <div className="flex items-center space-x-2 mb-6">
               <div className="w-12 h-12 rounded-lg flex items-center justify-center">
-                <img src="/new-logo.png" alt="Logo" className="w-full h-full" />
+                <img src={siteConfig.logo} alt="Logo" className="w-full h-full" />
               </div>
               <div>
                 <h3 className="text-xl font-bold text-foreground">
-                  โรงเรียนกวดวิชาเคมีพี่ต้า
+                  {siteConfig.fullName}
                 </h3>
                 <p className="text-muted-foreground text-sm">
-                  แพลตฟอร์มการเรียนรู้ออนไลน์
+                  {siteConfig.tagline}
                 </p>
               </div>
             </div>
@@ -162,7 +138,7 @@ export function Footer() {
 
             <div className="mt-8">
               <button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 px-4 rounded-lg font-medium transition-colors duration-200 cursor-pointer hover:font-bold">
-                <Link href="https://line.me/ti/p/sjYGzkVGDL" target="_blank" rel="noopener noreferrer">
+                <Link href={siteConfig.social.lineUrl} target="_blank" rel="noopener noreferrer">
                   ติดต่อเราเลย
                 </Link>
               </button>

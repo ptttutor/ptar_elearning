@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Award, Users, BookOpen, Target } from "lucide-react"
 import { TeachingCarousel } from "@/features/about/components/teaching-carousel"
 import type { TeachingImage } from "@/features/about/types"
+import { siteConfig } from "@/lib/site-config"
 
 const achievements = [
   "วิทยาศาสตร์เคมี ทุน พสวท. มหาวิทยาลัยขอนแก่น",
@@ -23,7 +24,7 @@ export function AboutClient({ images }: { images: TeachingImage[] }) {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-4 lg:mb-16">
             <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-4">เกี่ยวกับเรา</h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">โรงเรียนกวดวิชาเคมี ต้าเคมีพี่ต้า</p>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">{siteConfig.fullName}</p>
             <p className="text-lg text-muted-foreground/80 mt-2">(ในความควบคุมของกระทรวงศึกษาธิการ)</p>
           </div>
         </div>
@@ -34,7 +35,7 @@ export function AboutClient({ images }: { images: TeachingImage[] }) {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="relative">
               <div className="relative max-w-[250px] mx-auto rounded-2xl overflow-hidden shadow-2xl md:max-w-none md:w-full md:h-190">
-                <Image src="/profile_about.png" alt="ต้าเคมีพี่ต้า" width={1200} height={1500} sizes="(min-width: 468px) 50vw, 100vw" className="w-full h-auto md:h-full md:object-cover" priority />
+                <Image src="/profile_about.png" alt={siteConfig.siteName} width={1200} height={1500} sizes="(min-width: 468px) 50vw, 100vw" className="w-full h-auto md:h-full md:object-cover" priority />
               </div>
 
               <div className="absolute -bottom-4 right-12 md:-bottom-6 md:-right-6 bg-primary text-primary-foreground p-3 md:p-4 rounded-2xl shadow-lg">
@@ -45,7 +46,7 @@ export function AboutClient({ images }: { images: TeachingImage[] }) {
             <div className="space-y-8">
               <div>
                 <h2 className="text-3xl font-bold text-foreground mb-2">เคมี พี่ต้า</h2>
-                <p className="text-xl text-muted-foreground mb-4">ต้าเคมีพี่ต้า</p>
+                <p className="text-xl text-muted-foreground mb-4">{siteConfig.siteName}</p>
                 <Badge variant="outline" className="text-primary border-primary">
                   ผู้เชี่ยวชาญด้านเคมี
                 </Badge>

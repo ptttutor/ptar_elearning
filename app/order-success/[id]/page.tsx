@@ -1,7 +1,8 @@
 import { OrderSuccessClient } from "@/features/order-success/order-success-client"
+import { pageTitle } from "@/lib/site-config"
 
 export const metadata = {
-  title: "ยืนยันการสั่งซื้อ | เคมีพี่ต้า",
+  title: pageTitle("ยืนยันการสั่งซื้อ"),
 }
 
 type PageProps = { params: Promise<{ id: string }> }

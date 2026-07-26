@@ -1,7 +1,8 @@
 import { LiveScheduleClient } from "@/features/live-schedule/live-schedule-client"
+import { pageTitle } from "@/lib/site-config"
 
 export const metadata = {
-  title: "ตารางรอบสด, ถ่ายทอดสด | เคมีพี่ต้า",
+  title: pageTitle("ตารางรอบสด, ถ่ายทอดสด"),
   description: "รอบเรียนสด (Onsite/Online) และรายละเอียดการสมัคร พร้อมติดตามการเรียนแบบเรียลไทม์",
 }
 

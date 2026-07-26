@@ -1,7 +1,8 @@
 import { ExamResultsListClient } from "@/features/exam-results/exam-results-list-client"
+import { pageTitle } from "@/lib/site-config"
 
 export const metadata = {
-  title: "ประวัติการทำข้อสอบ | เคมีพี่ต้า",
+  title: pageTitle("ประวัติการทำข้อสอบ"),
 }
 
 export default function ExamResultsPage() {

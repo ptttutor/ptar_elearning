@@ -1,7 +1,8 @@
 import { OrdersPageClient } from "@/features/profile-orders/orders-page-client"
+import { pageTitle } from "@/lib/site-config"
 
 export const metadata = {
-  title: "คำสั่งซื้อของฉัน | เคมีพี่ต้า",
+  title: pageTitle("คำสั่งซื้อของฉัน"),
 }
 
 export default function OrdersPage() {

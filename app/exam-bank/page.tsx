@@ -4,9 +4,10 @@ import { fetchExamCategories } from "@/features/exam-bank/api/fetch-exam-categor
 import { fetchExamYears } from "@/features/exam-bank/api/fetch-exam-years"
 import { fetchCanDownload } from "@/features/exam-bank/api/fetch-can-download"
 import { getBaseUrl } from "@/lib/get-base-url"
+import { pageTitle } from "@/lib/site-config"
 
 export const metadata = {
-  title: "คลังข้อสอบ | เคมีพี่ต้า",
+  title: pageTitle("คลังข้อสอบ"),
   description: "รวบรวมข้อสอบเคมีและวิชาที่เกี่ยวข้องจากหลายปีการศึกษา พร้อมให้ดูและดาวน์โหลดฟรี",
 }
 

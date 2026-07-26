@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { Award, Target, GraduationCap, School } from "lucide-react"
+import { siteConfig } from "@/lib/site-config"
 
 export default function AboutTeacher() {
   return (
@@ -13,7 +14,7 @@ export default function AboutTeacher() {
           <div className="space-y-4 text-center md:text-left max-w-2xl mx-auto md:mx-0 md:col-span-7 md:col-start-6 md:row-start-1">
             <h2 className="text-4xl md:text-4xl lg:text-5xl font-bold text-foreground text-balance">ครูพี่ต้า (อนุชิต)</h2>
             <div className="space-y-2">
-              <h3 className="text-2xl font-semibold text-foreground text-pretty">โรงเรียนกวดวิชาเคมีพี่ต้า</h3>
+              <h3 className="text-2xl font-semibold text-foreground text-pretty">{siteConfig.fullName}</h3>
               <p className="text-muted-foreground text-pretty">(แพลตฟอร์มการเรียนรู้สำหรับทุกคน)</p>
             </div>
           </div>
@@ -76,7 +77,7 @@ export default function AboutTeacher() {
                 <Target className="h-6 w-6 text-primary" /> ปัจจุบัน
               </h4>
               <div className="flex flex-wrap gap-2">
-                {["อาจารย์ โรงเรียนกวดวิชาเคมีพี่ต้า"].map((position, index) => (
+                {[`อาจารย์ ${siteConfig.fullName}`].map((position, index) => (
                   <Badge
                     key={index}
                     variant="secondary"

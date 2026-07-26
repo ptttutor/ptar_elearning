@@ -1,6 +1,7 @@
 import Image from "next/image"
 import { notFound } from "next/navigation"
 import { getBaseUrl } from "@/lib/get-base-url"
+import { siteConfig } from "@/lib/site-config"
 
 type PageProps = { params: Promise<{ slug: string }> }
 
@@ -110,7 +111,7 @@ async function fetchArticle(slug: string): Promise<ArticleItem | null> {
     const desktop = found?.imageUrl || found?.imageUrlMobileMode || ""
     const mobile = found?.imageUrlMobileMode || found?.imageUrl || ""
     const excerpt = found?.excerpt || deriveExcerpt(found?.content, 180)
-    const authorName = found?.author?.name || found?.authorName || "เคมีพี่ต้า"
+    const authorName = found?.author?.name || found?.authorName || siteConfig.siteName
     const postContents: ArticleContentBlock[] = Array.isArray(found?.postContents)
       ? found.postContents
           .map((block: any, idx: number): ArticleContentBlock => ({
@@ -230,8 +231,8 @@ export default async function ArticleDetailPage({ params }: PageProps) {
                     {article.authorName?.charAt(0) ?? "P"}
                   </div>
                   <div>
-                    <div className="font-semibold text-white">{article.authorName ?? "ทีมเคมีพี่ต้า"}</div>
-                    <div className="text-xs text-amber-100/70">ทีมคอนเทนต์เคมีพี่ต้า</div>
+                    <div className="font-semibold text-white">{article.authorName ?? `ทีม${siteConfig.siteName}`}</div>
+                    <div className="text-xs text-amber-100/70">ทีมคอนเทนต์{siteConfig.siteName}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 rounded-full bg-white/5 px-4 py-2 text-xs uppercase tracking-wide text-amber-100/70">

@@ -1,9 +1,10 @@
 import { AboutClient } from "@/features/about/about-client"
 import { fetchTeachingImages } from "@/features/about/api/fetch-teaching-images"
+import { siteConfig, pageTitle } from "@/lib/site-config"
 
 export const metadata = {
-  title: "เกี่ยวกับเรา | เคมีพี่ต้า",
-  description: "โรงเรียนกวดวิชาเคมี ต้าเคมีพี่ต้า ประวัติและประสบการณ์การสอน บรรยากาศการเรียนการสอน",
+  title: pageTitle("เกี่ยวกับเรา"),
+  description: `${siteConfig.fullName} ประวัติและประสบการณ์การสอน บรรยากาศการเรียนการสอน`,
 }
 
 export default async function AboutPage() {

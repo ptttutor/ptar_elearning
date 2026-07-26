@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Sarabun } from "next/font/google"
 import "./globals.css"
 import { SiteChrome } from "@/components/site-chrome"
+import { siteConfig } from "@/lib/site-config"
 
 const sarabun = Sarabun({
   subsets: ["thai", "latin"],
@@ -13,12 +14,12 @@ const sarabun = Sarabun({
 })
 
 export const metadata: Metadata = {
-  title: "เคมีพี่ต้า โรงเรียนกวดวิชาเคมี",
-  description: "โรงเรียนกวดวิชาเคมีพี่ต้า ",
-  keywords: "โรงเรียนกวดวิชาเคมีพี่ต้า",
+  title: `${siteConfig.siteName} ${siteConfig.fullName}`,
+  description: siteConfig.fullName,
+  keywords: siteConfig.keywords,
   generator: "Demo-Learning.app",
   icons: {
-    icon: "/new-logo.png",
+    icon: siteConfig.logo,
   },
 }
 

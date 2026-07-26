@@ -1,7 +1,8 @@
 import { CoursePlayerClient } from "@/features/course-player/course-player-client"
+import { pageTitle } from "@/lib/site-config"
 
 export const metadata = {
-  title: "เรียนคอร์ส | เคมีพี่ต้า",
+  title: pageTitle("เรียนคอร์ส"),
 }
 
 type PageProps = { params: Promise<{ id: string }> }

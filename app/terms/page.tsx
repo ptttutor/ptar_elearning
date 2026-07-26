@@ -1,8 +1,9 @@
 import Link from "next/link"
+import { siteConfig, pageTitle } from "@/lib/site-config"
 
 export const metadata = {
-  title: "ข้อกำหนดการใช้งาน | เคมีพี่ต้า",
-  description: "ข้อกำหนดการใช้งานสำหรับเว็บไซต์และระบบเรียนออนไลน์ เคมีพี่ต้า",
+  title: pageTitle("ข้อกำหนดการใช้งาน"),
+  description: `ข้อกำหนดการใช้งานสำหรับเว็บไซต์และระบบเรียนออนไลน์ ${siteConfig.siteName}`,
 }
 
 export default function TermsPage() {
@@ -11,7 +12,7 @@ export default function TermsPage() {
       <h1 className="text-2xl font-bold">ข้อกำหนดการใช้งาน</h1>
       <p className="text-gray-700">
         ขอบคุณที่ใช้บริการของเรา หน้านี้เป็นสรุปข้อกำหนดการใช้งานสำหรับเว็บไซต์และระบบเรียนออนไลน์ของ
-        ฟิสิกส์พี่เต้ย โดยการใช้งานเว็บไซต์นี้ แสดงว่าคุณยอมรับข้อกำหนดต่อไปนี้
+        {" "}{siteConfig.siteName} โดยการใช้งานเว็บไซต์นี้ แสดงว่าคุณยอมรับข้อกำหนดต่อไปนี้
       </p>
       <div className="space-y-4 text-gray-700">
         <section>

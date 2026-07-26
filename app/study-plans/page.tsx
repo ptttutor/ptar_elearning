@@ -1,9 +1,10 @@
 import { StudyPlansClient } from "@/features/study-plans/study-plans-client"
 import { fetchStudyPlans } from "@/features/study-plans/api/fetch-study-plans"
+import { pageTitle, siteConfig } from "@/lib/site-config"
 
 export const metadata = {
-  title: "แผนการเรียน | เคมีพี่ต้า",
-  description: "แผนการเรียนเคมีสำหรับนักเรียนโรงเรียนกวดวิชาเคมีพี่ต้า",
+  title: pageTitle("แผนการเรียน"),
+  description: `แผนการเรียนเคมีสำหรับนักเรียน${siteConfig.fullName}`,
 }
 
 export default async function StudyPlansPage() {

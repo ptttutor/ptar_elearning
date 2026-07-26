@@ -1,7 +1,8 @@
 import { EbookCheckoutClient } from "@/features/checkout/ebook-checkout-client"
+import { pageTitle } from "@/lib/site-config"
 
 export const metadata = {
-  title: "ยืนยันการสั่งซื้อหนังสือ | เคมีพี่ต้า",
+  title: pageTitle("ยืนยันการสั่งซื้อหนังสือ"),
 }
 
 type PageProps = { params: Promise<{ id: string }> }

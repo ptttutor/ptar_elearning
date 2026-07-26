@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { siteConfig } from "@/lib/site-config"
 
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
@@ -103,7 +104,7 @@ export function Navigation() {
         <div className="mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16 lg:h-20">
             <Link href="/" className="flex items-center pl-2">
-              <img src="/new-logo.png" alt="Logo" className="h-16 lg:h-20" />
+              <img src={siteConfig.logo} alt="Logo" className="h-16 lg:h-20" />
             </Link>
 
             <div className="hidden lg:flex items-center space-x-1 lg:pr-4 xl:pr-10">

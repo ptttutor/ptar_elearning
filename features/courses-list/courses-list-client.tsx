@@ -8,6 +8,7 @@ import { CourseCard } from "@/features/courses-list/components/course-card"
 import { CourseGridSkeleton } from "@/features/courses-list/components/course-grid-skeleton"
 import { PaginationControls } from "@/components/pagination-controls"
 import type { ApiCourse, SubjectOption } from "@/features/courses-list/types"
+import { siteConfig } from "@/lib/site-config"
 
 const staggerContainer = { animate: { transition: { staggerChildren: 0.1 } } }
 
@@ -40,7 +41,7 @@ export function CoursesListClient(props: CoursesListClientProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <motion.div className="text-center mb-12" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
           <h1 className="text-4xl lg:text-5xl font-bold text-foreground mb-4 text-balance">คอร์สเรียนทั้งหมด</h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto text-pretty">เลือกคอร์สที่เหมาะกับเป้าหมายของคุณ เรียนกับต้าเคมีพี่ต้าผู้เชี่ยวชาญ</p>
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto text-pretty">เลือกคอร์สที่เหมาะกับเป้าหมายของคุณ เรียนกับต้า{siteConfig.siteName}ผู้เชี่ยวชาญ</p>
         </motion.div>
 
         <motion.div className="mb-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}>

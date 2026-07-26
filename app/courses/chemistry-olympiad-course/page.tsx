@@ -1,7 +1,8 @@
 import { CourseCategoryClient } from "@/features/course-category/course-category-client"
+import { pageTitle } from "@/lib/site-config"
 
 export const metadata = {
-  title: "คอร์ส สอวน.เคมี | เคมีพี่ต้า",
+  title: pageTitle("คอร์ส สอวน.เคมี"),
   description: "เตรียมตัวสำหรับการแข่งขันโอลิมปิกวิชาการเคมี ด้วยเนื้อหาระดับสูงและเทคนิคการแก้ปัญหาขั้นสูง",
 }
 

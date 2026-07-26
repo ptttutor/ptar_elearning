@@ -1,59 +1,77 @@
-SPDX-License-Identifier: LicenseRef-Proprietary
-LicenseRef-Proprietary — Chemistry P'Tar Frontend
-Version 1.0 (2025-11-01)
+SPDX-License-Identifier: LicenseRef-Commercial-Template
+Commercial Template License — E-Learning Platform Template
+Version 2.0 (2026-07-26)
 
-Copyright (c) 2025
-Phuris Kruacharee
+Copyright (c) 2025–2026
+tawan.dev ("Licensor")
 All rights reserved.
 
 
 [ENGLISH]
 
-1) Rights and Restrictions
-   - This software is protected by copyright law.
-   - You may not copy, modify, adapt, distribute, publish, sublicense, lease, lend,
-     or use this software for any purpose without the prior written permission of the copyright holder.
-   - You must not remove, alter, or obscure any copyright notices or legal notices.
+This software ("Template") is a source-available commercial software template
+sold to individual customers for use in their own projects. Purchasing a copy
+grants the rights described below; it does not transfer copyright ownership.
 
-2) Permitted Scope of Use
-   - Use is authorized solely by "the Client specified in the development contract"
-     for the "Chemistry P'Tar" website, strictly in accordance with the contract.
-   - Any use beyond what is specified in the contract is not permitted.
+1) Grant of License
+   - Licensor grants each purchasing customer ("Licensee") a non-exclusive,
+     non-transferable license to use, modify, and rebrand the Template for
+     ONE (1) end product / website per license purchased ("the Project"),
+     for either the Licensee's own business or a single client's business,
+     unless a multi-site or agency license was purchased separately.
+
+2) Restrictions
+   - The Licensee MAY NOT resell, sublicense, redistribute, or otherwise make
+     the Template's source code available as a standalone product or template
+     to third parties, whether modified or unmodified.
+   - The Licensee MAY deploy and operate the finished Project (the rebranded
+     website/application built from the Template) commercially without
+     restriction, including for paying end-users of that Project.
+   - The Licensee must not remove, alter, or obscure this license file from
+     the source tree, even after rebranding the Project's public-facing
+     branding, name, and content.
 
 3) Disclaimer
-   - This software is provided "AS IS," without warranties of any kind, express or implied.
-     The copyright holder shall not be liable for any damages arising from the use of this software.
+   - This software is provided "AS IS," without warranties of any kind,
+     express or implied. The Licensor shall not be liable for any damages
+     arising from the use of this software.
 
 4) Governing Law
-   - This license is governed by applicable copyright laws.
+   - This license is governed by the laws of Thailand.
 
 5) Contact
-   - For permission requests, please contact: Phuris Kruacharee
-
+   - For licensing questions or multi-site/agency licensing, contact the
+     Licensor: tawan.dev.
 
 
 [THAI]
 
-1) สิทธิ์และข้อจำกัด
-   - ซอฟต์แวร์นี้ได้รับความคุ้มครองตามกฎหมายลิขสิทธิ์
-   - ห้ามทำซ้ำ (copy), แก้ไข (modify), ดัดแปลง (adapt), แจกจ่าย (distribute),
-     เผยแพร่ (publish), โอนสิทธิ์/ให้เช่า/ให้ยืม (sublicense, lease, lend),
-     หรือใช้งานเพื่อวัตถุประสงค์อื่นใด เว้นแต่ได้รับอนุญาตเป็นลายลักษณ์อักษรจากผู้ถือลิขสิทธิ์
-   - ห้ามลบ เปลี่ยนแปลง หรือซ่อนข้อความลิขสิทธิ์และการแจ้งเตือนทางกฎหมายใด ๆ
+ซอฟต์แวร์นี้ ("เทมเพลต") เป็นเทมเพลตซอฟต์แวร์เชิงพาณิชย์แบบเปิดซอร์สโค้ด (source-available)
+ที่จำหน่ายให้แก่ลูกค้าแต่ละรายเพื่อนำไปใช้ในโปรเจกต์ของตนเอง การซื้อเทมเพลตนี้
+ทำให้ได้รับสิทธิ์ตามที่ระบุไว้ด้านล่าง แต่ไม่ได้เป็นการโอนกรรมสิทธิ์ในลิขสิทธิ์
 
-2) ขอบเขตการใช้งานที่อนุญาต
-   - อนุญาตให้ "ลูกค้าที่ระบุไว้ในสัญญาว่าจ้าง" ใช้งานซอฟต์แวร์นี้เฉพาะสำหรับ
-     เว็บไซต์ "เคมีครูพี่ต้า (Chemistry P'Tar)" ตามข้อตกลงในสัญญาเท่านั้น
-   - การใช้งานอื่นใดนอกเหนือจากที่ระบุในสัญญา ให้ถือว่าไม่ได้รับอนุญาต
+1) การให้สิทธิ์
+   - ผู้ให้สิทธิ์ ("Licensor") อนุญาตให้ลูกค้าแต่ละราย ("Licensee") ใช้สิทธิ์แบบไม่ผูกขาด
+     และไม่สามารถโอนสิทธิ์ต่อได้ ในการใช้งาน แก้ไข และปรับแบรนด์เทมเพลตนี้
+     สำหรับผลิตภัณฑ์/เว็บไซต์ปลายทาง 1 แห่งต่อ 1 ใบอนุญาตที่ซื้อ ("โปรเจกต์")
+     ไม่ว่าจะเพื่อธุรกิจของ Licensee เอง หรือธุรกิจของลูกค้ารายเดียวของ Licensee
+     เว้นแต่จะซื้อใบอนุญาตแบบหลายเว็บไซต์/เอเจนซี่แยกต่างหาก
+
+2) ข้อจำกัด
+   - Licensee ห้ามนำเทมเพลตนี้ไปขายต่อ ให้เช่าช่วง แจกจ่ายซ้ำ หรือเผยแพร่ซอร์สโค้ด
+     ในฐานะผลิตภัณฑ์/เทมเพลตแยกต่างหากให้บุคคลที่สาม ไม่ว่าจะแก้ไขแล้วหรือไม่ก็ตาม
+   - Licensee สามารถนำโปรเจกต์ที่พัฒนาเสร็จแล้ว (เว็บไซต์/แอปที่ปรับแบรนด์จากเทมเพลตนี้)
+     ไปใช้งานเชิงพาณิชย์ได้โดยไม่มีข้อจำกัด รวมถึงการเก็บเงินจากผู้ใช้ปลายทางของโปรเจกต์นั้น
+   - ห้ามลบ แก้ไข หรือซ่อนไฟล์ลิขสิทธิ์นี้ออกจากซอร์สโค้ด แม้จะปรับแบรนด์หน้าเว็บไซต์แล้วก็ตาม
 
 3) ความรับผิดชอบ
    - ซอฟต์แวร์นี้ถูกจัดให้ "ตามสภาพที่เป็นอยู่ (AS IS)" โดยไม่มีการรับประกันใด ๆ
-     ทั้งโดยชัดแจ้งหรือโดยปริยาย ผู้ถือลิขสิทธิ์ไม่รับผิดชอบต่อความเสียหายใด ๆ
+     ทั้งโดยชัดแจ้งหรือโดยปริยาย ผู้ให้สิทธิ์ไม่รับผิดชอบต่อความเสียหายใด ๆ
      ที่เกิดขึ้นจากการใช้งานซอฟต์แวร์นี้
 
-4) กฎหมายที่ใช้บังคับ
-   - ข้อกำหนดนี้อยู่ภายใต้บังคับของกฎหมายลิขสิทธิ์ที่มีผลบังคับใช้
+4) aaaaaaaaaaaa
+   - ข้อกำหนดนี้อยู่ภายใต้บังคับของกฎหมายไทย
 
 5) การติดต่อ
-   - สำหรับการขออนุญาตใช้งานเพิ่มเติม กรุณาติดต่อ: Phuris Kruacharee
-
+   - สำหรับคำถามเรื่องใบอนุญาต หรือใบอนุญาตแบบหลายเว็บไซต์/เอเจนซี่ กรุณาติดต่อ:
+     tawan.dev

@@ -1,7 +1,8 @@
 import { ExamAttemptClient } from "@/features/exam-attempt/exam-attempt-client"
+import { pageTitle } from "@/lib/site-config"
 
 export const metadata = {
-  title: "ทำข้อสอบ | เคมีพี่ต้า",
+  title: pageTitle("ทำข้อสอบ"),
 }
 
 type PageProps = { params: Promise<{ id: string; examId: string }> }

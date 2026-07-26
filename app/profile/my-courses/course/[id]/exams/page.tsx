@@ -1,7 +1,8 @@
 import { CourseExamsClient } from "@/features/course-exams/course-exams-client"
+import { pageTitle } from "@/lib/site-config"
 
 export const metadata = {
-  title: "ข้อสอบของคอร์ส | เคมีพี่ต้า",
+  title: pageTitle("ข้อสอบของคอร์ส"),
 }
 
 type PageProps = { params: Promise<{ id: string }> }
