@@ -18,6 +18,9 @@ export const metadata: Metadata = {
   description: siteConfig.fullName,
   keywords: siteConfig.keywords,
   generator: "Demo-Learning.app",
+  icons: {
+    icon: siteConfig.logo,
+  },
 }
 
 export default function RootLayout({

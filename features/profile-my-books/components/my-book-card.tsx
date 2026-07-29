@@ -45,7 +45,7 @@ export function MyBookCard({ entry, meta, fileUrl, isResolving, resolved, onRetr
                     const url = `/api/proxy-view?url=${encodeURIComponent(fileUrl)}&filename=${encodeURIComponent(filename)}`
                     window.open(url, "_blank")
                   }}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                  className="bg-blue-400 hover:bg-blue-500 text-white"
                 >
                   อ่าน eBook
                 </Button>

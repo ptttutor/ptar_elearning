@@ -40,7 +40,7 @@ export function ChaptersPanel({
   onToggleContentViewed,
 }: ChaptersPanelProps) {
   return (
-    <Card className="rounded-3xl border-border shadow-sm">
+    <Card className="rounded-2xl border-border shadow-sm">
       <CardHeader className="p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <CardTitle className="text-xl">Course Overview</CardTitle>
@@ -105,17 +105,17 @@ export function ChaptersPanel({
                           </div>
                         )}
                         {ch.isFreePreview ? (
-                          <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/10 rounded-lg h-8 px-2" onClick={(e) => { e.stopPropagation(); onPreviewClick() }}>
+                          <Button variant="ghost" size="sm" className="text-[#004B7D] hover:bg-[#004B7D1A] rounded-lg h-8 px-2" onClick={(e) => { e.stopPropagation(); onPreviewClick() }}>
                             <Play className="h-4 w-4 sm:mr-1" />
                             <span className="hidden sm:inline">ดูตัวอย่าง</span>
                           </Button>
                         ) : isEnrolled ? (
-                          <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/10 rounded-lg h-8 px-2" onClick={(e) => e.stopPropagation()}>
+                          <Button variant="ghost" size="sm" className="text-[#004B7D] hover:bg-[#004B7D1A] rounded-lg h-8 px-2" onClick={(e) => e.stopPropagation()}>
                             <Play className="h-4 w-4 sm:mr-1" />
                             <span className="hidden sm:inline">เริ่มเรียน</span>
                           </Button>
                         ) : (
-                          <div className="inline-flex items-center gap-1 text-muted-foreground text-xs">
+                          <div className="inline-flex items-center gap-1 text-gray-400 text-xs">
                             <Lock className="h-4 w-4" /> <span className="hidden sm:inline">เฉพาะผู้ลงทะเบียน</span>
                           </div>
                         )}

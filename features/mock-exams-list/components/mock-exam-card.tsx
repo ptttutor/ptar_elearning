@@ -12,7 +12,7 @@ const fadeInUp = { initial: { opacity: 0, y: 30 }, animate: { opacity: 1, y: 0 }
 export function MockExamCard({ exam }: { exam: ApiMockExam }) {
   return (
     <motion.div variants={fadeInUp}>
-      <Card className="h-full rounded-3xl card-3d group">
+      <Card className="h-full hover:shadow-xl transition-shadow duration-300 group">
         <CardContent className="p-6">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <Badge className="bg-primary text-primary-foreground">{getSubjectLabel(exam.subject)}</Badge>
@@ -44,7 +44,7 @@ export function MockExamCard({ exam }: { exam: ApiMockExam }) {
 
           <div className="flex flex-wrap items-center gap-2 mb-6">
             {exam.allowPracticeMode && (
-              <Badge variant="outline" className="border-border bg-secondary text-secondary-foreground">
+              <Badge variant="outline" className="border-cyan-200 bg-cyan-50 text-cyan-700">
                 <School className="mr-1 h-3 w-3" />
                 โหมดฝึกฝน
               </Badge>
@@ -57,9 +57,9 @@ export function MockExamCard({ exam }: { exam: ApiMockExam }) {
             )}
           </div>
 
-          <Button asChild className="w-full rounded-xl">
-            <Link href={`/mock-exams/${exam.id}`}>ดูรายละเอียด</Link>
-          </Button>
+          <Link href={`/mock-exams/${exam.id}`}>
+            <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">ดูรายละเอียด</Button>
+          </Link>
         </CardContent>
       </Card>
     </motion.div>

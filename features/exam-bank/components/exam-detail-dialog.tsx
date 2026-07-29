@@ -78,7 +78,7 @@ export function ExamDetailDialog({ exam, onClose, files, filesLoading, filesErro
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" onClick={() => onViewPDF(exam?.id || "", { id: f.id, url: f.url })} className="hover:bg-primary/10 hover:border-primary/30">
+                      <Button variant="outline" size="sm" onClick={() => onViewPDF(exam?.id || "", { id: f.id, url: f.url })} className="hover:bg-blue-50 hover:border-blue-300">
                         <Eye className="h-4 w-4" />
                         {f.isDownload === false || !canDownload ? "ดูเฉลย" : "ดูข้อสอบ"}
                       </Button>

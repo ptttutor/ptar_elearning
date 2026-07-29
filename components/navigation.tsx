@@ -219,7 +219,7 @@ export function Navigation() {
                       key={item.href}
                       href={item.href}
                       onClick={() => setIsOpen(false)}
-                      className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${pathname === item.href ? "text-primary border-l-4 border-primary bg-primary/10" : "text-gray-700 hover:text-primary hover:bg-primary/10"}`}
+                      className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${pathname === item.href ? "text-[#004B7D] border-l-4 border-[#004B7D] bg-[#004B7D1A]" : "text-gray-700 hover:text-[#004B7D] hover:bg-[#004B7D1A]"}`}
                     >
                       {item.label}
                     </Link>
@@ -247,7 +247,7 @@ export function Navigation() {
                   ) : !isAuthenticated ? (
                     <Button
                       onClick={handleLoginClick}
-                      className="block w-full text-left px-3 py-0 rounded-md text-base font-medium bg-primary hover:bg-primary/90 text-primary-foreground"
+                      className="block w-full text-left px-3 py-0 rounded-md text-base font-medium bg-[linear-gradient(180deg,#4eb5ed_0%,#01579b)] text-white"
                     >
                       สมัครเรียนออนไลน์
                     </Button>
@@ -274,7 +274,7 @@ export function Navigation() {
                       <Link
                         href="/profile"
                         onClick={() => setIsOpen(false)}
-                        className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary hover:bg-primary/10"
+                        className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-[#004B7D] hover:bg-[#004B7D1A]"
                       >
                         โปรไฟล์
                       </Link>

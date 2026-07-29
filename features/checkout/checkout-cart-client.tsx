@@ -43,7 +43,7 @@ export function CheckoutCartClient() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold">
-            <ShoppingCart className="h-8 w-8 text-primary" />
+            <ShoppingCart className="h-8 w-8 text-[#004B7D]" />
             ยืนยันคำสั่งซื้อ
           </h1>
           <p className="text-sm text-gray-500">ตรวจสอบรายละเอียดก่อนดำเนินการชำระเงิน</p>
@@ -131,7 +131,7 @@ export function CheckoutCartClient() {
               </CardContent>
             )}
             <CardFooter className="flex flex-col gap-3">
-              <Button className="w-full bg-primary hover:bg-primary/90" size="lg" onClick={handleSubmit} disabled={syncing || submitting}>
+              <Button className="w-full bg-[#004B7D] hover:bg-[#00395d]" size="lg" onClick={handleSubmit} disabled={syncing || submitting}>
                 {submitting ? (
                   <span className="flex items-center justify-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" /> กำลังดำเนินการ...

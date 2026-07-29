@@ -17,7 +17,7 @@ export function ModeActionRows({ exam, startingMode, hasAccess, onStart }: ModeA
         <div className="flex items-center justify-between rounded-lg border p-4">
           <div>
             <div className="flex items-center gap-2 font-semibold">
-              <School className="h-4 w-4 text-muted-foreground" />
+              <School className="h-4 w-4 text-cyan-600" />
               โหมดฝึกฝน
             </div>
             <p className="text-sm text-muted-foreground">ไม่จับเวลา ปลดล็อคเฉลยทีละข้อด้วย token</p>

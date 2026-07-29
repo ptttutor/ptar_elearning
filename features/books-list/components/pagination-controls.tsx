@@ -38,7 +38,7 @@ export function PaginationControls({ currentPage, totalPages, onPageChange }: { 
     return pages
   }, [currentPage, totalPages, isCompact])
 
-  const navButtonClass = "flex h-9 w-9 shrink-0 items-center justify-center rounded-full p-0 hover:bg-primary/10 hover:border-primary/40"
+  const navButtonClass = "flex h-9 w-9 shrink-0 items-center justify-center rounded-full p-0 hover:bg-blue-50 hover:border-blue-400"
 
   return (
     <>
@@ -61,7 +61,7 @@ export function PaginationControls({ currentPage, totalPages, onPageChange }: { 
             size="sm"
             onClick={() => onPageChange(page)}
             className={`flex h-9 min-w-[2.5rem] shrink-0 items-center justify-center rounded-full px-0 ${
-              currentPage === page ? "bg-primary hover:bg-primary/90 text-primary-foreground" : "hover:bg-primary/10 hover:border-primary/40"
+              currentPage === page ? "bg-blue-400 hover:bg-blue-500 text-white" : "hover:bg-blue-50 hover:border-blue-400"
             }`}
           >
             {page}

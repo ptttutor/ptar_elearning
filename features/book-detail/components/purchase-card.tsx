@@ -28,10 +28,10 @@ export function PurchaseCard({ price, discountPrice, hasDiscount, couponCode, on
             {hasDiscount ? (
               <div className="flex items-end justify-center gap-3">
                 <span className="text-xl text-gray-400 line-through">{fmtMoney(price)}</span>
-                <span className="text-3xl font-extrabold text-primary tracking-tight">{fmtMoney(discountPrice)}</span>
+                <span className="text-3xl font-extrabold text-blue-600 tracking-tight">{fmtMoney(discountPrice)}</span>
               </div>
             ) : (
-              <span className="text-3xl font-extrabold text-primary tracking-tight">{fmtMoney(price)}</span>
+              <span className="text-3xl font-extrabold text-blue-600 tracking-tight">{fmtMoney(price)}</span>
             )}
             <p className="text-xs text-gray-500 mt-1">ราคารวมภาษีมูลค่าเพิ่ม</p>
           </div>
@@ -46,7 +46,7 @@ export function PurchaseCard({ price, discountPrice, hasDiscount, couponCode, on
           </div>
 
           <div className="space-y-3">
-            <Button onClick={onCheckout} disabled={creating} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-lg py-3 rounded-xl shadow hover:shadow-md transition">
+            <Button onClick={onCheckout} disabled={creating} className="w-full bg-blue-400 hover:bg-blue-500 text-white text-lg py-3 rounded-xl shadow hover:shadow-md transition">
               {creating ? "กำลังไปหน้าชำระเงิน..." : "ไปหน้าชำระเงิน"}
             </Button>
             <Button variant="outline" className="w-full rounded-xl" disabled={creating || addingToCart || cartSyncing || inCart} onClick={onAddToCart}>

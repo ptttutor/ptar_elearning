@@ -171,7 +171,7 @@ export default async function ArticlesIndexPage({ searchParams }: Props) {
                   </div>
 
                   <Link href={article.slug ? `/articles/${article.slug}` : `#`}>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-3 text-balance group-hover:text-primary transition-colors duration-200">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-3 text-balance group-hover:text-blue-600 transition-colors duration-200">
                       {article.title}
                     </h3>
                   </Link>
@@ -180,7 +180,7 @@ export default async function ArticlesIndexPage({ searchParams }: Props) {
                     {article.excerpt}
                   </p>
 
-                  <Button asChild variant="ghost" className="group/btn p-0 h-auto text-primary hover:text-primary/80">
+                  <Button asChild variant="ghost" className="group/btn p-0 h-auto text-blue-600 hover:text-blue-700">
                     <Link href={`/articles/${article.slug}`}>
                       อ่านต่อ
                       <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform duration-200" />

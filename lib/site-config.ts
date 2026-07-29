@@ -4,20 +4,20 @@
 
 export const siteConfig = {
   // Short name used in nav/footer headings and page title suffixes
-  siteName: "Tawan.dev",
+  siteName: "เคมีพี่ต้า",
   // Full institute name shown in footer / about / metadata descriptions
-  fullName: "White-Label E-Learning Platform",
-  englishName: "Tawan.dev",
-  tagline: "White-Label E-Learning Platform",
-  subtitle: "(เดโมเว็บไซต์เรียนออนไลน์สำหรับติวเตอร์/โรงเรียนกวดวิชา)",
-  defaultDescription: "ตัวอย่างเว็บไซต์เรียนออนไลน์ (Template Demo) พัฒนาโดย Tawan.dev พร้อมระบบคอร์สเรียน ข้อสอบจำลอง และร้านหนังสือออนไลน์",
-  keywords: "Tawan.dev, เว็บไซต์เรียนออนไลน์, e-learning template, ระบบคอร์สเรียนออนไลน์",
+  fullName: "โรงเรียนกวดวิชาเคมีพี่ต้า",
+  englishName: "Chemistry P'Tar",
+  tagline: "แพลตฟอร์มการเรียนรู้ออนไลน์",
+  subtitle: "(แพลตฟอร์มการเรียนรู้สำหรับทุกคน)",
+  defaultDescription: "โรงเรียนกวดวิชาเคมีพี่ต้า คอร์สเรียนเคมี ม.ต้น-ม.ปลาย พร้อมข้อสอบและบทความ",
+  keywords: "โรงเรียนกวดวิชาเคมีพี่ต้า",
 
-  logo: "/tawan-logo.png",
+  logo: "/new-logo.png",
 
   contact: {
-    email: "khumta15176@gmail.com",
-    address: "กรุงเทพมหานคร ประเทศไทย",
+    email: "tihcuna888@gmail.com",
+    address: "สำนักงานใหญ่ : กรุงเทพมหานคร ประเทศไทย",
     hours: {
       vacation: "เปิดให้บริการ 24/7 ออนไลน์",
       semester: "เปิดให้บริการ 24/7 ออนไลน์",
@@ -25,22 +25,32 @@ export const siteConfig = {
   },
 
   social: {
-    lineUrl: "https://line.me/ti/p/~jykkb123",
+    lineUrl: "https://line.me/ti/p/sjYGzkVGDL",
     links: [
       {
-        platform: "Website",
-        username: "tawan.dev",
-        url: "https://www.tawan.dev",
+        platform: "YouTube",
+        username: "เคมี พี่ต้า",
+        url: "https://www.youtube.com/@Chemistar",
+      },
+      {
+        platform: "Instagram",
+        username: "Chem_istar",
+        url: "https://www.instagram.com/chem_istar?igsh=eXRrMzA3c3N6bnV4",
+      },
+      {
+        platform: "Facebook",
+        username: "เคมี พี่ต้า online",
+        url: "https://www.facebook.com/komkaiChemistry/?locale=th_TH",
       },
       {
         platform: "Line",
-        username: "jykkb123",
-        url: "https://line.me/ti/p/~jykkb123",
+        username: "chemistar518",
+        url: "https://line.me/ti/p/sjYGzkVGDL",
       },
     ],
   },
 
-  copyrightHolder: "tawan.dev",
+  copyrightHolder: "โรงเรียนกวดวิชาเคมีพี่ต้า",
 } as const
 
 // Convenience helper for page metadata: "หัวข้อ | ชื่อไซต์"

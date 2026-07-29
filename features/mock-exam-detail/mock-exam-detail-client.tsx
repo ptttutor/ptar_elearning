@@ -56,7 +56,7 @@ export function MockExamDetailClient({ id, initial }: { id: string; initial: Api
                     <Badge className="bg-primary text-primary-foreground">{getSubjectLabel(exam.subject)}</Badge>
                     {exam.gradeLevel && <Badge variant="outline">{getGradeLevelLabel(exam.gradeLevel)}</Badge>}
                     {exam.course && (
-                      <Badge variant="outline" className="border-primary/20 bg-primary/10 text-primary">
+                      <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
                         <BookOpen className="mr-1 h-3 w-3" />
                         คอร์ส: {exam.course.title}
                       </Badge>

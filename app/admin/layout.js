@@ -8,15 +8,13 @@ import { Toaster } from "@/components/ui/toaster";
 
 export default function AdminLayout({ children }) {
   return (
-    <div className="admin-scope">
-      <SessionProvider>
-        <AdminAuthProvider>
-          <AntdRegistry>
-            <AntdConfigProvider>{children}</AntdConfigProvider>
-          </AntdRegistry>
-          <Toaster />
-        </AdminAuthProvider>
-      </SessionProvider>
-    </div>
+    <SessionProvider>
+      <AdminAuthProvider>
+        <AntdRegistry>
+          <AntdConfigProvider>{children}</AntdConfigProvider>
+        </AntdRegistry>
+        <Toaster />
+      </AdminAuthProvider>
+    </SessionProvider>
   );
 }

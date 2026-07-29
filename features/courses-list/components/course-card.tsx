@@ -2,6 +2,7 @@ import { motion } from "framer-motion"
 import Image from "next/image"
 import Link from "next/link"
 import { Users, BookOpen, Clock } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { GRADE_LEVEL_LABELS } from "@/features/courses-list/types"
@@ -18,9 +19,9 @@ export function CourseCard({ course }: { course: ApiCourse }) {
 
   return (
     <motion.div variants={fadeInUp}>
-      <Card className="h-full rounded-3xl overflow-hidden card-3d group pt-0">
+      <Card className="h-full hover:shadow-xl transition-shadow duration-300 group pt-0">
         <CardContent className="p-0">
-          <div className="aspect-video relative overflow-hidden">
+          <div className="aspect-video relative overflow-hidden rounded-t-lg">
             <Image
               src={course.coverImageUrl || "/placeholder.svg?height=200&width=350"}
               alt={course.title}
@@ -28,9 +29,9 @@ export function CourseCard({ course }: { course: ApiCourse }) {
               className="object-cover group-hover:scale-105 transition-transform duration-300"
             />
             <div className="absolute top-4 left-4">
-              <span className="glass-card px-3 py-1 rounded-full text-xs font-bold text-primary">
+              <Badge className="bg-primary text-primary-foreground">
                 {course.gradeLevel ? GRADE_LEVEL_LABELS[course.gradeLevel] : (course.category?.name ?? "คอร์ส")}
-              </span>
+              </Badge>
             </div>
           </div>
 
@@ -67,9 +68,9 @@ export function CourseCard({ course }: { course: ApiCourse }) {
               )}
             </div>
 
-            <Button asChild className="w-full rounded-xl">
-              <Link href={`/courses/${course.id}`}>ดูรายละเอียด</Link>
-            </Button>
+            <Link href={`/courses/${course.id}`}>
+              <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">ดูรายละเอียด</Button>
+            </Link>
           </div>
         </CardContent>
       </Card>

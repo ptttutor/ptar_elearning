@@ -16,7 +16,7 @@ export function MyCoursesSkeleton() {
               <Skeleton className="h-4 w-1/3" />
               <div>
                 <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full w-1/5 bg-primary rounded-full" />
+                  <div className="h-full w-1/5 bg-blue-400 rounded-full" />
                 </div>
               </div>
               <Skeleton className="h-9 w-32" />

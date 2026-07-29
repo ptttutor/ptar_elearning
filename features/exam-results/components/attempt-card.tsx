@@ -35,7 +35,7 @@ export function AttemptCard({ attempt }: { attempt: AttemptSummary }) {
             )}
           </div>
           <Link href={`/profile/my-courses/exam-results/${encodeURIComponent(attempt.id)}`}>
-            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">ดูรายละเอียด</Button>
+            <Button className="bg-blue-400 hover:bg-blue-500 text-white">ดูรายละเอียด</Button>
           </Link>
         </div>
       </CardContent>

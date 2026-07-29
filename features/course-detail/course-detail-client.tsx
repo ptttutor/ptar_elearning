@@ -134,11 +134,11 @@ export function CourseDetailClient({ id, initial }: { id: string; initial: { cou
 
   return (
     <>
-      <div className="min-h-screen bg-muted/30">
+      <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-8">
           <div className="mb-6">
             <Link href="/courses">
-              <Button variant="outline" className="gap-2 rounded-xl border-border shadow-sm hover:shadow transition-all hover:-translate-y-0.5">
+              <Button variant="outline" className="gap-2 rounded-xl border-gray-200 shadow-sm hover:shadow transition-all hover:-translate-y-0.5">
                 <ArrowLeft className="h-4 w-4" />
                 <span className="hidden sm:inline">กลับไปหน้าคอร์สเรียนทั้งหมด</span>
                 <span className="sm:hidden">คอร์สเรียนทั้งหมด</span>
