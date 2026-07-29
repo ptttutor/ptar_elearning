@@ -9,7 +9,7 @@ export function CategoryFilter({ categories, value, onChange }: { categories: Bo
           key={c.id}
           variant={value === c.id ? "default" : "outline"}
           onClick={() => onChange(c.id)}
-          className={`px-5 rounded-full ${value === c.id ? "bg-blue-400 text-white" : ""}`}
+          className={`px-5 rounded-full ${value === c.id ? "bg-primary text-primary-foreground" : ""}`}
         >
           {c.name}
         </Button>

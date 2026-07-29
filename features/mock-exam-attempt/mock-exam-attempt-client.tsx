@@ -40,7 +40,7 @@ export function MockExamAttemptClient({ attemptId }: { attemptId: string }) {
         <h1 className="text-xl font-bold sm:text-2xl">กำลังทำข้อสอบ</h1>
         {mode && (
           <div className="flex items-center gap-2">
-            <Badge className={mode === "PRACTICE" ? "bg-cyan-100 text-cyan-700 border border-cyan-200" : "bg-orange-100 text-orange-700 border border-orange-200"}>
+            <Badge className={mode === "PRACTICE" ? "bg-secondary text-secondary-foreground border border-border" : "bg-orange-100 text-orange-700 border border-orange-200"}>
               {mode === "PRACTICE" ? "โหมดฝึกฝน" : "โหมดสอบจริง"}
             </Badge>
             {mode === "PRACTICE" && (

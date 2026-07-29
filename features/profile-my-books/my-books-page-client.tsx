@@ -20,14 +20,14 @@ export function MyBooksPageClient() {
 
       {authLoading && !isAuthenticated ? (
         <div className="bg-white border rounded-lg p-6 flex items-center gap-3 text-gray-700">
-          <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+          <Loader2 className="h-5 w-5 animate-spin text-primary" />
           <span>กำลังตรวจสอบสถานะการเข้าสู่ระบบ...</span>
         </div>
       ) : !isAuthenticated ? (
         <div className="bg-white border rounded-lg p-6">
           <div className="flex items-center justify-between gap-4">
             <div className="text-gray-700">กรุณาเข้าสู่ระบบเพื่อดู eBook ของคุณ</div>
-            <Button className="bg-blue-400 hover:bg-blue-500 text-white" onClick={() => setLoginOpen(true)}>
+            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => setLoginOpen(true)}>
               เข้าสู่ระบบ
             </Button>
           </div>

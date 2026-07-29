@@ -37,7 +37,7 @@ export default function TermsPage() {
           <h2 className="font-semibold text-gray-900">4) ความเป็นส่วนตัว</h2>
           <p>
             เราจะใช้ข้อมูลของคุณตามที่ระบุใน
-            <Link href="/privacy" className="text-blue-600 underline ml-1">นโยบายความเป็นส่วนตัว</Link>
+            <Link href="/privacy" className="text-primary underline ml-1">นโยบายความเป็นส่วนตัว</Link>
           </p>
         </section>
       </div>

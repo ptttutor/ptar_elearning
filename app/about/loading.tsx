@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 export default function Loading() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white">
       <div className="pt-24 pb-16 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">

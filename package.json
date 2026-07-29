@@ -1,5 +1,5 @@
 {
-  "name": "ptar_elearning",
+  "name": "tawan-dev-elearning",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,7 +9,12 @@
     "lint": "next lint",
     "postinstall": "prisma generate",
     "db:seed": "node prisma/seed.js",
+    "db:seed:admin": "node prisma/seed-admin.js",
+    "db:seed:course-js": "node prisma/seed-course-js.js",
+    "db:seed:exam-js": "node prisma/seed-exam-js.js",
+    "db:seed:student-works": "node prisma/seed-student-works.js",
     "db:seed:mock-exam": "node prisma/seed-mock-exam.js",
+    "db:seed:mock-exam-js": "node prisma/seed-mock-exam-js.js",
     "db:reset": "npx prisma migrate reset --force && npm run db:seed",
     "db:studio": "npx prisma studio"
   },

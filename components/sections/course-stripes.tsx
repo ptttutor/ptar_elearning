@@ -21,27 +21,27 @@ const stripes: Stripe[] = [
     highlight: "NETSAT",
     paramTage: "NETSAT",
     subtitle: "(เตรียมสอบ NETSAT เคมี)",
-    bg: "from-blue-50 via-white to-blue-50",
-    ctaClass: "bg-[#2688DF] hover:bg-[#1f6fba] text-white",
-    accent: "bg-[#2688DF]",
+    bg: "from-orange-50 via-white to-orange-50",
+    ctaClass: "bg-primary hover:bg-primary/90 text-primary-foreground",
+    accent: "bg-primary",
   },
   {
     title: "คอร์ส",
     highlight: "สอวน.เคมี",
     paramTage: "สอวน.เคมี",
     subtitle: "(โอลิมปิกวิชาการเคมี)",
-    bg: "from-blue-50 via-white to-blue-50",
-    ctaClass: "bg-[#2688DF] hover:bg-[#1f6fba] text-white",
-    accent: "bg-[#2688DF]",
+    bg: "from-orange-50 via-white to-orange-50",
+    ctaClass: "bg-primary hover:bg-primary/90 text-primary-foreground",
+    accent: "bg-primary",
   },
   {
     title: "คอร์ส",
     highlight: "เนื้อหาเคมี",
     paramTage: "เนื้อหาเคมี",
     subtitle: "(เก็บเกรดและสอบเข้ามหาวิทยาลัย)",
-    bg: "from-blue-50 via-white to-blue-50",
-    ctaClass: "bg-[#2688DF] hover:bg-[#1f6fba] text-white",
-    accent: "bg-[#2688DF]",
+    bg: "from-orange-50 via-white to-orange-50",
+    ctaClass: "bg-primary hover:bg-primary/90 text-primary-foreground",
+    accent: "bg-primary",
   },
 ];
 
@@ -81,13 +81,7 @@ export default function CourseStripes() {
                   <div className="text-2xl md:text-3xl font-extrabold tracking-tight text-foreground leading-tight">
                     {s.title}{" "}
                     {s.highlight && (
-                      <span
-                        className={
-                          s.accent === "bg-[#FEBE01]"
-                            ? "text-accent-foreground"
-                            : "text-primary"
-                        }
-                      >
+                      <span className="text-primary">
                         {s.highlight}
                       </span>
                     )}

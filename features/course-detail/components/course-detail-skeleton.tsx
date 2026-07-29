@@ -26,7 +26,7 @@ export function CourseDetailSkeleton() {
         }
       `}</style>
       <section className="lg:col-span-2 space-y-6 order-1 lg:order-1">
-        <div className="aspect-video rounded-2xl ring-1 ring-black/5 shadow-lg overflow-hidden">
+        <div className="aspect-video rounded-3xl ring-1 ring-black/5 shadow-lg overflow-hidden">
           <Skeleton className="h-full w-full rounded-none" />
         </div>
         <div className="flex items-center gap-2">
@@ -45,7 +45,7 @@ export function CourseDetailSkeleton() {
       </section>
 
       <aside className="lg:col-span-1 order-3 lg:order-2 space-y-6">
-        <Card className="rounded-2xl shadow-lg ring-1 ring-black/5">
+        <Card className="rounded-3xl shadow-lg ring-1 ring-black/5">
           <CardContent className="p-4 space-y-4">
             <Skeleton className="h-8 w-40 mx-auto" />
             <Skeleton className="h-10 w-full rounded-xl" />
@@ -54,7 +54,7 @@ export function CourseDetailSkeleton() {
       </aside>
 
       <section className="lg:col-span-2 order-2 lg:order-3">
-        <Card className="rounded-2xl border-gray-200 shadow-sm">
+        <Card className="rounded-3xl border-border shadow-sm">
           <CardHeader>
             <Skeleton className="h-6 w-40" />
           </CardHeader>
@@ -67,7 +67,7 @@ export function CourseDetailSkeleton() {
       </section>
 
       <section className="lg:col-span-3 order-4">
-        <Card className="rounded-2xl border-gray-200 shadow-sm">
+        <Card className="rounded-3xl border-border shadow-sm">
           <CardHeader>
             <Skeleton className="h-6 w-40" />
           </CardHeader>

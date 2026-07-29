@@ -42,7 +42,7 @@ export function ReviewsSection({
 }: ReviewsSectionProps) {
   return (
     <motion.div variants={fadeInUp} initial="initial" animate="animate" transition={{ delay: 0.25 }}>
-      <Card className="rounded-2xl border-border shadow-sm">
+      <Card className="rounded-3xl border-border shadow-sm">
         <CardHeader className="p-4">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
@@ -76,14 +76,14 @@ export function ReviewsSection({
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <div className="font-semibold text-gray-900 break-words">{rv.user?.name || "ผู้ใช้"}</div>
-                        <span className="text-xs text-gray-400">• {formatThaiDate(rv.createdAt)}</span>
+                        <div className="font-semibold text-foreground break-words">{rv.user?.name || "ผู้ใช้"}</div>
+                        <span className="text-xs text-muted-foreground">• {formatThaiDate(rv.createdAt)}</span>
                       </div>
                       <div className="mt-1">
                         <StarRating value={rv.rating} readOnly />
                       </div>
-                      {rv.title && <div className="mt-2 text-gray-900 font-medium break-words">{rv.title}</div>}
-                      {rv.comment && <p className="mt-1 text-gray-700 whitespace-pre-wrap break-words">{rv.comment}</p>}
+                      {rv.title && <div className="mt-2 text-foreground font-medium break-words">{rv.title}</div>}
+                      {rv.comment && <p className="mt-1 text-muted-foreground whitespace-pre-wrap break-words">{rv.comment}</p>}
                     </div>
                   </div>
                 </div>
@@ -102,7 +102,7 @@ export function ReviewsSection({
                     )}
                   </Button>
                 ) : (
-                  <div className="text-center text-sm text-gray-500">แสดงครบแล้ว</div>
+                  <div className="text-center text-sm text-muted-foreground">แสดงครบแล้ว</div>
                 )}
               </div>
             </div>

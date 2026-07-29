@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Mail, MapPin, Clock } from "lucide-react";
+import { Mail, MapPin, Clock, Globe } from "lucide-react";
 import { SiFacebook, SiInstagram, SiTiktok, SiLine, SiYoutube } from "react-icons/si";
 import { siteConfig } from "@/lib/site-config";
 
@@ -16,6 +16,8 @@ export function Footer() {
         return <SiTiktok className="w-6 h-6" />;
         case "youtube":
         return <SiYoutube className="w-6 h-6" />;
+      case "website":
+        return <Globe className="w-6 h-6" />;
       default:
         return null;
     }

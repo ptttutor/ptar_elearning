@@ -17,12 +17,12 @@ export function BookHero({ book, averageRating, totalReviews }: { book: Ebook; a
   return (
     <section className="order-1 lg:order-1 lg:col-span-2 space-y-6">
       <div className="grid md:grid-cols-2 gap-6">
-        <div className="relative aspect-[3/4] rounded-2xl overflow-hidden ring-1 ring-black/5 bg-white">
+        <div className="relative aspect-[3/4] rounded-3xl overflow-hidden ring-1 ring-black/5 bg-white">
           <Image src={book.coverImageUrl || "/placeholder.svg?height=600&width=450"} alt={book.title} fill className="object-contain" />
         </div>
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            {book.category?.name && <Badge className="rounded-full bg-blue-400 text-white px-3 py-1 h-7">{book.category.name}</Badge>}
+            {book.category?.name && <Badge className="rounded-full bg-primary text-primary-foreground px-3 py-1 h-7">{book.category.name}</Badge>}
             {book.format && (
               <Badge variant="outline" className="rounded-full h-7 px-3">
                 รูปแบบ: {book.format}
@@ -30,33 +30,33 @@ export function BookHero({ book, averageRating, totalReviews }: { book: Ebook; a
             )}
           </div>
 
-          <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight text-balance">{book.title}</h1>
+          <h1 className="text-3xl lg:text-4xl font-bold text-foreground leading-tight text-balance">{book.title}</h1>
 
-          <div className="text-gray-700">
+          <div className="text-muted-foreground">
             <span className="font-medium">ผู้เขียน:</span> {book.author || "ไม่ระบุผู้เขียน"}
           </div>
 
           <div className="flex items-center gap-2">
             <StarRating value={averageRating || 0} readOnly />
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-muted-foreground">
               {averageRating?.toFixed(1) ?? "0.0"} ({totalReviews} รีวิว)
             </span>
           </div>
 
-          {book.description && <p className="text-gray-700 leading-relaxed text-pretty">{book.description}</p>}
+          {book.description && <p className="text-muted-foreground leading-relaxed text-pretty">{book.description}</p>}
 
           <div className="grid grid-cols-2 gap-3 text-sm pt-2">
             <div>
-              <span className="text-gray-500">ISBN:</span> <span className="font-medium">{book.isbn || "-"}</span>
+              <span className="text-muted-foreground">ISBN:</span> <span className="font-medium">{book.isbn || "-"}</span>
             </div>
             <div>
-              <span className="text-gray-500">ปีที่ตีพิมพ์:</span> <span className="font-medium">{getYear(book.publishedAt)}</span>
+              <span className="text-muted-foreground">ปีที่ตีพิมพ์:</span> <span className="font-medium">{getYear(book.publishedAt)}</span>
             </div>
             <div>
-              <span className="text-gray-500">จำนวนหน้า:</span> <span className="font-medium">{book.pageCount ?? "-"}</span>
+              <span className="text-muted-foreground">จำนวนหน้า:</span> <span className="font-medium">{book.pageCount ?? "-"}</span>
             </div>
             <div>
-              <span className="text-gray-500">ภาษา:</span> <span className="font-medium">{book.language || "-"}</span>
+              <span className="text-muted-foreground">ภาษา:</span> <span className="font-medium">{book.language || "-"}</span>
             </div>
           </div>
         </div>

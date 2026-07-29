@@ -16,7 +16,7 @@ export function StarRating({
     <div className="flex items-center gap-1">
       {stars.map((s) => {
         const active = s <= Math.round(value)
-        const cls = active ? "text-blue-500" : "text-gray-300"
+        const cls = active ? "text-primary" : "text-gray-300"
         return (
           <button
             type="button"

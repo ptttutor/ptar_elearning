@@ -38,7 +38,7 @@ export function CourseHero({
     <motion.div variants={fadeInUp} initial="initial" animate="animate" className="w-full max-w-full">
       <div ref={introSectionRef} className="mb-6">
         <AspectRatio ratio={16 / 9}>
-          <div className="group relative h-full w-full overflow-hidden rounded-2xl ring-1 ring-black/5 shadow-lg bg-black">
+          <div className="group relative h-full w-full overflow-hidden rounded-3xl ring-1 ring-black/5 shadow-lg bg-black">
             {introSrc ? (
               <>
                 <iframe

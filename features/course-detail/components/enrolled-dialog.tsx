@@ -20,13 +20,13 @@ export function EnrolledDialog({
           <DialogTitle>คุณได้ซื้อคอร์สนี้แล้ว</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="text-gray-700">เริ่มเรียนต่อได้ทันทีที่หน้าเรียน</div>
+          <div className="text-muted-foreground">เริ่มเรียนต่อได้ทันทีที่หน้าเรียน</div>
           <div className="flex flex-wrap justify-end gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               ปิด
             </Button>
             <Link href={`/profile/my-courses/course/${courseId}/`}>
-              <Button className="bg-blue-400 hover:bg-blue-500 text-white">เข้าเรียน</Button>
+              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">เข้าเรียน</Button>
             </Link>
             <Button variant="outline" onClick={onWriteReview}>
               เขียนรีวิวคอร์สนี้

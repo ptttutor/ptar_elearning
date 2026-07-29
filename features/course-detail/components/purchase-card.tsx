@@ -52,7 +52,7 @@ export function PurchaseCard({
 }: PurchaseCardProps) {
   return (
     <motion.div className="lg:sticky lg:top-8" variants={fadeInUp} initial="initial" animate="animate" transition={{ delay: 0.1 }}>
-      <Card className="rounded-2xl shadow-lg ring-1 ring-black/5">
+      <Card className="rounded-3xl shadow-lg ring-1 ring-black/5">
         <CardContent className="p-4 sm:p-6">
           <div className="text-center mb-6">
             <div className="flex items-center justify-center gap-2 mb-1 flex-wrap">
@@ -73,15 +73,15 @@ export function PurchaseCard({
 
           <div className="space-y-3 mb-6 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-600">ระยะเวลา</span>
+              <span className="text-muted-foreground">ระยะเวลา</span>
               <span className="font-medium">{course.duration ?? "-"}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">บทเรียน</span>
+              <span className="text-muted-foreground">บทเรียน</span>
               <span className="font-medium">{chapters.length} บทเรียน</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">นักเรียน</span>
+              <span className="text-muted-foreground">นักเรียน</span>
               <span className="font-medium">{course._count?.enrollments ?? 0} คน</span>
             </div>
 
