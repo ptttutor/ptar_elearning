@@ -10,6 +10,7 @@
     "postinstall": "prisma generate",
     "db:seed": "node prisma/seed.js",
     "db:seed:mock-exam": "node prisma/seed-mock-exam.js",
+    "db:seed:flashcards-chemistry": "node prisma/seed-flashcards-chemistry.js",
     "db:reset": "npx prisma migrate reset --force && npm run db:seed",
     "db:studio": "npx prisma studio"
   },

@@ -60,6 +60,9 @@ model User {
   mockPracticeUnlocks MockPracticeUnlock[]
   mockPracticeWallet  MockPracticeWallet?
   mockExamPurchases   MockExamPurchase[]
+
+  flashcardReviews    FlashcardReview[]
+  flashcardReviewLogs FlashcardReviewLog[]
 }
 
 // NextAuth.js required models
@@ -781,7 +784,8 @@ model MockTopic {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  questions MockQuestion[]
+  questions      MockQuestion[]
+  flashcardDecks FlashcardDeck[]
 
   @@unique([subject, name])
 }
@@ -933,4 +937,127 @@ model MockPracticeWallet {
   tokens Int    @default(10)
 
   user User @relation(fields: [userId], references: [id])
+}
+
+// =========================================================================
+// Flashcards — spaced repetition (SM-2). See plan.md for full design notes.
+// Standalone feature: FlashcardDeck carries its own `subject` so it doesn't
+// depend on mock exams existing, but `topicId` is an optional loose tie-in
+// to MockTopic so a weak-topic result can recommend a matching deck without
+// any FK on the MockQuestion side.
+// =========================================================================
+
+model FlashcardDeck {
+  id            String      @id @default(uuid())
+  title         String
+  description   String?
+  subject       Subjects
+  gradeLevel    GradeLevel?
+  topicId       String?
+  coverImageUrl String?
+  isActive      Boolean     @default(true)
+  order         Int         @default(0)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  topic MockTopic?  @relation(fields: [topicId], references: [id])
+  cards Flashcard[]
+
+  @@index([subject])
+  @@index([topicId])
+}
+
+enum FlashcardAnswerMode {
+  SELF_GRADE
+  MULTIPLE_CHOICE
+  TYPED
+}
+
+model Flashcard {
+  id         String   @id @default(uuid())
+  deckId     String
+  front      String   @db.Text
+  frontImage String?
+  back       String   @db.Text
+  backImage  String?
+  hint       String?
+  order      Int      @default(0)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  answerMode       FlashcardAnswerMode @default(SELF_GRADE)
+  acceptedAnswers  String[]            @default([]) // TYPED only
+  numericTolerance Float? // TYPED only; null = exact string match
+
+  deck    FlashcardDeck        @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  options FlashcardOption[]
+  reviews FlashcardReview[]
+  logs    FlashcardReviewLog[]
+
+  @@index([deckId])
+}
+
+model FlashcardOption {
+  id         String  @id @default(uuid())
+  cardId     String
+  optionText String
+  isCorrect  Boolean @default(false)
+  order      Int     @default(0)
+
+  card Flashcard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([cardId])
+}
+
+enum FlashcardStatus {
+  NEW
+  LEARNING
+  REVIEW
+  RELEARNING
+}
+
+// Per-user, per-card SM-2 state. `nextReviewAt` is the field the study-queue
+// query filters on — indexed together with userId since every query is
+// "this user's cards due now".
+model FlashcardReview {
+  id             String          @id @default(uuid())
+  userId         String
+  cardId         String
+  repetitions    Int             @default(0)
+  easeFactor     Float           @default(2.5)
+  interval       Int             @default(0)
+  nextReviewAt   DateTime        @default(now())
+  lastReviewedAt DateTime?
+  lapses         Int             @default(0)
+  status         FlashcardStatus @default(NEW)
+
+  user User      @relation(fields: [userId], references: [id])
+  card Flashcard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, cardId])
+  @@index([userId, nextReviewAt])
+}
+
+// Append-only history — powers streaks/stats and lets admins see which
+// cards get forgotten most often (via `grade`/`wasCorrect` aggregation).
+model FlashcardReviewLog {
+  id              String   @id @default(uuid())
+  userId          String
+  cardId          String
+  grade           Int
+  intervalBefore  Int
+  intervalAfter   Int
+  easeFactorAfter Float
+  reviewedAt      DateTime @default(now())
+
+  answerMode FlashcardAnswerMode
+  userAnswer String?
+  wasCorrect Boolean?
+
+  user User      @relation(fields: [userId], references: [id])
+  card Flashcard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([userId, reviewedAt])
+  @@index([cardId])
 }

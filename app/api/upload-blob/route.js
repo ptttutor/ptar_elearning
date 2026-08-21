@@ -131,6 +131,7 @@ function getAllowedTypes(type) {
     'question-image': ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
     'mock-question-image': ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
     'mock-explanation-image': ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'],
+    'flashcard-image': ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
     'general': [], // Allow all types
   };
 

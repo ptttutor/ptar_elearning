@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flashcard UI — ตัวอย่าง</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f6f7f9; --surface:#fff; --border:#e6e8ec;
+    --text:#1a1d21; --muted:#6b7280;
+    --primary:#2563eb; --primary-soft:#eff4ff;
+    --green:#16a34a; --green-soft:#f0fdf4;
+    --amber:#d97706; --amber-soft:#fffbeb;
+    --red:#dc2626;   --red-soft:#fef2f2;
+    --radius:14px;
+    --shadow:0 1px 2px rgb(16 24 40/.06), 0 4px 12px rgb(16 24 40/.05);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:"Sarabun",system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.6}
+  .wrap{max-width:860px;margin:0 auto;padding:24px 20px 64px}
+
+  .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+  .top h1{font-size:22px;font-weight:700;margin:0}
+  .top p{margin:2px 0 0;color:var(--muted);font-size:14px}
+  .tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:4px}
+  .tab{border:0;background:transparent;font:inherit;font-size:14px;font-weight:500;color:var(--muted);
+    padding:6px 14px;border-radius:7px;cursor:pointer}
+  .tab[aria-selected="true"]{background:var(--primary);color:#fff}
+
+  /* ---------- deck list ---------- */
+  .filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+  .chip{border:1px solid var(--border);background:var(--surface);color:var(--muted);
+    font:inherit;font-size:13px;padding:6px 13px;border-radius:999px;cursor:pointer}
+  .chip[aria-pressed="true"]{background:var(--primary-soft);border-color:#c7d9ff;color:var(--primary);font-weight:600}
+  .decks{display:grid;gap:12px}
+  .deck{display:flex;align-items:center;gap:16px;background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);cursor:pointer;
+    text-align:left;width:100%;font:inherit;color:inherit}
+  .deck:hover{border-color:#c9d3e0}
+  .deck-body{flex:1;min-width:0}
+  .deck-title{font-weight:600;font-size:16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;
+    background:#f1f5f9;color:#475569;border:1px solid #e2e8f0}
+  .badge.topic{background:#fdf4ff;color:#a21caf;border-color:#f5d0fe}
+  .deck-meta{font-size:13px;color:var(--muted);margin-top:2px}
+  .counts{display:flex;gap:6px;flex-shrink:0}
+  .pill{min-width:52px;text-align:center;border-radius:9px;padding:5px 8px;font-size:12px;font-weight:600;line-height:1.35}
+  .pill small{display:block;font-size:10px;font-weight:500;opacity:.8}
+  .pill.due{background:var(--red-soft);color:var(--red)}
+  .pill.new{background:var(--primary-soft);color:var(--primary)}
+  .pill.zero{background:#f1f5f9;color:#94a3b8}
+
+  /* ---------- study ---------- */
+  .study-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:12px}
+  .back{border:0;background:transparent;font:inherit;font-size:14px;color:var(--muted);cursor:pointer;padding:4px 0}
+  .back:hover{color:var(--text)}
+  .progress-text{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .bar{height:6px;background:#e9edf3;border-radius:99px;overflow:hidden;margin-bottom:22px}
+  .bar>i{display:block;height:100%;background:var(--primary);border-radius:99px;transition:width .25s ease}
+
+  .stage{position:relative}
+  .card{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:18px;
+    box-shadow:var(--shadow);padding:32px 26px;min-height:250px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+    user-select:none;touch-action:none;overflow:hidden}
+  .card.draggable{cursor:grab}
+  .card.dragging{cursor:grabbing;transition:none}
+  .card.settle{transition:transform .22s ease, opacity .22s ease}
+
+  .mode-tag{position:absolute;top:12px;right:14px;font-size:10px;font-weight:600;letter-spacing:.04em;
+    padding:3px 9px;border-radius:999px;background:#f1f5f9;color:#64748b}
+  .card-label{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:12px}
+  .card-img{margin:0 0 16px;display:flex;justify-content:center}
+  .card-img svg{max-width:230px;height:auto;border-radius:8px;background:#f8fafc;border:1px solid var(--border)}
+  .card-text{font-size:22px;font-weight:600;margin:0}
+  .hint{margin-top:14px;font-size:14px;color:var(--amber)}
+  .tap{margin-top:20px;font-size:13px;color:var(--muted)}
+  .divider{width:56px;height:1px;background:var(--border);margin:18px 0}
+  .answer{font-size:18px;font-weight:500;color:#334155;margin:0}
+
+  /* swipe overlay */
+  .swipe-hud{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    pointer-events:none;opacity:0;font-size:26px;font-weight:700;letter-spacing:.02em}
+  .swipe-hud span{padding:10px 22px;border-radius:14px;border:2px solid currentColor;background:#fff}
+
+  /* ---------- answer widgets ---------- */
+  .options{display:grid;gap:8px;width:100%;max-width:420px;margin-top:4px}
+  .opt{display:flex;align-items:center;gap:10px;border:1px solid var(--border);background:var(--surface);
+    border-radius:11px;padding:11px 14px;font:inherit;font-size:15px;cursor:pointer;text-align:left;width:100%}
+  .opt:hover:not(:disabled){border-color:#c9d3e0;background:#fafbfc}
+  .opt:disabled{cursor:default}
+  .opt .k{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:#f1f5f9;color:#64748b;
+    font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .opt.correct{border-color:var(--green);background:var(--green-soft)}
+  .opt.correct .k{background:var(--green);color:#fff}
+  .opt.wrong{border-color:var(--red);background:var(--red-soft)}
+  .opt.wrong .k{background:var(--red);color:#fff}
+
+  .typed{display:flex;gap:8px;width:100%;max-width:420px;margin-top:4px}
+  .typed input{flex:1;font:inherit;font-size:16px;padding:11px 14px;border:1px solid var(--border);
+    border-radius:11px;outline:0;background:var(--surface)}
+  .typed input:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+  .typed button{border:0;background:var(--primary);color:#fff;font:inherit;font-weight:600;
+    padding:11px 20px;border-radius:11px;cursor:pointer}
+
+  .verdict{margin-top:16px;padding:11px 16px;border-radius:11px;font-size:14px;font-weight:500;width:100%;max-width:420px}
+  .verdict.ok{background:var(--green-soft);color:#166534;border:1px solid #bbf7d0}
+  .verdict.near{background:var(--amber-soft);color:#854d0e;border:1px solid #fde68a}
+  .verdict.no{background:var(--red-soft);color:#991b1b;border:1px solid #fecaca}
+  .verdict b{display:block;font-weight:600;margin-top:3px}
+
+  /* ---------- grade buttons ---------- */
+  .grades{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px}
+  .grade{border:1px solid var(--border);background:var(--surface);border-radius:12px;
+    padding:11px 6px;cursor:pointer;font:inherit;text-align:center}
+  .grade:hover{border-color:currentColor}
+  .grade b{display:block;font-size:14px;font-weight:600}
+  .grade span{display:block;font-size:11px;color:var(--muted);margin-top:3px;font-variant-numeric:tabular-nums}
+  .grade em{display:block;font-size:10px;font-style:normal;opacity:.55;margin-top:1px}
+  .g0{color:var(--red)} .g3{color:var(--amber)} .g4{color:var(--green)} .g5{color:var(--primary)}
+  .adjust{margin-top:14px;text-align:center;font-size:13px;color:var(--muted)}
+  .adjust-row{display:flex;gap:8px;justify-content:center;margin-top:8px;flex-wrap:wrap}
+  .adjust-row button{border:1px solid var(--border);background:var(--surface);font:inherit;font-size:13px;
+    padding:7px 16px;border-radius:9px;cursor:pointer}
+  .adjust-row button:hover{border-color:#c9d3e0}
+
+  .hidden{display:none!important}
+  .done{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:40px 24px;text-align:center;box-shadow:var(--shadow)}
+  .done h2{margin:0 0 6px;font-size:20px}
+  .done p{margin:0;color:var(--muted);font-size:14px}
+  .btn{margin-top:18px;border:0;background:var(--primary);color:#fff;font:inherit;font-weight:600;
+    padding:10px 22px;border-radius:10px;cursor:pointer;font-size:14px}
+
+  .note{margin-top:26px;padding:13px 16px;background:var(--amber-soft);border:1px solid #fde68a;
+    border-radius:10px;font-size:13px;color:#854d0e}
+  .note b{font-weight:600}
+  .note code{background:#fff7db;padding:1px 5px;border-radius:4px;font-size:12px}
+  @media (max-width:560px){
+    .grades{grid-template-columns:repeat(2,1fr)}
+    .card-text{font-size:19px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <div>
+      <h1>แฟลชการ์ด</h1>
+      <p>ตัวอย่าง UI — 3 โหมดการตอบ + ปัดการ์ด 4 ทิศ</p>
+    </div>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true"  data-view="list">รายการชุด</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="study">หน้าท่อง</button>
+    </div>
+  </div>
+
+  <!-- ============ รายการชุด ============ -->
+  <section id="view-list">
+    <div class="filters">
+      <button class="chip" aria-pressed="true">ทุกวิชา</button>
+      <button class="chip" aria-pressed="false">ฟิสิกส์</button>
+      <button class="chip" aria-pressed="false">เคมี</button>
+      <button class="chip" aria-pressed="false">ชีววิทยา</button>
+    </div>
+    <div class="decks" id="decks"></div>
+  </section>
+
+  <!-- ============ หน้าท่อง ============ -->
+  <section id="view-study" class="hidden">
+    <div class="study-head">
+      <button class="back" id="back">← กลับไปรายการชุด</button>
+      <span class="progress-text" id="progressText"></span>
+    </div>
+    <div class="bar"><i id="bar"></i></div>
+
+    <div id="cardArea">
+      <div class="stage">
+        <div class="card" id="card">
+          <div class="mode-tag" id="modeTag"></div>
+          <div class="card-label" id="cardLabel">คำถาม</div>
+          <div class="card-img hidden" id="cardImg"></div>
+          <p class="card-text" id="front"></p>
+          <p class="hint hidden" id="hint"></p>
+
+          <!-- SELF_GRADE -->
+          <div id="selfGrade" class="hidden">
+            <div class="divider hidden" id="divider"></div>
+            <p class="answer hidden" id="back"></p>
+            <p class="tap" id="tap">แตะการ์ดเพื่อดูเฉลย · หรือปัดการ์ดไปตามทิศ</p>
+          </div>
+
+          <!-- MULTIPLE_CHOICE -->
+          <div class="options hidden" id="options"></div>
+
+          <!-- TYPED -->
+          <form class="typed hidden" id="typed" autocomplete="off">
+            <input id="typedInput" placeholder="พิมพ์คำตอบ…">
+            <button type="submit">ตรวจ</button>
+          </form>
+
+          <div class="verdict hidden" id="verdict"></div>
+
+          <div class="swipe-hud" id="hud"><span id="hudText"></span></div>
+        </div>
+      </div>
+
+      <!-- ปุ่มให้คะแนนเต็ม 4 ปุ่ม (SELF_GRADE) -->
+      <div class="grades hidden" id="grades">
+        <button class="grade g0" data-g="0"><b>ลืม</b><span id="i0"></span><em>ปัดซ้าย ←</em></button>
+        <button class="grade g3" data-g="3"><b>ยาก</b><span id="i3"></span><em>ปัดลง ↓</em></button>
+        <button class="grade g4" data-g="4"><b>จำได้</b><span id="i4"></span><em>ปัดขวา →</em></button>
+        <button class="grade g5" data-g="5"><b>ง่าย</b><span id="i5"></span><em>ปัดขึ้น ↑</em></button>
+      </div>
+
+      <!-- ปรับความยากหลังระบบเฉลย (MC / TYPED) -->
+      <div class="adjust hidden" id="adjust">
+        <span id="adjustLead"></span>
+        <div class="adjust-row">
+          <button data-adj="3">ยากกว่านั้น</button>
+          <button data-adj="next">ถัดไป →</button>
+          <button data-adj="5">ง่ายมาก</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="done hidden" id="done">
+      <h2>จบรอบแล้ว 🎉</h2>
+      <p id="doneText"></p>
+      <button class="btn" id="restart">กลับไปรายการชุด</button>
+    </div>
+
+    <div class="note">
+      <b>สิ่งที่ตัวอย่างนี้แสดง</b> — การ์ดใบที่ 1 เป็นโหมดพลิกเอง (ปัดได้ 4 ทิศ), ใบที่ 2 มีรูป,
+      ใบที่ 3 เป็นเลือก ก ข ค ง, ใบที่ 4 เป็นพิมพ์คำตอบ (ลองพิมพ์ผิดนิดหน่อยดู จะได้ grade 3)
+      <br>ตัวเลขใต้ปุ่มคือระยะทบทวนถัดไปจาก <code>sm2()</code> จริงตามสถานะของการ์ดใบนั้น
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ================= SM-2 (ตรงกับ plan.md §3) ================= */
+function sm2(state, grade){
+  let { repetitions, easeFactor, interval } = state;
+  if (grade >= 3) {
+    if (repetitions === 0) interval = 1;
+    else if (repetitions === 1) interval = 6;
+    else interval = Math.round(interval * easeFactor);
+    repetitions += 1;
+  } else {
+    repetitions = 0;
+    interval = 1;
+  }
+  easeFactor += 0.1 - (5 - grade) * (0.08 + (5 - grade) * 0.02);
+  if (easeFactor < 1.3) easeFactor = 1.3;
+  return { repetitions, easeFactor, interval };
+}
+
+/* ============ ตรวจคำตอบโหมด TYPED (plan.md §3.1) ============ */
+const norm = s => s.trim().toLowerCase().replace(/\s+/g," ");
+function levenshtein(a,b){
+  const m=[...Array(b.length+1)].map((_,i)=>[i,...Array(a.length).fill(0)]);
+  for(let j=0;j<=a.length;j++) m[0][j]=j;
+  for(let i=1;i<=b.length;i++) for(let j=1;j<=a.length;j++)
+    m[i][j]=Math.min(m[i-1][j]+1,m[i][j-1]+1,m[i-1][j-1]+(a[j-1]===b[i-1]?0:1));
+  return m[b.length][a.length];
+}
+function checkTyped(input, accepted){
+  const v = norm(input);
+  if (!v) return { grade:0, kind:"no" };
+  for (const a of accepted) if (v === norm(a)) return { grade:4, kind:"ok" };
+  for (const a of accepted) if (levenshtein(v, norm(a)) <= 2) return { grade:3, kind:"near" };
+  return { grade:0, kind:"no" };
+}
+
+/* ================= ข้อมูลตัวอย่าง ================= */
+const decks = [
+  { id:1, title:"กฎการเคลื่อนที่ของนิวตัน", subject:"ฟิสิกส์", topic:"แรงและการเคลื่อนที่", total:24, due:7,  neu:3 },
+  { id:2, title:"สูตรจลนศาสตร์",             subject:"ฟิสิกส์", topic:"การเคลื่อนที่แนวตรง", total:18, due:0,  neu:5 },
+  { id:3, title:"ตารางธาตุ หมู่ 1–2",        subject:"เคมี",    topic:null,                  total:40, due:12, neu:0 },
+  { id:4, title:"โครงสร้างเซลล์",            subject:"ชีววิทยา", topic:"เซลล์และองค์ประกอบ",  total:31, due:0,  neu:0 },
+];
+
+// รูปในตัวอย่างวาดเป็น inline SVG เพื่อให้ไฟล์เดียวจบ
+// ของจริงคือ <img src={card.frontImage}> ที่อัปโหลดผ่าน /api/upload-blob
+const inclineSVG = `<svg viewBox="0 0 240 130" xmlns="http://www.w3.org/2000/svg">
+  <polygon points="20,110 220,110 220,35" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2"/>
+  <rect x="150" y="55" width="34" height="26" rx="3" fill="#2563eb" transform="rotate(-20.6 167 68)"/>
+  <line x1="167" y1="68" x2="167" y2="105" stroke="#dc2626" stroke-width="2.5" marker-end="url(#a)"/>
+  <text x="172" y="100" font-size="12" fill="#dc2626" font-family="sans-serif">mg</text>
+  <text x="34" y="105" font-size="12" fill="#475569" font-family="sans-serif">θ</text>
+  <path d="M28 110 A 22 22 0 0 0 44 100" fill="none" stroke="#475569" stroke-width="1.5"/>
+  <defs><marker id="a" markerWidth="7" markerHeight="7" refX="3" refY="3.5" orient="auto">
+    <polygon points="0 0, 7 3.5, 0 7" fill="#dc2626"/></marker></defs>
+</svg>`;
+
+const cards = [
+  { mode:"SELF_GRADE",
+    front:"กฎข้อที่ 1 ของนิวตัน กล่าวว่าอย่างไร",
+    back:"วัตถุจะรักษาสภาพหยุดนิ่งหรือเคลื่อนที่ด้วยความเร็วคงที่ ถ้าไม่มีแรงลัพธ์มากระทำ",
+    hint:"กฎความเฉื่อย",
+    state:{ repetitions:2, easeFactor:2.5, interval:6 } },
+
+  { mode:"SELF_GRADE", image:inclineSVG,
+    front:"วัตถุบนพื้นเอียงมุม θ แรงที่ดึงวัตถุลงตามพื้นเอียงมีค่าเท่าใด",
+    back:"mg·sin θ  (ส่วนแรงตั้งฉากกับพื้นคือ mg·cos θ)",
+    hint:null,
+    state:{ repetitions:4, easeFactor:2.36, interval:21 } },
+
+  { mode:"MULTIPLE_CHOICE",
+    front:"หน่วยของแรงในระบบ SI คือข้อใด",
+    back:"นิวตัน (N) โดย 1 N = 1 kg·m/s²",
+    options:[
+      { text:"จูล (J)",    correct:false },
+      { text:"นิวตัน (N)", correct:true  },
+      { text:"วัตต์ (W)",  correct:false },
+      { text:"ปาสคาล (Pa)",correct:false },
+    ],
+    state:{ repetitions:1, easeFactor:2.5, interval:1 } },
+
+  { mode:"TYPED",
+    front:"ความเร่งเนื่องจากแรงโน้มถ่วงของโลกมีค่าประมาณเท่าใด (m/s²)",
+    back:"9.8 m/s² (ปัดเป็น 10 ได้ในการคำนวณคร่าว ๆ)",
+    accepted:["9.8","9.81","10"],
+    state:{ repetitions:3, easeFactor:2.18, interval:13 } },
+];
+
+const MODE_LABEL = { SELF_GRADE:"พลิกเอง", MULTIPLE_CHOICE:"เลือกตอบ", TYPED:"พิมพ์ตอบ" };
+const KEYS = ["ก","ข","ค","ง","จ"];
+
+/* ================= รายการชุด ================= */
+const pill = (n,cls) =>
+  `<div class="pill ${n===0?"zero":cls}">${n}<small>${cls==="due"?"ทบทวน":"ใหม่"}</small></div>`;
+
+document.getElementById("decks").innerHTML = decks.map(d => `
+  <button class="deck" data-deck="${d.id}">
+    <div class="deck-body">
+      <div class="deck-title">${d.title}
+        <span class="badge">${d.subject}</span>
+        ${d.topic ? `<span class="badge topic">${d.topic}</span>` : ""}
+      </div>
+      <div class="deck-meta">${d.total} ใบ</div>
+    </div>
+    <div class="counts">${pill(d.due,"due")}${pill(d.neu,"new")}</div>
+  </button>`).join("");
+
+/* ================= สลับหน้า ================= */
+const el = id => document.getElementById(id);
+const viewList = el("view-list"), viewStudy = el("view-study");
+const tabs = [...document.querySelectorAll(".tab")];
+
+function show(view){
+  tabs.forEach(t => t.setAttribute("aria-selected", String(t.dataset.view === view)));
+  viewList.classList.toggle("hidden",  view !== "list");
+  viewStudy.classList.toggle("hidden", view !== "study");
+  if (view === "study") start();
+}
+tabs.forEach(t => t.onclick = () => show(t.dataset.view));
+document.querySelectorAll(".deck").forEach(d => d.onclick = () => show("study"));
+el("back").onclick = el("restart").onclick = () => show("list");
+document.querySelectorAll(".chip").forEach(c => c.onclick = () => {
+  document.querySelectorAll(".chip").forEach(x => x.setAttribute("aria-pressed","false"));
+  c.setAttribute("aria-pressed","true");
+});
+
+/* ================= หน้าท่อง ================= */
+let idx = 0, graded = 0, answered = false, pendingGrade = null;
+
+const fmt = d => d < 1 ? "< 1 วัน" : d < 30 ? d + " วัน" : Math.round(d/30) + " เดือน";
+
+function render(){
+  const c = cards[idx];
+  answered = false; pendingGrade = null;
+
+  el("progressText").textContent = `การ์ดที่ ${idx+1} / ${cards.length}`;
+  el("bar").style.width = (idx / cards.length * 100) + "%";
+  el("modeTag").textContent = MODE_LABEL[c.mode];
+  el("cardLabel").textContent = "คำถาม";
+  el("front").textContent = c.front;
+
+  // รูป
+  el("cardImg").innerHTML = c.image || "";
+  el("cardImg").classList.toggle("hidden", !c.image);
+
+  // hint
+  el("hint").textContent = c.hint ? "💡 " + c.hint : "";
+  el("hint").classList.toggle("hidden", !c.hint);
+
+  // ซ่อนทุก widget ก่อน
+  ["selfGrade","options","typed","verdict","grades","adjust"].forEach(i => el(i).classList.add("hidden"));
+  el("divider").classList.add("hidden");
+  el("back").classList.add("hidden");
+  el("tap").classList.remove("hidden");
+  el("verdict").className = "verdict hidden";
+
+  // ระยะทบทวนถัดไปของแต่ละปุ่ม
+  [0,3,4,5].forEach(g => el("i"+g).textContent = fmt(sm2(c.state, g).interval));
+
+  const card = el("card");
+  card.classList.toggle("draggable", c.mode === "SELF_GRADE");
+  card.style.transform = ""; card.style.opacity = "";
+
+  if (c.mode === "SELF_GRADE") {
+    el("selfGrade").classList.remove("hidden");
+  } else if (c.mode === "MULTIPLE_CHOICE") {
+    el("options").classList.remove("hidden");
+    el("options").innerHTML = c.options.map((o,i) =>
+      `<button class="opt" data-i="${i}"><span class="k">${KEYS[i]}</span>${o.text}</button>`).join("");
+    el("options").querySelectorAll(".opt").forEach(b => b.onclick = () => pickOption(+b.dataset.i));
+  } else {
+    el("typed").classList.remove("hidden");
+    el("typedInput").value = "";
+    setTimeout(() => el("typedInput").focus(), 50);
+  }
+}
+
+/* ---- SELF_GRADE: พลิกการ์ด ---- */
+function flip(){
+  if (cards[idx].mode !== "SELF_GRADE" || answered) return;
+  answered = true;
+  el("cardLabel").textContent = "เฉลย";
+  el("divider").classList.remove("hidden");
+  el("back").textContent = cards[idx].back;
+  el("back").classList.remove("hidden");
+  el("tap").classList.add("hidden");
+  el("grades").classList.remove("hidden");
+}
+el("card").onclick = e => { if (!dragMoved) flip(); };
+
+/* ---- MULTIPLE_CHOICE ---- */
+function pickOption(i){
+  if (answered) return;
+  answered = true;
+  const c = cards[idx];
+  const correctIdx = c.options.findIndex(o => o.correct);
+  const ok = i === correctIdx;
+
+  el("options").querySelectorAll(".opt").forEach((b,j) => {
+    b.disabled = true;
+    if (j === correctIdx) b.classList.add("correct");
+    else if (j === i)     b.classList.add("wrong");
+  });
+  showVerdict(ok ? "ok" : "no", ok ? "ถูกต้อง" : "ยังไม่ถูก", c.back);
+  pendingGrade = ok ? 4 : 0;
+  offerAdjust(ok);
+}
+
+/* ---- TYPED ---- */
+el("typed").onsubmit = e => {
+  e.preventDefault();
+  if (answered) return;
+  answered = true;
+  const c = cards[idx];
+  const r = checkTyped(el("typedInput").value, c.accepted);
+  el("typedInput").disabled = true;
+  el("typed").querySelector("button").disabled = true;
+
+  const title = r.kind === "ok"   ? "ถูกต้อง"
+              : r.kind === "near" ? "เกือบถูก — สะกดเพี้ยนเล็กน้อย"
+              :                     "ยังไม่ถูก";
+  showVerdict(r.kind, title, c.back);
+  pendingGrade = r.grade;
+  offerAdjust(r.grade >= 3);
+};
+
+function showVerdict(kind, title, answer){
+  const v = el("verdict");
+  v.className = "verdict " + kind;
+  v.innerHTML = `${title}<b>${answer}</b>`;
+}
+
+function offerAdjust(ok){
+  el("adjustLead").textContent = ok
+    ? `ระบบให้ grade ${pendingGrade} → ทบทวนอีกครั้งใน ${fmt(sm2(cards[idx].state, pendingGrade).interval)}`
+    : `ตอบผิด → grade 0, ทบทวนใหม่พรุ่งนี้`;
+  el("adjust").classList.remove("hidden");
+  // ตอบผิดแล้วไม่ต้องให้ปรับความยาก
+  el("adjust").querySelectorAll("[data-adj]").forEach(b => {
+    b.classList.toggle("hidden", !ok && b.dataset.adj !== "next");
+  });
+}
+el("adjust").querySelectorAll("[data-adj]").forEach(b => b.onclick = () => {
+  const a = b.dataset.adj;
+  commit(a === "next" ? pendingGrade : +a);
+});
+
+/* ---- ปุ่มให้คะแนน 4 ปุ่ม ---- */
+document.querySelectorAll(".grade").forEach(b => b.onclick = () => commit(+b.dataset.g));
+
+function commit(){
+  graded++;
+  idx++;
+  if (idx >= cards.length) {
+    el("cardArea").classList.add("hidden");
+    el("done").classList.remove("hidden");
+    el("bar").style.width = "100%";
+    el("progressText").textContent = `${cards.length} / ${cards.length}`;
+    el("doneText").textContent = `ทบทวนไป ${graded} ใบ — แล้วเจอกันใหม่ตามกำหนดของแต่ละใบ`;
+    return;
+  }
+  el("typedInput").disabled = false;
+  el("typed").querySelector("button").disabled = false;
+  render();
+}
+
+/* ================= ปัดการ์ด 4 ทิศ (plan.md §3.2) ================= */
+const SWIPE = {
+  left : { g:0, text:"ลืม",   color:"#dc2626" },
+  down : { g:3, text:"ยาก",   color:"#d97706" },
+  right: { g:4, text:"จำได้", color:"#16a34a" },
+  up   : { g:5, text:"ง่าย",  color:"#2563eb" },
+};
+const THRESHOLD = 90;
+let dragging = false, dragMoved = false, sx = 0, sy = 0;
+
+const card = el("card"), hud = el("hud"), hudText = el("hudText");
+
+function dirOf(dx, dy){
+  if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return null;
+  return Math.abs(dx) > Math.abs(dy)
+    ? (dx > 0 ? "right" : "left")
+    : (dy > 0 ? "down"  : "up");
+}
+
+card.addEventListener("pointerdown", e => {
+  if (cards[idx].mode !== "SELF_GRADE") return;
+  dragging = true; dragMoved = false; sx = e.clientX; sy = e.clientY;
+  card.classList.add("dragging"); card.classList.remove("settle");
+  card.setPointerCapture(e.pointerId);
+});
+
+card.addEventListener("pointermove", e => {
+  if (!dragging) return;
+  const dx = e.clientX - sx, dy = e.clientY - sy;
+  if (Math.hypot(dx, dy) > 6) dragMoved = true;
+
+  card.style.transform = `translate(${dx}px, ${dy}px) rotate(${dx * 0.04}deg)`;
+
+  const d = dirOf(dx, dy);
+  if (d) {
+    const s = SWIPE[d];
+    const strength = Math.min(Math.max(Math.abs(dx), Math.abs(dy)) / THRESHOLD, 1);
+    hud.style.opacity = strength;
+    hud.style.color = s.color;
+    hudText.textContent = s.text;
+  } else {
+    hud.style.opacity = 0;
+  }
+});
+
+function endDrag(e){
+  if (!dragging) return;
+  dragging = false;
+  card.classList.remove("dragging");
+  card.classList.add("settle");
+  hud.style.opacity = 0;
+
+  const dx = e.clientX - sx, dy = e.clientY - sy;
+  const d = dirOf(dx, dy);
+  const far = Math.max(Math.abs(dx), Math.abs(dy)) >= THRESHOLD;
+
+  if (d && far) {
+    // ปัดผ่าน threshold → ให้คะแนนเลย (ไม่ต้องพลิกดูเฉลยก่อนก็ได้)
+    const fly = { left:"-120%,0", right:"120%,0", up:"0,-120%", down:"0,120%" }[d];
+    card.style.transform = `translate(${fly}) rotate(${dx * 0.05}deg)`;
+    card.style.opacity = "0";
+    setTimeout(() => commit(SWIPE[d].g), 180);
+  } else {
+    card.style.transform = "";
+  }
+}
+card.addEventListener("pointerup", endDrag);
+card.addEventListener("pointercancel", () => {
+  dragging = false;
+  card.classList.remove("dragging"); card.classList.add("settle");
+  card.style.transform = ""; hud.style.opacity = 0;
+});
+
+function start(){
+  idx = 0; graded = 0;
+  el("cardArea").classList.remove("hidden");
+  el("done").classList.add("hidden");
+  el("typedInput").disabled = false;
+  el("typed").querySelector("button").disabled = false;
+  render();
+}
+render();
+</script>
+</body>
+</html>
