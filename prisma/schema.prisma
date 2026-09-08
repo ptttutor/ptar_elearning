@@ -948,17 +948,18 @@ model MockPracticeWallet {
 // =========================================================================
 
 model FlashcardDeck {
-  id            String      @id @default(uuid())
-  title         String
-  description   String?
-  subject       Subjects
-  gradeLevel    GradeLevel?
-  topicId       String?
-  coverImageUrl String?
-  isActive      Boolean     @default(true)
-  order         Int         @default(0)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id             String      @id @default(uuid())
+  title          String
+  description    String?
+  subject        Subjects
+  gradeLevel     GradeLevel?
+  topicId        String?
+  coverImageUrl  String?
+  isActive       Boolean     @default(true)
+  order          Int         @default(0)
+  newCardsPerDay Int         @default(20) // new (never-reviewed) cards introduced per day; 0 = unlimited
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
 
   topic MockTopic?  @relation(fields: [topicId], references: [id])
   cards Flashcard[]

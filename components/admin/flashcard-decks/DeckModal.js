@@ -20,6 +20,7 @@ const EMPTY_FORM = {
   topicId: "none",
   coverImageUrl: "",
   isActive: true,
+  newCardsPerDay: "20",
 };
 
 async function uploadFile(file, type) {
@@ -56,6 +57,7 @@ export default function DeckModal({ open, editing, onCancel, onSubmit }) {
             topicId: editing.topicId || "none",
             coverImageUrl: editing.coverImageUrl || "",
             isActive: editing.isActive,
+            newCardsPerDay: String(editing.newCardsPerDay ?? 20),
           }
         : EMPTY_FORM
     );
@@ -112,6 +114,7 @@ export default function DeckModal({ open, editing, onCancel, onSubmit }) {
         topicId: values.topicId === "none" ? null : values.topicId,
         coverImageUrl: values.coverImageUrl || null,
         isActive: values.isActive,
+        newCardsPerDay: values.newCardsPerDay,
       });
     } finally {
       setLoading(false);
@@ -224,6 +227,31 @@ export default function DeckModal({ open, editing, onCancel, onSubmit }) {
             </Select>
             {values.subject && topics.length === 0 && (
               <p className="text-xs text-gray-400">ไม่มีหัวข้อสำหรับวิชานี้ — เพิ่มได้ที่หน้า &quot;หัวข้อข้อสอบจำลอง&quot;</p>
+            )}
+          </div>
+
+          <div className="space-y-1.5 rounded-lg border border-gray-100 p-3">
+            <div className="flex items-center justify-between">
+              <Label>จำนวนการ์ดใหม่ต่อวัน</Label>
+              <label className="flex items-center gap-1.5 text-xs text-gray-600">
+                <input
+                  type="checkbox"
+                  checked={values.newCardsPerDay === "0"}
+                  onChange={(e) => setValues((p) => ({ ...p, newCardsPerDay: e.target.checked ? "0" : "20" }))}
+                />
+                ไม่จำกัด
+              </label>
+            </div>
+            <p className="text-xs text-gray-400">
+              จำนวนการ์ดที่ยังไม่เคยทบทวนซึ่งจะถูกปล่อยให้นักเรียนเห็นใหม่ในแต่ละวัน (การ์ดที่ถึงกำหนดทบทวนแล้วจะไม่ถูกจำกัด)
+            </p>
+            {values.newCardsPerDay !== "0" && (
+              <Input
+                type="number"
+                min={1}
+                value={values.newCardsPerDay}
+                onChange={(e) => setValues((p) => ({ ...p, newCardsPerDay: e.target.value }))}
+              />
             )}
           </div>
 

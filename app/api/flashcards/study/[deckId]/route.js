@@ -3,10 +3,6 @@ import prisma from "@/lib/prisma";
 import { requireUser } from "@/lib/requireUser";
 import { CARD_INCLUDE } from "@/lib/flashcardValidation";
 
-// New cards introduced per session — keeps a student from opening the whole
-// deck at once and flooding tomorrow's due queue. See plan.md §5.
-const NEW_CARDS_PER_DAY = 20;
-
 // GET: /api/flashcards/study/[deckId] - build today's study queue for the
 // authenticated user: cards already due (nextReviewAt <= now, oldest due
 // first) followed by never-reviewed "new" cards, capped per day.
@@ -49,6 +45,11 @@ export async function GET(request, { params }) {
     });
     const excludeIds = reviewedCardIds.map((r) => r.cardId);
 
+    // Caps how many never-reviewed cards get introduced per day, so a student
+    // can't open the whole deck at once and flood tomorrow's due queue. Set
+    // per deck from the admin deck form; 0 means no cap. See plan.md §5.
+    const newCardsPerDay = deck.newCardsPerDay;
+
     const newCards = await prisma.flashcard.findMany({
       where: {
         deckId,
@@ -56,7 +57,7 @@ export async function GET(request, { params }) {
         ...(excludeIds.length > 0 && { id: { notIn: excludeIds } }),
       },
       orderBy: { order: "asc" },
-      take: NEW_CARDS_PER_DAY,
+      ...(newCardsPerDay > 0 && { take: newCardsPerDay }),
       include: CARD_INCLUDE,
     });
 
