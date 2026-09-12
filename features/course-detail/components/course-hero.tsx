@@ -50,7 +50,13 @@ export function CourseHero({
                   height="100%"
                   style={{ border: 0, display: "block" }}
                   allowFullScreen
-                  referrerPolicy="no-referrer"
+                  // "no-referrer" hides this site's origin from player.vimeo.com,
+                  // which is exactly what Vimeo's domain-restricted embed privacy
+                  // checks against — any video with that restriction enabled would
+                  // refuse to play for every visitor. strict-origin-when-cross-origin
+                  // (the browser default, matching course-player's video card) still
+                  // lets Vimeo see the origin without leaking the full page URL.
+                  referrerPolicy="strict-origin-when-cross-origin"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   title={`${course.title} - แนะนำคอร์ส`}
                   loading="lazy"

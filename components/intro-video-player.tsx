@@ -50,7 +50,11 @@ export function IntroVideoPlayer({
           allow: "autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share",
         }
       : {
-          referrerPolicy: "no-referrer" as const,
+          // strict-origin-when-cross-origin, not no-referrer — Vimeo's
+          // domain-restricted embed privacy checks the referring origin, and a
+          // video with that restriction enabled would refuse to play for every
+          // visitor if the origin never reaches Vimeo.
+          referrerPolicy: "strict-origin-when-cross-origin" as const,
           allow: "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share",
         }
 

@@ -61,7 +61,11 @@ export function LiveScheduleClient() {
                     src={videoSrc}
                     className="w-full h-full transition-opacity duration-300"
                     allowFullScreen
-                    referrerPolicy="no-referrer"
+                    // strict-origin-when-cross-origin, not no-referrer — Vimeo's
+                    // domain-restricted embed privacy checks the referring origin,
+                    // and a video with that restriction enabled would refuse to
+                    // play for every visitor if the origin never reaches Vimeo.
+                    referrerPolicy="strict-origin-when-cross-origin"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                     title="วิดีโอรอบสด"
                   />
