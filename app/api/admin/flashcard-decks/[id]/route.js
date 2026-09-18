@@ -44,7 +44,7 @@ export async function PUT(request, { params }) {
 
     const { id } = await params;
     const data = await request.json();
-    const { title, description, subject, gradeLevel, topicId, coverImageUrl, isActive, newCardsPerDay } = data;
+    const { title, description, subject, gradeLevel, topicId, coverImageUrl, isActive, newCardsPerDay, price, discountPrice } = data;
 
     const existingDeck = await prisma.flashcardDeck.findUnique({ where: { id } });
     if (!existingDeck) {
@@ -76,6 +76,8 @@ export async function PUT(request, { params }) {
         coverImageUrl: coverImageUrl || null,
         isActive: isActive ?? existingDeck.isActive,
         newCardsPerDay: newCardsPerDay != null ? parseInt(newCardsPerDay, 10) : existingDeck.newCardsPerDay,
+        price: price != null && price !== "" ? Number(price) : 0,
+        discountPrice: discountPrice != null && discountPrice !== "" ? Number(discountPrice) : null,
         updatedAt: new Date(),
       },
       include: {

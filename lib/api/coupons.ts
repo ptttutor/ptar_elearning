@@ -27,7 +27,7 @@ export async function validateCartCoupon(payload: CartCouponPayload): Promise<{ 
 type ItemCouponPayload = {
   code: string
   userId: string
-  itemType: "course" | "ebook" | "mock_exam"
+  itemType: "course" | "ebook" | "mock_exam" | "flashcard_deck"
   itemId: string
   subtotal: number
 }

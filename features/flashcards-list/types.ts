@@ -6,6 +6,9 @@ export type ApiFlashcardDeck = {
   gradeLevel: string | null
   coverImageUrl: string | null
   topic: { id: string; name: string } | null
+  price: number
+  discountPrice: number | null
+  hasAccess: boolean
   totalCards: number
   dueCount: number
   newCount: number

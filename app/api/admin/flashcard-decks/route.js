@@ -74,7 +74,7 @@ export async function POST(request) {
     }
 
     const data = await request.json();
-    const { title, description, subject, gradeLevel, topicId, coverImageUrl, isActive, newCardsPerDay } = data;
+    const { title, description, subject, gradeLevel, topicId, coverImageUrl, isActive, newCardsPerDay, price, discountPrice } = data;
 
     if (!title || !subject) {
       return NextResponse.json({
@@ -103,6 +103,8 @@ export async function POST(request) {
         coverImageUrl: coverImageUrl || null,
         isActive: isActive ?? true,
         newCardsPerDay: newCardsPerDay != null ? parseInt(newCardsPerDay, 10) : 20,
+        price: price != null && price !== "" ? Number(price) : 0,
+        discountPrice: discountPrice != null && discountPrice !== "" ? Number(discountPrice) : null,
       },
       include: {
         topic: { select: { id: true, name: true } },

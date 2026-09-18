@@ -40,6 +40,7 @@ export default function DeckTable({
                 <TableHead>ระดับชั้น</TableHead>
                 <TableHead>หัวข้อที่ผูก</TableHead>
                 <TableHead>จำนวนการ์ด</TableHead>
+                <TableHead>ราคา</TableHead>
                 <SortableTableHead field="isActive" label="สถานะ" sortBy={filters.sortBy} sortOrder={filters.sortOrder} onSort={onSortChange} />
                 <TableHead className="text-right">การจัดการ</TableHead>
               </TableRow>
@@ -48,14 +49,14 @@ export default function DeckTable({
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell colSpan={8}>
+                    <TableCell colSpan={9}>
                       <Skeleton className="h-10 w-full" />
                     </TableCell>
                   </TableRow>
                 ))
               ) : decks.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-gray-400">
+                  <TableCell colSpan={9} className="text-center text-gray-400">
                     ไม่พบชุดแฟลชการ์ด
                   </TableCell>
                 </TableRow>
@@ -100,6 +101,20 @@ export default function DeckTable({
                         <HelpCircle className="h-3.5 w-3.5 text-gray-400" />
                         {deck._count?.cards || 0} ใบ
                       </div>
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {deck.price > 0 ? (
+                        deck.discountPrice != null && deck.discountPrice < deck.price ? (
+                          <span>
+                            <span className="font-medium text-gray-900">฿{deck.discountPrice.toLocaleString()}</span>{" "}
+                            <span className="text-xs text-gray-400 line-through">฿{deck.price.toLocaleString()}</span>
+                          </span>
+                        ) : (
+                          <span className="font-medium text-gray-900">฿{deck.price.toLocaleString()}</span>
+                        )
+                      ) : (
+                        <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">ฟรี</Badge>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireUser } from "@/lib/requireUser";
 import { applyReview } from "@/lib/sm2";
+import { hasFlashcardDeckAccess } from "@/lib/flashcardAccess";
 
 const VALID_ANSWER_MODES = ["SELF_GRADE", "MULTIPLE_CHOICE", "TYPED"];
 
@@ -32,10 +33,13 @@ export async function POST(request) {
 
     const card = await prisma.flashcard.findUnique({
       where: { id: cardId },
-      include: { deck: { select: { isActive: true } } },
+      include: { deck: { select: { id: true, isActive: true, price: true } } },
     });
     if (!card || !card.isActive || !card.deck?.isActive) {
       return NextResponse.json({ success: false, error: "ไม่พบการ์ดนี้ หรือชุดถูกปิดใช้งานแล้ว" }, { status: 404 });
+    }
+    if (!(await hasFlashcardDeckAccess(userId, card.deck))) {
+      return NextResponse.json({ success: false, error: "กรุณาซื้อชุดแฟลชการ์ดนี้ก่อน", requiresPurchase: true }, { status: 403 });
     }
 
     const existing = await prisma.flashcardReview.findUnique({

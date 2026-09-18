@@ -20,6 +20,8 @@ export function toItemTypeLabel(itemType?: string) {
   const t = (itemType || "").toUpperCase()
   if (t === "COURSE") return "คอร์สเรียน"
   if (t === "EBOOK") return "หนังสือ / E-Book"
+  if (t === "MOCK_EXAM") return "ข้อสอบจำลอง"
+  if (t === "FLASHCARD_DECK") return "ชุดแฟลชการ์ด"
   return itemType || "สินค้า"
 }
 

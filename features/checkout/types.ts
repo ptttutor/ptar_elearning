@@ -26,3 +26,13 @@ export type CheckoutMockExam = {
   price: number
   discountPrice?: number | null
 }
+
+export type CheckoutFlashcardDeck = {
+  id: string
+  title: string
+  description?: string | null
+  coverImageUrl?: string | null
+  price: number
+  discountPrice?: number | null
+  hasAccess: boolean
+}

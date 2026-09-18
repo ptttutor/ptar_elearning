@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { fetchStudyQueue } from "@/features/flashcard-study/api/fetch-study-queue"
 import { submitReview } from "@/features/flashcard-study/api/submit-review"
@@ -7,6 +8,7 @@ import type { FlashcardAnswerMode, StudyCard, StudyDeck } from "@/features/flash
 
 export function useFlashcardStudy(deckId: string, isAuthenticated: boolean, authLoading: boolean) {
   const { toast } = useToast()
+  const router = useRouter()
 
   const [deck, setDeck] = useState<StudyDeck | null>(null)
   const [cards, setCards] = useState<StudyCard[]>([])
@@ -31,11 +33,16 @@ export function useFlashcardStudy(deckId: string, isAuthenticated: boolean, auth
       setIndex(0)
       setReviewedCount(0)
     } catch (e: any) {
+      // Opened a priced deck by direct link without owning it — send them to buy it.
+      if (e?.response?.status === 403 && e?.response?.data?.requiresPurchase) {
+        router.replace(`/checkout/flashcard/${encodeURIComponent(deckId)}`)
+        return
+      }
       setError(e?.response?.data?.error || e?.message || "โหลดคิวทบทวนไม่สำเร็จ")
     } finally {
       setLoading(false)
     }
-  }, [deckId])
+  }, [deckId, router])
 
   useEffect(() => {
     if (authLoading) return

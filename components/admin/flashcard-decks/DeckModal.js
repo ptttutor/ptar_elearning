@@ -21,6 +21,8 @@ const EMPTY_FORM = {
   coverImageUrl: "",
   isActive: true,
   newCardsPerDay: "20",
+  price: "0",
+  discountPrice: "",
 };
 
 async function uploadFile(file, type) {
@@ -58,6 +60,8 @@ export default function DeckModal({ open, editing, onCancel, onSubmit }) {
             coverImageUrl: editing.coverImageUrl || "",
             isActive: editing.isActive,
             newCardsPerDay: String(editing.newCardsPerDay ?? 20),
+            price: String(editing.price ?? 0),
+            discountPrice: editing.discountPrice != null ? String(editing.discountPrice) : "",
           }
         : EMPTY_FORM
     );
@@ -115,6 +119,8 @@ export default function DeckModal({ open, editing, onCancel, onSubmit }) {
         coverImageUrl: values.coverImageUrl || null,
         isActive: values.isActive,
         newCardsPerDay: values.newCardsPerDay,
+        price: values.price || 0,
+        discountPrice: values.discountPrice || null,
       });
     } finally {
       setLoading(false);
@@ -228,6 +234,31 @@ export default function DeckModal({ open, editing, onCancel, onSubmit }) {
             {values.subject && topics.length === 0 && (
               <p className="text-xs text-gray-400">ไม่มีหัวข้อสำหรับวิชานี้ — เพิ่มได้ที่หน้า &quot;หัวข้อข้อสอบจำลอง&quot;</p>
             )}
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="price">ราคา (บาท)</Label>
+              <Input
+                id="price"
+                type="number"
+                min={0}
+                value={values.price}
+                onChange={(e) => setValues((p) => ({ ...p, price: e.target.value }))}
+              />
+              <p className="text-xs text-gray-400">ใส่ 0 = ฟรี ไม่ต้องซื้อ</p>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="discountPrice">ราคาหลังลด (ไม่บังคับ)</Label>
+              <Input
+                id="discountPrice"
+                type="number"
+                min={0}
+                value={values.discountPrice}
+                onChange={(e) => setValues((p) => ({ ...p, discountPrice: e.target.value }))}
+                placeholder="ไม่มีส่วนลด"
+              />
+            </div>
           </div>
 
           <div className="space-y-1.5 rounded-lg border border-gray-100 p-3">

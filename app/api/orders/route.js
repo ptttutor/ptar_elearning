@@ -44,6 +44,8 @@ export async function POST(request) {
         itemData = await prisma.ebook.findUnique({ where: { id: itemId, isActive: true } });
       } else if (itemType === "MOCK_EXAM") {
         itemData = await prisma.mockExam.findUnique({ where: { id: itemId, isActive: true } });
+      } else if (itemType === "FLASHCARD_DECK") {
+        itemData = await prisma.flashcardDeck.findUnique({ where: { id: itemId, isActive: true } });
       }
       if (!itemData) {
         return NextResponse.json({ success: false, error: `ไม่พบสินค้า ${itemId}` }, { status: 404 });

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireUser } from "@/lib/requireUser";
 import { CARD_INCLUDE } from "@/lib/flashcardValidation";
+import { hasFlashcardDeckAccess } from "@/lib/flashcardAccess";
 
 // GET: /api/flashcards/study/[deckId] - build today's study queue for the
 // authenticated user: cards already due (nextReviewAt <= now, oldest due
@@ -25,6 +26,13 @@ export async function GET(request, { params }) {
 
     const now = new Date();
     const userId = user.userId;
+
+    if (!(await hasFlashcardDeckAccess(userId, deck))) {
+      return NextResponse.json(
+        { success: false, error: "กรุณาซื้อชุดแฟลชการ์ดนี้ก่อน", requiresPurchase: true },
+        { status: 403 }
+      );
+    }
 
     // Due: has a review row, nextReviewAt <= now, oldest due first.
     const dueReviews = await prisma.flashcardReview.findMany({

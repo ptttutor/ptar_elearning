@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireUser } from "@/lib/requireUser";
+import { hasFlashcardDeckAccess } from "@/lib/flashcardAccess";
 
 // GET: /api/flashcards/decks - list active decks for browsing, with
 // per-user dueCount/newCount so the list page can show "ถึงกำหนดทบทวน N ใบ"
@@ -55,6 +56,7 @@ export async function GET(request) {
           }),
         ]);
         const newCount = Math.max(0, totalCards - reviewedCount);
+        const hasAccess = await hasFlashcardDeckAccess(user.userId, deck);
 
         return {
           id: deck.id,
@@ -64,6 +66,9 @@ export async function GET(request) {
           gradeLevel: deck.gradeLevel,
           coverImageUrl: deck.coverImageUrl,
           topic: deck.topic,
+          price: deck.price,
+          discountPrice: deck.discountPrice,
+          hasAccess,
           totalCards,
           dueCount,
           newCount,
