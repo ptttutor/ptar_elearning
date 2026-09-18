@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useMockExamCheckout } from "@/features/checkout/hooks/use-mock-exam-checkout"
 import { CouponInput } from "@/features/checkout/components/coupon-input"
+import { SchoolField } from "@/components/school-field"
 
 export function MockExamCheckoutClient({ id }: { id: string }) {
   const {
@@ -23,6 +24,9 @@ export function MockExamCheckoutClient({ id }: { id: string }) {
     finalTotal,
     creating,
     confirmOrder,
+    school,
+    schoolInput,
+    setSchoolInput,
   } = useMockExamCheckout(id)
 
   if (checkingAccess) return null
@@ -42,6 +46,7 @@ export function MockExamCheckoutClient({ id }: { id: string }) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <SchoolField school={school} schoolInput={schoolInput} onSchoolInputChange={setSchoolInput} />
             {price > 0 && (
               <div className="space-y-2">
                 <CouponInput
@@ -57,6 +62,7 @@ export function MockExamCheckoutClient({ id }: { id: string }) {
                 </div>
               </div>
             )}
+            {price === 0 && couponError && <div className="text-xs text-destructive">{couponError}</div>}
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => router.back()}>
                 ยกเลิก

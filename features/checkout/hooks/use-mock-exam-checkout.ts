@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/components/auth-provider"
+import { useSchoolField } from "@/hooks/use-school-field"
 import { validateItemCoupon } from "@/lib/api/coupons"
 import { createOrder } from "@/lib/api/orders"
 import { fetchMockExamById } from "@/features/checkout/api/fetch-mock-exam"
@@ -26,6 +27,8 @@ export function useMockExamCheckout(id: string) {
   const [couponError, setCouponError] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
   const lastAutoAppliedCoupon = useRef<string | null>(null)
+
+  const { school, schoolInput, setSchoolInput, validateSchool, onSaved: onSchoolSaved } = useSchoolField()
 
   useEffect(() => {
     if (!couponFromQuery) {
@@ -140,13 +143,23 @@ export function useMockExamCheckout(id: string) {
       router.push(`/mock-exams/${encodeURIComponent(id)}`)
       return
     }
+    // POST /api/orders requires a school name the first time — without this
+    // a first-time buyer's mock-exam order failed with "กรุณากรอกชื่อโรงเรียน".
+    const schoolCheck = validateSchool()
+    if (!schoolCheck.ok) {
+      setCouponError(schoolCheck.error)
+      return
+    }
     try {
       setCreating(true)
+      setCouponError(null)
       const { orderId } = await createOrder({
         userId: authUserId,
         items: [{ itemType: "MOCK_EXAM", itemId: exam.id, title: exam.title, quantity: 1, unitPrice: price }],
         couponCode: couponCode || undefined,
+        school: schoolCheck.value,
       })
+      if (schoolCheck.value) onSchoolSaved(schoolCheck.value)
       router.push(`/order-success/${encodeURIComponent(orderId)}`)
     } catch (e: any) {
       setCouponError(e?.message || "สร้างคำสั่งซื้อไม่สำเร็จ")
@@ -171,5 +184,8 @@ export function useMockExamCheckout(id: string) {
     finalTotal,
     creating,
     confirmOrder,
+    school,
+    schoolInput,
+    setSchoolInput,
   }
 }
