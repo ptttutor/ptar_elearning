@@ -15,8 +15,10 @@ function effectivePrice(deck: ApiFlashcardDeck) {
 }
 
 export function DeckCard({ deck }: { deck: ApiFlashcardDeck }) {
-  // A priced deck the user hasn't bought goes to checkout instead of study.
-  const locked = deck.price > 0 && !deck.hasAccess
+  // Every deck must be bought/claimed first (free = ฿0 through checkout);
+  // one the user doesn't own yet goes to checkout instead of study.
+  const locked = !deck.hasAccess
+  const isFree = effectivePrice(deck) === 0
   return (
     <motion.div variants={fadeInUp}>
       <Link href={locked ? `/checkout/flashcard/${deck.id}` : `/flashcards/${deck.id}`} className="block h-full">
@@ -44,10 +46,12 @@ export function DeckCard({ deck }: { deck: ApiFlashcardDeck }) {
               <div className="flex items-center justify-between gap-2">
                 <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
                   <Lock className="mr-1 h-3 w-3" />
-                  ซื้อเพื่อเริ่มเรียน
+                  {isFree ? "กดรับเพื่อเริ่มเรียน" : "ซื้อเพื่อเริ่มเรียน"}
                 </Badge>
                 <div className="text-right">
-                  <span className="text-lg font-bold text-foreground">฿{effectivePrice(deck).toLocaleString()}</span>
+                  <span className={`text-lg font-bold ${isFree ? "text-green-600" : "text-foreground"}`}>
+                    {isFree ? "ฟรี (฿0)" : `฿${effectivePrice(deck).toLocaleString()}`}
+                  </span>
                   {effectivePrice(deck) < deck.price && (
                     <span className="ml-1.5 text-sm text-muted-foreground line-through">฿{deck.price.toLocaleString()}</span>
                   )}
@@ -55,11 +59,9 @@ export function DeckCard({ deck }: { deck: ApiFlashcardDeck }) {
               </div>
             ) : (
             <div className="flex flex-wrap items-center gap-2">
-              {deck.price > 0 && (
-                <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
-                  ซื้อแล้ว
-                </Badge>
-              )}
+              <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
+                {isFree ? "รับแล้ว" : "ซื้อแล้ว"}
+              </Badge>
               {deck.dueCount > 0 ? (
                 <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700">
                   ถึงกำหนดทบทวน {deck.dueCount} ใบ

@@ -39,7 +39,11 @@ export function FlashcardCheckoutClient({ id }: { id: string }) {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>{deck.title}</span>
-              {price === 0 && <Badge className="bg-green-600 text-white">ฟรี</Badge>}
+              {price === 0 ? (
+                <Badge className="bg-green-600 text-white">ฟรี (฿0)</Badge>
+              ) : (
+                <span className="text-lg font-semibold">฿{price.toLocaleString()}</span>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -71,6 +75,8 @@ export function FlashcardCheckoutClient({ id }: { id: string }) {
                     <Loader2 className="h-4 w-4 animate-spin" />
                     กำลังสร้างคำสั่งซื้อ...
                   </span>
+                ) : price === 0 ? (
+                  "รับชุดนี้ฟรี"
                 ) : (
                   "ยืนยันการสั่งซื้อ"
                 )}
